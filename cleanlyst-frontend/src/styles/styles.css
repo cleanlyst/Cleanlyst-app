@@ -1,0 +1,42 @@
+html {
+  -webkit-text-size-adjust: 100%; /* 2 */
+}
+
+body {
+  margin: 0;
+  height: 100%;
+}
+a {
+  text-decoration: none;
+  list-style: none;
+}
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+:root {
+  --white: #ffffff;
+  --red: #ee3438;
+  --black: #000000;
+
+  --max-width: 1500px;
+  --navbar-height: 90px;
+}
+
+.no-margin {
+  margin: 0;
+}
+.no-padding {
+  padding: 0 !important;
+}
+.mb-0 {
+  margin-bottom: 0;
+}
+.justify-end {
+  display: flex;
+  justify-content: end;
+}
+.pointer {
+  cursor: pointer;
+}

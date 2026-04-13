@@ -31,6 +31,8 @@ npm install
 
 ### Compile and Hot-Reload for Development
 
+From the project root:
+
 ```sh
 npm run dev
 ```

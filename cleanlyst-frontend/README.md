@@ -37,6 +37,13 @@ From the project root:
 npm run dev
 ```
 
+If the browser shows a Supabase configuration error, create `cleanlyst-frontend/.env` with:
+
+```sh
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
 ### Type-Check, Compile and Minify for Production
 
 ```sh

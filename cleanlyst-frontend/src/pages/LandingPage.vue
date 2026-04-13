@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { supabase } from '@/lib/supabase'
+import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
 interface Service {
@@ -67,6 +67,16 @@ const success = ref(false)
 onMounted(async () => {
   await auth.init()
 
+  let supabase
+  try {
+    supabase = requireSupabase()
+  } catch (error) {
+    console.error(error)
+    alert(error instanceof Error ? error.message : 'Supabase is not configured')
+    loading.value = false
+    return
+  }
+
   const { data, error } = await supabase.from('services').select('*').eq('active', true)
 
   if (error) {
@@ -83,6 +93,14 @@ onMounted(async () => {
 
 async function createBooking() {
   success.value = false
+
+  let supabase
+  try {
+    supabase = requireSupabase()
+  } catch (error) {
+    alert(error instanceof Error ? error.message : 'Supabase is not configured')
+    return
+  }
 
   if (!auth.userId) {
     alert('You must be logged in')

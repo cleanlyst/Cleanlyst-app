@@ -1,6 +1,6 @@
 import type { AuthChangeEvent, Subscription } from '@supabase/supabase-js'
 import { defineStore } from 'pinia'
-import { supabase } from '@/lib/supabase'
+import { hasSupabaseConfig, requireSupabase, supabaseConfigError } from '@/lib/supabase'
 
 export type Role = 'customer' | 'cleaner' | 'admin'
 
@@ -32,6 +32,17 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async init() {
       this.loading = true
+
+      if (!hasSupabaseConfig) {
+        console.warn(supabaseConfigError)
+        this.userId = null
+        this.profile = null
+        this.loading = false
+        this.initialized = true
+        return
+      }
+
+      const supabase = requireSupabase()
 
       const { data, error } = await supabase.auth.getUser()
       if (error) {
@@ -65,6 +76,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async signIn(email: string, password: string) {
+      const supabase = requireSupabase()
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -76,6 +88,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async signUp(email: string, password: string, fullName: string, role: Role) {
+      const supabase = requireSupabase()
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -91,6 +104,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async signOut() {
+      const supabase = requireSupabase()
       const { error } = await supabase.auth.signOut()
       if (error) throw error
 
@@ -103,7 +117,9 @@ export const useAuthStore = defineStore('auth', {
     },
 
     bindAuthListener() {
-      if (this.authSubscription) return
+      if (this.authSubscription || !hasSupabaseConfig) return
+
+      const supabase = requireSupabase()
 
       const {
         data: { subscription },

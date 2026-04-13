@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { supabase } from '@/lib/supabase'
+import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -59,6 +59,17 @@ async function loadBookings() {
 
   loading.value = true
 
+  let supabase
+  try {
+    supabase = requireSupabase()
+  } catch (error) {
+    console.error(error)
+    alert(error instanceof Error ? error.message : 'Supabase is not configured')
+    bookings.value = []
+    loading.value = false
+    return
+  }
+
   const { data, error } = await supabase
     .from('bookings')
     .select('*')
@@ -78,6 +89,7 @@ async function loadBookings() {
 }
 
 async function acceptBooking(id: string) {
+  const supabase = requireSupabase()
   const { error } = await supabase.functions.invoke('accept-booking', {
     body: { booking_id: id },
   })
@@ -92,6 +104,7 @@ async function acceptBooking(id: string) {
 }
 
 async function declineBooking(id: string) {
+  const supabase = requireSupabase()
   const { error } = await supabase.from('bookings').update({ status: 'declined' }).eq('id', id)
 
   if (error) {

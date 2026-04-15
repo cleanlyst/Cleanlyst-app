@@ -2,41 +2,62 @@
   <main class="servicesPage">
     <section class="servicesHero">
       <p class="eyebrow">Services</p>
-      <h1>Flexible cleaning support for homes, routines, and one-off resets.</h1>
+      <h1>Cleaning support across homes, workplaces, vehicles, outdoor areas, and specialist jobs.</h1>
       <p class="heroText">
-        Cleanlyst is built to make it easier to browse trusted options, compare service types, and
-        book the kind of help that fits your schedule.
+        Browse the full range of services available through Cleanlyst and choose the type of clean
+        that best fits your space and schedule.
       </p>
     </section>
 
     <section class="serviceGrid">
-      <article class="serviceCard">
-        <h2>Standard home clean</h2>
-        <p>Ideal for regular upkeep, kitchen and bathroom refreshes, dusting, vacuuming, and tidying.</p>
-      </article>
-      <article class="serviceCard">
-        <h2>Deep clean</h2>
-        <p>For first visits, seasonal resets, or homes that need extra attention in high-use areas.</p>
-      </article>
-      <article class="serviceCard">
-        <h2>Move-in or move-out</h2>
-        <p>Support for handovers, fresh starts, and preparing a space for the next resident.</p>
-      </article>
-      <article class="serviceCard">
-        <h2>Kitchen focus</h2>
-        <p>Detailed wipe-downs, surface care, appliance exteriors, and a sharper finish where it matters.</p>
-      </article>
-      <article class="serviceCard">
-        <h2>Bathroom refresh</h2>
-        <p>Practical care for sinks, showers, mirrors, tiles, and the everyday details that build up fast.</p>
-      </article>
-      <article class="serviceCard">
-        <h2>Recurring visits</h2>
-        <p>Weekly or fortnightly routines designed for busy households that want a dependable reset.</p>
+      <article v-for="service in services" :key="service.title" class="serviceCard">
+        <h2>{{ service.title }}</h2>
+        <p>{{ service.description }}</p>
       </article>
     </section>
   </main>
 </template>
+
+<script setup lang="ts">
+const services = [
+  {
+    title: 'Home Cleaning',
+    description: 'Routine cleaning for apartments, houses, and everyday household upkeep.',
+  },
+  {
+    title: 'Commercial & Office Cleaning',
+    description: 'Reliable cleaning for offices, shops, studios, and shared workspaces.',
+  },
+  {
+    title: 'Windows & Glass',
+    description: 'Cleaning for windows, mirrors, partitions, and glass surfaces inside and out.',
+  },
+  {
+    title: 'Vehicle & Mobility Cleaning',
+    description: 'Interior and surface cleaning for cars, vans, and mobility equipment.',
+  },
+  {
+    title: 'Specialist Interior Cleaning',
+    description: 'Focused cleaning for carpets, upholstery, mattresses, and delicate interior finishes.',
+  },
+  {
+    title: 'Exterior & Outdoor Cleaning',
+    description: 'Practical cleaning for patios, driveways, garden areas, and outdoor surfaces.',
+  },
+  {
+    title: 'Bin & Waste Cleaning',
+    description: 'Sanitising and refreshing bins, waste storage areas, and high-use disposal spaces.',
+  },
+  {
+    title: 'Specialist & High-Level Services',
+    description: 'Support for deep cleans, post-build work, and harder-to-reach areas.',
+  },
+  {
+    title: 'Personal Item Cleaning',
+    description: 'Care for selected personal items such as trainers, bags, curtains, and more.',
+  },
+]
+</script>
 
 <style scoped>
 .servicesPage {

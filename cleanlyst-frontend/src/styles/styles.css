@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300..800&display=swap');
-
 html {
   -webkit-text-size-adjust: 100%; /* 2 */
 }
@@ -24,6 +22,7 @@ a {
   --black: #000000;
   --blue: #0b2d72;
   --green: #408a71;
+  --lightBlue: #e7edf6;
 
   --max-width: 1500px;
   --navbar-height: 90px;

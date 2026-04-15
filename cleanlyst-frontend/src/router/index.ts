@@ -51,6 +51,15 @@ const router = createRouter({
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
   ],
+  scrollBehavior(to) {
+    if (to.hash) {
+      return {
+        el: to.hash,
+        behavior: 'smooth',
+      }
+    }
+    return { top: 0 }
+  },
 })
 
 router.beforeEach(async (to) => {

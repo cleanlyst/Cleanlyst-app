@@ -85,10 +85,12 @@
   </div>
 
   <router-view />
+  <FooterPage />
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import FooterPage from '@/components/FooterPage.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 

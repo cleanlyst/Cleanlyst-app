@@ -21,6 +21,18 @@ const router = createRouter({
       component: () => import('../components/IndexPage.vue'),
     },
     {
+      path: '/contact',
+      name: 'Contact',
+      meta: { title: 'Contact Us' },
+      component: () => import('../pages/ContactPage.vue'),
+    },
+    {
+      path: '/services',
+      name: 'Services',
+      meta: { title: 'Services' },
+      component: () => import('../pages/ServicesPage.vue'),
+    },
+    {
       path: '/auth',
       name: 'Auth',
       meta: { title: 'Sign In', redirectIfAuthenticated: true },

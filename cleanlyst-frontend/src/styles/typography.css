@@ -1,0 +1,24 @@
+.blue-text {
+  color: var(--blue);
+}
+
+.white-text {
+  color: var(--white);
+}
+
+.black-text {
+  color: var(--black);
+}
+.red-text {
+  color: var(--red);
+}
+
+.green-text {
+  color: var(--green);
+}
+.text-uppercase {
+  text-transform: uppercase;
+}
+.text-underline {
+  text-decoration: underline;
+}

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300..800&display=swap');
+
 html {
   -webkit-text-size-adjust: 100%; /* 2 */
 }
@@ -5,6 +7,7 @@ html {
 body {
   margin: 0;
   height: 100%;
+  font-family: 'Open Sans', sans-serif;
 }
 a {
   text-decoration: none;
@@ -19,6 +22,8 @@ a {
   --white: #ffffff;
   --red: #ee3438;
   --black: #000000;
+  --blue: #0b2d72;
+  --green: #408a71;
 
   --max-width: 1500px;
   --navbar-height: 90px;
@@ -38,5 +43,34 @@ a {
   justify-content: end;
 }
 .pointer {
+  cursor: pointer;
+}
+
+.blueButton {
+  border: 1px solid var(--blue);
+  cursor: pointer;
+  text-align: center;
+  padding: 0.5rem 1.5rem;
+  background: var(--white);
+  color: var(--blue);
+}
+.blueButton:hover {
+  background-color: var(--blue);
+  color: var(--white);
+  cursor: pointer;
+}
+
+.greenButton {
+  border: 1px solid var(--white);
+  cursor: pointer;
+  text-align: center;
+  padding: 0.5rem 1.5rem;
+  background: var(--green);
+  color: var(--white);
+}
+.greenButton:hover {
+  background-color: var(--white);
+  border: 1px solid var(--green);
+  color: var(--green);
   cursor: pointer;
 }

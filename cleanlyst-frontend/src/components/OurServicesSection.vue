@@ -2,30 +2,38 @@
   <section class="ourServices">
     <div class="sectionIntro">
       <h2 class="h4">Our Services</h2>
-      <p>Professional cleaning support across homes, workplaces, outdoor areas, and specialist jobs.</p>
+      <p>
+        Professional cleaning support across homes, workplaces, outdoor areas, and specialist jobs.
+      </p>
     </div>
 
     <div class="servicesGrid">
       <article
         v-for="service in featuredServices"
         :key="service.title"
-        class="serviceCard"
-        :style="{ backgroundImage: `linear-gradient(180deg, rgba(11, 45, 114, 0.16) 0%, rgba(8, 18, 34, 0.78) 100%), url(${landingImage})` }"
+        class="serviceCard pointer"
+        :style="{
+          backgroundImage: `linear-gradient(180deg, rgba(11, 45, 114, 0.16) 0%, rgba(8, 18, 34, 0.78) 100%), url(${service.image})`,
+        }"
       >
-        <div class="serviceContent">
-          <h3 class="h6">{{ service.title }}</h3>
-          <p class="small">{{ service.description }}</p>
+        <div class="serviceContent white-text">
+          <h3 class="h6 white-text">{{ service.title }}</h3>
+          <p class="small white-text">{{ service.description }}</p>
         </div>
       </article>
 
       <router-link
         :to="{ name: 'Services' }"
         class="serviceCard serviceCardLink"
-        :style="{ backgroundImage: `linear-gradient(180deg, rgba(64, 138, 113, 0.18) 0%, rgba(8, 18, 34, 0.82) 100%), url(${landingImage})` }"
+        :style="{
+          backgroundImage: `linear-gradient(180deg, rgba(64, 138, 113, 0.18) 0%, rgba(8, 18, 34, 0.82) 100%), url(${homeImage})`,
+        }"
       >
-        <div class="serviceContent">
-          <h3 class="h6">More services we offer</h3>
-          <p class="small">Explore the full range of cleaning services available through Cleanlyst.</p>
+        <div class="serviceContent white-text">
+          <h3 class="h6 white-text">More services we offer</h3>
+          <p class="small white-text">
+            Explore the full range of cleaning services available through Cleanlyst.
+          </p>
         </div>
       </router-link>
     </div>
@@ -33,20 +41,25 @@
 </template>
 
 <script setup lang="ts">
-import landingImage from '@/assets/landingpage.png'
+import homeImage from '@/assets/home.jpg'
+import officeImage from '@/assets/office.jpg'
+import windowImage from '@/assets/window.jpg'
 
 const featuredServices = [
   {
     title: 'Home Cleaning',
     description: 'Routine cleaning for apartments and houses.',
+    image: homeImage,
   },
   {
     title: 'Commercial & Office Cleaning',
     description: 'Reliable cleaning for offices, shops, and shared workspaces.',
+    image: officeImage,
   },
   {
     title: 'Windows & Glass',
     description: 'Clearer windows, mirrors, and glass surfaces inside and out.',
+    image: windowImage,
   },
 ]
 </script>
@@ -105,7 +118,7 @@ const featuredServices = [
   content: '';
   position: absolute;
   inset: 0;
-  backdrop-filter: blur(1px);
+  backdrop-filter: brightness(0.9);
 }
 
 .serviceContent {

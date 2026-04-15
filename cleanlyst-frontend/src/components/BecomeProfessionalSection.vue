@@ -2,7 +2,6 @@
   <section class="becomeProfessional">
     <div class="professionalGrid">
       <div class="contentCard">
-        <p class="eyebrow">For cleaners</p>
         <h2 class="h4">Become a Cleanlyst Professional</h2>
         <p class="supportText">
           Join Cleanlyst to receive booking requests, grow your client base, and manage your work
@@ -17,14 +16,14 @@
       </div>
 
       <div class="imageCard hide-mobile">
-        <img :src="landingImage" alt="Cleanlyst cleaner application" class="professionalImage" />
+        <img :src="proImage" alt="Cleanlyst cleaner application" class="professionalImage" />
       </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import landingImage from '@/assets/landingpage.png'
+import proImage from '@/assets/become-pro.jpg'
 </script>
 
 <style scoped>

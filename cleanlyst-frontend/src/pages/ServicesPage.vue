@@ -10,51 +10,77 @@
     </section>
 
     <section class="serviceGrid">
-      <article v-for="service in services" :key="service.title" class="serviceCard">
-        <h2>{{ service.title }}</h2>
-        <p>{{ service.description }}</p>
+      <article
+        v-for="service in services"
+        :key="service.title"
+        class="serviceCard"
+        :style="{ backgroundImage: `linear-gradient(180deg, rgba(11, 45, 114, 0.18) 0%, rgba(8, 18, 34, 0.84) 100%), url(${service.image})` }"
+      >
+        <div class="serviceContent white-text">
+          <h2 class="white-text">{{ service.title }}</h2>
+          <p class="white-text">{{ service.description }}</p>
+        </div>
       </article>
     </section>
   </main>
 </template>
 
 <script setup lang="ts">
+import homeImage from '@/assets/landingpage.png'
+import officeImage from '@/assets/office.jpg'
+import windowImage from '@/assets/window.jpg'
+import vehicleImage from '@/assets/vehicle.jpg'
+import specialistInteriorImage from '@/assets/specialist-interior.jpg'
+import outdoorImage from '@/assets/outdoor.jpg'
+import binImage from '@/assets/bin.jpg'
+import specialistImage from '@/assets/specialist.jpg'
+import personalItemImage from '@/assets/personal-item.jpg'
+
 const services = [
   {
     title: 'Home Cleaning',
     description: 'Routine cleaning for apartments, houses, and everyday household upkeep.',
+    image: homeImage,
   },
   {
     title: 'Commercial & Office Cleaning',
     description: 'Reliable cleaning for offices, shops, studios, and shared workspaces.',
+    image: officeImage,
   },
   {
     title: 'Windows & Glass',
     description: 'Cleaning for windows, mirrors, partitions, and glass surfaces inside and out.',
+    image: windowImage,
   },
   {
     title: 'Vehicle & Mobility Cleaning',
     description: 'Interior and surface cleaning for cars, vans, and mobility equipment.',
+    image: vehicleImage,
   },
   {
     title: 'Specialist Interior Cleaning',
     description: 'Focused cleaning for carpets, upholstery, mattresses, and delicate interior finishes.',
+    image: specialistInteriorImage,
   },
   {
     title: 'Exterior & Outdoor Cleaning',
     description: 'Practical cleaning for patios, driveways, garden areas, and outdoor surfaces.',
+    image: outdoorImage,
   },
   {
     title: 'Bin & Waste Cleaning',
     description: 'Sanitising and refreshing bins, waste storage areas, and high-use disposal spaces.',
+    image: binImage,
   },
   {
     title: 'Specialist & High-Level Services',
     description: 'Support for deep cleans, post-build work, and harder-to-reach areas.',
+    image: specialistImage,
   },
   {
     title: 'Personal Item Cleaning',
     description: 'Care for selected personal items such as trainers, bags, curtains, and more.',
+    image: personalItemImage,
   },
 ]
 </script>
@@ -114,11 +140,30 @@ h1 {
 }
 
 .serviceCard {
+  position: relative;
+  min-height: 280px;
   padding: 1.75rem;
   border-radius: 24px;
+  overflow: hidden;
   border: 1px solid rgba(19, 34, 59, 0.08);
-  background: rgba(255, 252, 246, 0.92);
   box-shadow: 0 18px 50px rgba(19, 34, 59, 0.07);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  display: flex;
+  align-items: flex-end;
+}
+
+.serviceCard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(1px);
+}
+
+.serviceContent {
+  position: relative;
+  z-index: 1;
 }
 
 .serviceCard h2 {
@@ -128,7 +173,6 @@ h1 {
 .serviceCard p {
   margin-bottom: 0;
   line-height: 1.7;
-  color: #41506a;
 }
 
 @media (max-width: 900px) {
@@ -138,6 +182,10 @@ h1 {
 
   .serviceGrid {
     grid-template-columns: 1fr;
+  }
+
+  .serviceCard {
+    min-height: 220px;
   }
 }
 </style>

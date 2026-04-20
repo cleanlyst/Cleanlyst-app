@@ -3,20 +3,41 @@
     <div class="footerInner">
       <div class="footerColumn brandColumn">
         <router-link :to="{ name: 'Home' }" class="footerBrand">
-          <img src="/logo.png" alt="Cleanlyst logo" class="footerLogo" />
+          <img src="/logo-text.svg" alt="Cleanlyst logo" class="footerLogo" />
         </router-link>
 
         <div class="socialLinks">
           <a href="#" aria-label="Instagram" class="socialLink">
-            <svg viewBox="0 0 24 24" class="socialIcon" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.8" />
+            <svg
+              viewBox="0 0 24 24"
+              class="socialIcon"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect
+                x="3"
+                y="3"
+                width="18"
+                height="18"
+                rx="5"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
               <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8" />
               <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
             </svg>
           </a>
           <a href="#" aria-label="Facebook" class="socialLink">
-            <svg viewBox="0 0 24 24" class="socialIcon" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M13.5 21V13.2H16.1L16.5 10.2H13.5V8.3C13.5 7.43 13.73 6.84 14.98 6.84H16.6V4.15C16.32 4.11 15.37 4 14.26 4C11.95 4 10.36 5.41 10.36 8V10.2H7.8V13.2H10.36V21H13.5Z" fill="currentColor"/>
+            <svg
+              viewBox="0 0 24 24"
+              class="socialIcon"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M13.5 21V13.2H16.1L16.5 10.2H13.5V8.3C13.5 7.43 13.73 6.84 14.98 6.84H16.6V4.15C16.32 4.11 15.37 4 14.26 4C11.95 4 10.36 5.41 10.36 8V10.2H7.8V13.2H10.36V21H13.5Z"
+                fill="currentColor"
+              />
             </svg>
           </a>
         </div>
@@ -60,8 +81,7 @@
 .footerColumn {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 1rem;
+  justify-content: center;
   flex: 1 1 0;
 }
 
@@ -71,24 +91,30 @@
 }
 
 .footerLogo {
-  height: 46px;
+  height: 100px;
   object-fit: contain;
+  filter: invert(1);
 }
 
 .footerTitle {
-  margin: 0;
+  margin-bottom: 10px;
   font-size: 1.05rem;
   color: rgba(255, 255, 255, 0.92);
 }
 
-.footerLinks,
-.contactList,
 .socialLinks {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   gap: 0.85rem;
   align-items: center;
+}
+.contactList,
+.footerLinks {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 0.85rem;
 }
 
 .footerLink,
@@ -106,9 +132,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  width: 30px;
+  height: 30px;
+
   border-radius: 999px;
 }
 

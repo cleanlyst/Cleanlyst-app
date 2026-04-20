@@ -2,9 +2,11 @@
   <main class="landingPage">
     <section class="booking- container">
       <div class="row">
+        <div class="col-lg-1 hide-mobile"></div>
+        <!--Empty container for spacing-->
         <div class="col-lg-5">
           <div class="landing-page-booking-form">
-            <h2 class="h5">Book Trusted Cleaners in Minutes</h2>
+            <h2 class="h4">Book Trusted Cleaners in Minutes</h2>
             <p>
               Cleanlyst helps you find cleaners in minutes and not after ten tabs and three phone
               calls.
@@ -12,19 +14,25 @@
 
             <form class="bookingForm" @submit.prevent="handleBookCleaner">
               <label class="formField">
-                <span>Enter your location</span>
+                <span class="visually-hidden">Address</span>
                 <input
                   v-model.trim="location"
                   type="text"
                   placeholder="Enter your address"
                   class="addressInput"
                   required
+                  aria-label="Enter your address"
                 />
               </label>
 
               <label class="formField">
-                <span>Select your service</span>
-                <select v-model="selectedService" class="serviceSelect" required>
+                <span class="visually-hidden">Service type</span>
+                <select
+                  v-model="selectedService"
+                  class="serviceSelect"
+                  required
+                  aria-label="Select a service type"
+                >
                   <option disabled value="">Choose a main service</option>
                   <option v-for="service in mainServices" :key="service" :value="service">
                     {{ service }}
@@ -32,15 +40,21 @@
                 </select>
               </label>
 
-              <button class="blueButton bookingButton" type="submit">Book a cleaner</button>
+              <div class="landing-page-CTA">
+                <button class="blueButton bookingButton" type="submit">Book a cleaner</button>
+
+                <span class="pointer text-underline">Log in</span>
+              </div>
             </form>
           </div>
         </div>
-        <div class="col-lg-7 hide-mobile">
+        <div class="col-lg-5 hide-mobile">
           <div class="landing-image-box">
             <img src="../assets/landingpage.png" alt="" class="landing-image" />
           </div>
         </div>
+        <div class="col-lg-1 hide-mobile"></div>
+        <!--Empty container for spacing-->
       </div>
     </section>
 
@@ -110,29 +124,25 @@ async function handleBookCleaner() {
 
 <style scoped>
 section.booking-.container {
-  padding: 3rem 30px;
-  background: var(--lightBlue);
+  padding: 25px 0;
 }
 
 .landing-image-box {
   width: 100%;
-  height: 400px;
+  height: 420px;
 }
 
 .landing-page-booking-form {
   width: 100%;
   min-height: 400px;
-  padding: 1.5rem;
-  border-radius: 28px;
-  background: var(--white);
-  border: 1px solid rgba(19, 34, 59, 0.08);
-  box-shadow: 0 22px 60px rgba(19, 34, 59, 0.08);
+  padding: 1.5rem 2.5rem;
 }
 
 .bookingForm {
   display: grid;
   gap: 0.85rem;
   margin-top: 1.25rem;
+  width: 75%;
 }
 
 .formField {
@@ -148,17 +158,17 @@ section.booking-.container {
 .addressInput,
 .serviceSelect {
   width: 100%;
-  min-height: 52px;
-  padding: 0.9rem 1rem;
-  border: 1px solid rgba(19, 34, 59, 0.14);
+  padding: 0.6rem;
+  border: 1px solid var(--green);
   border-radius: 18px;
   background: var(--white);
-  color: #13223b;
+  color: var(--black);
 }
 
 .bookingButton {
   justify-self: start;
   margin-top: 0.25rem;
+  margin-right: 10px;
 }
 
 img.landing-image {
@@ -181,6 +191,7 @@ img.landing-image {
   .landing-page-booking-form {
     min-height: auto;
     margin-bottom: 2rem;
+    padding: 0.5rem;
   }
 
   .landing-image-box {

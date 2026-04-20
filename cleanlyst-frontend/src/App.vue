@@ -3,7 +3,7 @@
     <nav class="headerNav">
       <div class="navGroup">
         <router-link :to="{ name: 'Home' }" class="brandLink">
-          <img src="/logo.png" alt="Cleanlyst logo" class="brandLogo" />
+          <img src="/logo.svg" alt="Cleanlyst logo" class="brandLogo" />
         </router-link>
       </div>
 
@@ -163,7 +163,7 @@ async function handleSignOut() {
 }
 
 .brandLogo {
-  height: 42px;
+  height: 80px;
   object-fit: contain;
 }
 
@@ -267,6 +267,10 @@ async function handleSignOut() {
   .close-container {
     display: flex;
     justify-content: end;
+  }
+
+  .brandLogo {
+    height: 60px;
   }
 }
 </style>

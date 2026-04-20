@@ -28,6 +28,19 @@ a {
   --navbar-height: 90px;
 }
 
+/* Accessibility: Visually hidden but screen reader accessible */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .no-margin {
   margin: 0;
 }
@@ -49,9 +62,10 @@ a {
   border: 1px solid var(--blue);
   cursor: pointer;
   text-align: center;
-  padding: 0.5rem 1.5rem;
+  padding: 4px 20px;
   background: var(--white);
   color: var(--blue);
+  border-radius: 10px;
 }
 .blueButton:hover {
   background-color: var(--blue);
@@ -63,9 +77,10 @@ a {
   border: 1px solid var(--white);
   cursor: pointer;
   text-align: center;
-  padding: 0.5rem 1.5rem;
+  padding: 4px 20px;
   background: var(--green);
   color: var(--white);
+  border-radius: 10px;
 }
 .greenButton:hover {
   background-color: var(--white);

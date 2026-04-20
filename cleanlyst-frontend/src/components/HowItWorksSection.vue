@@ -1,7 +1,7 @@
 <template>
   <section class="howItWorks">
     <div class="sectionIntro">
-      <h2 class="h4">How it works</h2>
+      <h2 class="h4 no-margin">How it works</h2>
       <p>Book trusted cleaners in just a few simple steps.</p>
     </div>
 
@@ -44,35 +44,11 @@ const steps = [
 
 <style scoped>
 .howItWorks {
-  padding: 4rem 30px 2rem;
+  padding: 2rem 3rem;
 }
 
 .sectionIntro {
   max-width: 42rem;
-  margin: 0 auto 2rem;
-  text-align: center;
-  color: #13223b;
-}
-
-.eyebrow {
-  margin: 0 0 0.85rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #cf5d34;
-}
-
-.sectionIntro h2 {
-  margin: 0;
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.05;
-}
-
-.sectionIntro p:last-child {
-  margin: 1rem 0 0;
-  line-height: 1.7;
-  color: #4f5c73;
 }
 
 .stepsGrid {
@@ -82,43 +58,23 @@ const steps = [
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
+.step-title {
+  text-align: center;
+}
 
 .stepCard {
   padding: 1.6rem;
-  border-radius: 28px;
-  border: 1px solid rgba(19, 34, 59, 0.08);
-  box-shadow: 0 18px 50px rgba(19, 34, 59, 0.07);
-  color: #13223b;
 }
 
 .stepImage {
   display: block;
-  width: 100%;
+  width: 60px;
   max-width: 70px;
-  margin-bottom: 1.25rem;
+  margin: 0 auto 10px;
 }
-
-.stepCard h3 {
-  margin: 0 0 0.75rem;
-  font-size: 1.2rem;
-}
-
 .stepCard p {
   margin: 0;
-  line-height: 1.7;
   color: #4f5c73;
-}
-
-@media (max-width: 900px) {
-  .stepsGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .stepCard:last-child {
-    grid-column: 1 / -1;
-    max-width: calc(50% - 0.5rem);
-    justify-self: center;
-  }
 }
 
 @media (max-width: 720px) {
@@ -127,7 +83,7 @@ const steps = [
   }
 
   .stepCard {
-    padding: 1.35rem;
+    padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -138,6 +94,7 @@ const steps = [
   }
   .step-title {
     margin: 10px 0;
+    font-size: 15px;
   }
 }
 </style>

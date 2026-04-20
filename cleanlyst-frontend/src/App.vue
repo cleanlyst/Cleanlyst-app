@@ -10,8 +10,8 @@
       <!-- Desktop Navigation -->
       <div class="navGroup hide-mobile">
         <router-link :to="{ name: 'Home' }" class="navLink">Home</router-link>
-        <router-link :to="{ name: 'Contact' }" class="navLink">Contact Us</router-link>
         <router-link :to="{ name: 'Services' }" class="navLink">Services</router-link>
+        <router-link :to="{ name: 'About' }" class="navLink">About</router-link>
       </div>
 
       <div class="navGroup navActions hide-mobile">
@@ -106,8 +106,8 @@ function toggleNav() {
 
 const mobileNavItems = [
   { name: 'Home', label: 'Home' },
-  { name: 'Contact', label: 'Contact' },
   { name: 'Services', label: 'Services' },
+  { name: 'About', label: 'About' },
 ] as const
 
 const mobileActionItems = computed(() => {

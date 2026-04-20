@@ -21,10 +21,10 @@ const router = createRouter({
       component: () => import('../components/IndexPage.vue'),
     },
     {
-      path: '/contact',
-      name: 'Contact',
-      meta: { title: 'Contact Us' },
-      component: () => import('../pages/ContactPage.vue'),
+      path: '/about',
+      name: 'About',
+      meta: { title: 'About Us' },
+      component: () => import('../pages/AboutUs.vue'),
     },
     {
       path: '/services',

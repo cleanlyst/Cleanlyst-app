@@ -88,3 +88,12 @@ a {
   color: var(--green);
   cursor: pointer;
 }
+.addressInput,
+.serviceSelect {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid var(--green);
+  border-radius: 18px;
+  background: var(--white);
+  color: var(--black);
+}

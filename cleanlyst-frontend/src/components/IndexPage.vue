@@ -43,7 +43,9 @@
               <div class="landing-page-CTA">
                 <button class="blueButton bookingButton" type="submit">Book a cleaner</button>
 
-                <span class="pointer text-underline">Log in</span>
+                <router-link :to="{ name: 'Login' }" class="pointer text-underline"
+                  >Log in</router-link
+                >
               </div>
             </form>
           </div>
@@ -153,16 +155,6 @@ section.booking-.container {
 .formField span {
   font-weight: 700;
   color: #20314d;
-}
-
-.addressInput,
-.serviceSelect {
-  width: 100%;
-  padding: 0.6rem;
-  border: 1px solid var(--green);
-  border-radius: 18px;
-  background: var(--white);
-  color: var(--black);
 }
 
 .bookingButton {

@@ -39,6 +39,18 @@ const router = createRouter({
       component: () => import('../pages/AuthPage.vue'),
     },
     {
+      path: '/login',
+      name: 'Login',
+      meta: { title: 'Log in', redirectIfAuthenticated: true },
+      component: () => import('../pages/LoginPage.vue'),
+    },
+    {
+      path: '/signup',
+      name: 'Signup',
+      meta: { title: 'Sign up', redirectIfAuthenticated: true },
+      component: () => import('../pages/SignupPage.vue'),
+    },
+    {
       path: '/book',
       name: 'BookCleaner',
       meta: { title: 'Book a Cleaner', requiresAuth: true, requiresRole: 'customer' },

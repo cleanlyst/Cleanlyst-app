@@ -25,18 +25,18 @@
         >
           Dashboard
         </router-link>
-        <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Auth' }" class="blueButton">
+        <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Login' }" class="blueButton">
           Log in
         </router-link>
-        <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Auth' }" class="greenButton">
-          Register
+        <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Signup' }" class="greenButton">
+          Sign up
         </router-link>
         <button v-else class="navLink navButton ghostButton" type="button" @click="handleSignOut">
           Sign out
         </button>
       </div>
 
-      <div class="breadcrumb hide-desktop" @click.stop="toggleNav">
+      <div class="breadcrumb hide-desktop">
         <div class="mobileNavLinks hide-desktop">
           <router-link
             v-for="item in mobileActionItems"
@@ -57,7 +57,7 @@
           </button>
         </div>
 
-        <div class="bars">
+        <div class="bars" @click.stop="toggleNav">
           <div class="bar1"></div>
           <div class="bar2"></div>
           <div class="bar3"></div>
@@ -124,7 +124,7 @@ const mobileActionItems = computed(() => {
   }
 
   if (!auth.isAuthenticated) {
-    items.push({ name: 'Auth', label: 'Log in' })
+    items.push({ name: 'Login', label: 'Log in' })
     items.push({ name: 'Auth', label: 'Register' })
   }
 

@@ -36,30 +36,32 @@
         </button>
       </div>
 
-      <div class="mobileNavLinks hide-desktop">
-        <router-link
-          v-for="item in mobileActionItems"
-          :key="`${item.name}-${item.label}`"
-          :to="{ name: item.name }"
-          :class="{ active: route.name === item.name }"
-        >
-          <span class="blue-text">{{ item.label }}</span>
-        </router-link>
-
-        <button
-          v-if="auth.isAuthenticated"
-          class="breadcrumbLink breadcrumbAction ghostButton"
-          type="button"
-          @click="handleSignOut"
-        >
-          Sign out
-        </button>
-      </div>
-
       <div class="breadcrumb hide-desktop" @click.stop="toggleNav">
-        <div class="bar1"></div>
-        <div class="bar2"></div>
-        <div class="bar3"></div>
+        <div class="mobileNavLinks hide-desktop">
+          <router-link
+            v-for="item in mobileActionItems"
+            :key="`${item.name}-${item.label}`"
+            :to="{ name: item.name }"
+            :class="{ active: route.name === item.name }"
+          >
+            <span class="blue-text">{{ item.label }}</span>
+          </router-link>
+
+          <button
+            v-if="auth.isAuthenticated"
+            class="breadcrumbLink breadcrumbAction ghostButton"
+            type="button"
+            @click="handleSignOut"
+          >
+            Sign out
+          </button>
+        </div>
+
+        <div class="bars">
+          <div class="bar1"></div>
+          <div class="bar2"></div>
+          <div class="bar3"></div>
+        </div>
       </div>
     </nav>
 
@@ -78,7 +80,7 @@
           @click="toggleNav"
           :class="{ active: route.name === item.name }"
         >
-          {{ item.label }}
+          <span>{{ item.label }}</span>
         </router-link>
       </div>
     </div>
@@ -174,7 +176,7 @@ async function handleSignOut() {
   text-transform: uppercase;
 }
 .breadcrumb {
-  margin: auto 0;
+  display: flex;
   cursor: pointer;
 }
 .bar1,
@@ -259,6 +261,9 @@ async function handleSignOut() {
     display: flex;
     gap: 0.1rem;
     flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin-right: 10px;
   }
   .mobileNavLinks.hide-desktop a {
     margin-right: 5px;

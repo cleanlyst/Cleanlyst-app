@@ -44,7 +44,7 @@
       </div>
 
       <div class="footerColumn linkColumn">
-        <h2 class="footerTitle">Explore</h2>
+        <h2 class="footerTitle text-underline">Explore</h2>
         <div class="footerLinks">
           <router-link :to="{ name: 'About' }" class="footerLink">About Us</router-link>
           <router-link :to="{ name: 'Services' }" class="footerLink">Services</router-link>
@@ -52,7 +52,7 @@
       </div>
 
       <div class="footerColumn contactColumn">
-        <h2 class="footerTitle">About Us</h2>
+        <h2 class="footerTitle text-underline">About Us</h2>
         <div class="contactList">
           <a href="tel:+442079460821" class="footerLink">+44 20 7946 0821</a>
           <a href="mailto:hello@cleanlyst.co" class="footerLink">hello@cleanlyst.co</a>
@@ -145,7 +145,7 @@
 
 @media (max-width: 720px) {
   .footerInner {
-    flex-direction: column;
+    flex-direction: row;
     gap: 1.5rem;
   }
 }

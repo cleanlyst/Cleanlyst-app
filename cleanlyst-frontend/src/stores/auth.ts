@@ -29,6 +29,7 @@ export interface CleanerProfile {
 }
 
 type PublicSignupRole = Exclude<Role, 'admin'>
+const AUTH_SESSION_MISSING_ERROR = 'AuthSessionMissingError'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -58,6 +59,13 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    isExpectedMissingSessionError(error: unknown) {
+      if (!error || typeof error !== 'object') return false
+
+      const name = 'name' in error ? (error.name as string | undefined) : undefined
+      return name === AUTH_SESSION_MISSING_ERROR
+    },
+
     async init() {
       this.loading = true
 
@@ -75,7 +83,10 @@ export const useAuthStore = defineStore('auth', {
 
       const { data, error } = await supabase.auth.getUser()
       if (error) {
-        console.error('Failed to get current user', error)
+        // A missing auth session means the user is logged out, which is expected on first load.
+        if (!this.isExpectedMissingSessionError(error)) {
+          console.error('Failed to get current user', error)
+        }
         this.userId = null
         this.profile = null
         this.cleanerProfile = null

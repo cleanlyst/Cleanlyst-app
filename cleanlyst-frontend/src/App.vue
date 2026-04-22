@@ -9,55 +9,67 @@
 
       <!-- Desktop Navigation -->
       <div class="navGroup hide-mobile">
-        <router-link :to="{ name: 'Home' }" class="navLink">Home</router-link>
+        <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Home' }" class="navLink"
+          >Home</router-link
+        >
         <router-link :to="{ name: 'Services' }" class="navLink">Services</router-link>
         <router-link :to="{ name: 'About' }" class="navLink">About</router-link>
       </div>
 
       <div class="navGroup navActions hide-mobile">
-        <router-link v-if="auth.hasRole('customer')" :to="{ name: 'CustomerDashboard' }" class="navLink">
-          Dashboard
-        </router-link>
-        <router-link v-if="auth.hasRole('customer')" :to="{ name: 'BookCleaner' }" class="navLink">
-          Book
-        </router-link>
-        <router-link
-          v-if="auth.hasRole('cleaner') || auth.hasRole('admin')"
-          :to="{ name: auth.dashboardRouteName }"
-          class="navLink"
-        >
-          Dashboard
-        </router-link>
         <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Login' }" class="blueButton">
           Log in
         </router-link>
-        <router-link v-if="!auth.isAuthenticated" :to="{ name: 'SignupCustomer' }" class="greenButton">
+        <router-link
+          v-if="!auth.isAuthenticated"
+          :to="{ name: 'SignupCustomer' }"
+          class="greenButton"
+        >
           Sign up
         </router-link>
-        <button v-else class="navLink navButton ghostButton" type="button" @click="handleSignOut">
-          Sign out
-        </button>
+        <!-- User Avatar Dropdown -->
+        <div v-if="auth.isAuthenticated" class="userDropdown">
+          <button
+            type="button"
+            class="userAvatarButton"
+            @click="toggleUserMenu"
+            aria-label="User menu"
+          >
+            <img :src="peopleImage" alt="User" class="userAvatar" />
+          </button>
+          <div v-if="showUserMenu" class="userMenu">
+            <button type="button" class="userMenuItem" @click="handleSignOut">Logout</button>
+          </div>
+        </div>
       </div>
 
       <div class="breadcrumb hide-desktop">
         <div class="mobileNavLinks hide-desktop">
-          <router-link
-            v-for="item in mobileActionItems"
-            :key="`${item.name}-${item.label}`"
-            :to="{ name: item.name }"
-            :class="{ active: route.name === item.name }"
-          >
-            <span class="blue-text">{{ item.label }}</span>
-          </router-link>
+          <!-- User Avatar Dropdown (Mobile) -->
+          <div v-if="auth.isAuthenticated" class="userDropdown mobileUserDropdown">
+            <button
+              type="button"
+              class="userAvatarButton"
+              @click.stop="toggleUserMenu"
+              aria-label="User menu"
+            >
+              <img :src="peopleImage" alt="User" class="userAvatar" />
+            </button>
+            <div v-if="showUserMenu" class="userMenu">
+              <button type="button" class="userMenuItem" @click="handleSignOut">Logout</button>
+            </div>
+          </div>
 
-          <button
-            v-if="auth.isAuthenticated"
-            class="breadcrumbLink breadcrumbAction ghostButton"
-            type="button"
-            @click="handleSignOut"
-          >
-            Sign out
-          </button>
+          <template v-if="!auth.isAuthenticated">
+            <router-link
+              v-for="item in mobileActionItems"
+              :key="`${item.name}-${item.label}`"
+              :to="{ name: item.name }"
+              :class="{ active: route.name === item.name }"
+            >
+              <span class="blue-text">{{ item.label }}</span>
+            </router-link>
+          </template>
         </div>
 
         <div class="bars" @click.stop="toggleNav">
@@ -94,42 +106,56 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import FooterPage from '@/components/FooterPage.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import peopleImage from '@/assets/people.png'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const open = ref(false)
+const showUserMenu = ref(false)
 
 function toggleNav() {
   open.value = !open.value
   document.body.classList.toggle('open', open.value)
 }
 
-const mobileNavItems = [
-  { name: 'Home', label: 'Home' },
-  { name: 'Services', label: 'Services' },
-  { name: 'About', label: 'About' },
-] as const
+function toggleUserMenu() {
+  showUserMenu.value = !showUserMenu.value
+}
+
+function handleClickOutside(event: MouseEvent) {
+  const target = event.target as HTMLElement
+  if (!target.closest('.userDropdown')) {
+    showUserMenu.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+const mobileNavItems = computed(() => {
+  const items: Array<{ name: string; label: string }> = []
+
+  if (!auth.isAuthenticated) {
+    items.push({ name: 'Home', label: 'Home' })
+  }
+  items.push({ name: 'Services', label: 'Services' })
+  items.push({ name: 'About', label: 'About' })
+
+  return items
+})
 
 const mobileActionItems = computed(() => {
   const items: Array<{ name: string; label: string }> = []
-
-  if (auth.hasRole('customer')) {
-    items.push({ name: 'CustomerDashboard', label: 'Dashboard' })
-    items.push({ name: 'BookCleaner', label: 'Book' })
-  }
-
-  if (auth.hasRole('cleaner')) {
-    items.push({ name: 'CleanerDashboard', label: 'Dashboard' })
-  }
-
-  if (auth.hasRole('admin')) {
-    items.push({ name: 'AdminDashboard', label: 'Dashboard' })
-  }
 
   if (!auth.isAuthenticated) {
     items.push({ name: 'Login', label: 'Log in' })
@@ -285,5 +311,59 @@ async function handleSignOut() {
   .brandLogo {
     height: 60px;
   }
+}
+
+/* User Dropdown Styles */
+.userDropdown {
+  position: relative;
+}
+
+.userAvatarButton {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: opacity 0.2s ease;
+}
+
+.userAvatarButton:hover {
+  opacity: 0.8;
+}
+
+.userAvatar {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+}
+
+.userMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--white);
+  border: 1px solid rgba(35, 45, 63, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(16, 35, 61, 0.12);
+  min-width: 120px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.userMenuItem {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  color: var(--blue);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.userMenuItem:hover {
+  background-color: rgba(64, 138, 113, 0.08);
 }
 </style>

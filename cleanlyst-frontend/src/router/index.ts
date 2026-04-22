@@ -36,7 +36,13 @@ const router = createRouter({
       path: '/auth',
       name: 'Auth',
       meta: { title: 'Sign In', redirectIfAuthenticated: true },
-      component: () => import('../pages/AuthPage.vue'),
+      redirect: (to) => ({ name: 'Login', query: to.query }),
+    },
+    {
+      path: '/auth/callback',
+      name: 'AuthCallback',
+      meta: { title: 'Completing Sign In' },
+      component: () => import('../pages/AuthCallbackPage.vue'),
     },
     {
       path: '/login',
@@ -51,16 +57,40 @@ const router = createRouter({
       component: () => import('../pages/SignupPage.vue'),
     },
     {
+      path: '/signup/customer',
+      name: 'SignupCustomer',
+      meta: { title: 'Customer Sign up', redirectIfAuthenticated: true },
+      component: () => import('../pages/SignupPage.vue'),
+    },
+    {
+      path: '/signup/cleaner',
+      name: 'SignupCleaner',
+      meta: { title: 'Cleaner Sign up', redirectIfAuthenticated: true },
+      component: () => import('../pages/SignupCleanerPage.vue'),
+    },
+    {
       path: '/book',
       name: 'BookCleaner',
       meta: { title: 'Book a Cleaner', requiresAuth: true, requiresRole: 'customer' },
       component: () => import('../pages/LandingPage.vue'),
     },
     {
+      path: '/customer/dashboard',
+      name: 'CustomerDashboard',
+      meta: { title: 'Customer Dashboard', requiresAuth: true, requiresRole: 'customer' },
+      component: () => import('../pages/customer/CustomerDashboard.vue'),
+    },
+    {
       path: '/cleaner/dashboard',
       name: 'CleanerDashboard',
       meta: { title: 'Cleaner Dashboard', requiresAuth: true, requiresRole: 'cleaner' },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
+    },
+    {
+      path: '/admin/dashboard',
+      name: 'AdminDashboard',
+      meta: { title: 'Admin Dashboard', requiresAuth: true, requiresRole: 'admin' },
+      component: () => import('../pages/admin/AdminDashboard.vue'),
     },
   ],
   scrollBehavior(to) {
@@ -86,20 +116,16 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.redirectIfAuthenticated && auth.isAuthenticated) {
-    return auth.hasRole('cleaner') ? { name: 'CleanerDashboard' } : { name: 'BookCleaner' }
+    return { name: auth.dashboardRouteName }
   }
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    return { name: 'Auth', query: { redirect: to.fullPath } }
+    return { name: 'Login', query: { redirect: to.fullPath } }
   }
 
   if (to.meta.requiresRole && !auth.hasRole(to.meta.requiresRole)) {
-    if (auth.hasRole('cleaner')) {
-      return { name: 'CleanerDashboard' }
-    }
-
-    if (auth.hasRole('customer')) {
-      return { name: 'BookCleaner' }
+    if (auth.isAuthenticated) {
+      return { name: auth.dashboardRouteName }
     }
 
     return { name: 'Home' }

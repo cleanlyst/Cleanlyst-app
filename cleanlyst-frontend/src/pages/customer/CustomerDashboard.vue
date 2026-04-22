@@ -2,20 +2,16 @@
   <main class="dashboardPage">
     <section class="dashboardHero">
       <div>
-        <p class="eyebrow">Cleaner dashboard</p>
-        <h1>{{ greetingName ? `Welcome back, ${greetingName}.` : 'Manage your work.' }}</h1>
+        <p class="eyebrow">Customer dashboard</p>
+        <h1>{{ greetingName ? `Welcome back, ${greetingName}.` : 'Manage your bookings.' }}</h1>
         <p>
-          Stay on top of booking requests, confirm upcoming visits, and keep your onboarding
-          progress moving.
+          Review your latest requests, jump into a fresh booking, and keep track of completed
+          jobs in one place.
         </p>
       </div>
 
-      <div class="heroStatus">
-        <span class="statusLabel">Profile status</span>
-        <strong>{{ cleanerStatusLabel }}</strong>
-        <p v-if="auth.cleanerProfile && !auth.cleanerProfile.onboarding_complete">
-          Your onboarding is still incomplete.
-        </p>
+      <div class="heroActions">
+        <router-link :to="{ name: 'BookCleaner' }" class="greenButton">Book a cleaner</router-link>
       </div>
     </section>
 
@@ -38,58 +34,39 @@
       <article class="panel">
         <div class="panelHeader">
           <div>
-            <p class="panelEyebrow">Bookings</p>
-            <h2>Incoming requests</h2>
+            <p class="panelEyebrow">Recent bookings</p>
+            <h2>Your activity</h2>
           </div>
         </div>
 
         <p v-if="errorMessage" class="message error">{{ errorMessage }}</p>
-        <p v-else-if="loading" class="emptyState">Loading bookings...</p>
+        <p v-else-if="loading" class="emptyState">Loading your bookings...</p>
         <p v-else-if="!bookings.length" class="emptyState">
-          No bookings have been assigned yet. New requests will appear here.
+          You have not requested a cleaner yet. Start a booking when you're ready.
         </p>
 
         <div v-else class="bookingList">
           <article v-for="booking in bookings" :key="booking.id" class="bookingCard">
             <div>
-              <p class="bookingTitle">{{ booking.service_title_snapshot || 'Service booking' }}</p>
+              <p class="bookingTitle">{{ booking.service_title_snapshot }}</p>
               <p class="bookingMeta">{{ formatDate(booking.scheduled_start) }}</p>
-              <p class="bookingMeta">{{ booking.location_text }}</p>
             </div>
-
             <div class="bookingAside">
               <span class="statusPill" :class="booking.status">{{ formatStatus(booking.status) }}</span>
-
-              <div v-if="booking.status === 'pending'" class="actionRow">
-                <button class="greenButton actionButton" type="button" @click="acceptBooking(booking.id)">
-                  Accept
-                </button>
-                <button class="blueButton actionButton" type="button" @click="declineBooking(booking.id)">
-                  Decline
-                </button>
-              </div>
+              <p>{{ booking.location_text }}</p>
             </div>
           </article>
         </div>
       </article>
 
-      <article class="panel sidePanel">
-        <p class="panelEyebrow">Snapshot</p>
-        <h2>Your profile</h2>
-        <dl class="detailList">
-          <div>
-            <dt>Business</dt>
-            <dd>{{ auth.cleanerProfile?.business_name || 'Not set yet' }}</dd>
-          </div>
-          <div>
-            <dt>Hourly rate</dt>
-            <dd>{{ hourlyRateLabel }}</dd>
-          </div>
-          <div>
-            <dt>Rating</dt>
-            <dd>{{ ratingLabel }}</dd>
-          </div>
-        </dl>
+      <article class="panel tipsPanel">
+        <p class="panelEyebrow">Next steps</p>
+        <h2>Keep your requests moving</h2>
+        <ul class="tipsList">
+          <li>Add full address details and arrival notes for smoother handoffs.</li>
+          <li>Use the booking form to compare services and request a new visit quickly.</li>
+          <li>After a completed clean, leave a review to help surface trusted cleaners.</li>
+        </ul>
       </article>
     </section>
   </main>
@@ -100,38 +77,20 @@ import { computed, onMounted, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
-interface Booking {
+interface BookingSummary {
   id: string
   service_title_snapshot: string | null
-  scheduled_start: string
   location_text: string
+  scheduled_start: string
   status: 'pending' | 'accepted' | 'declined' | 'paid' | 'in_progress' | 'completed' | 'cancelled'
-  created_at: string
 }
 
 const auth = useAuthStore()
-const bookings = ref<Booking[]>([])
+const bookings = ref<BookingSummary[]>([])
 const loading = ref(true)
 const errorMessage = ref('')
 
 const greetingName = computed(() => auth.profile?.full_name?.split(' ')[0] ?? '')
-const cleanerStatusLabel = computed(() => auth.cleanerProfile?.status ?? 'pending')
-const hourlyRateLabel = computed(() => {
-  const amount = auth.cleanerProfile?.hourly_rate_cents
-  const currency = auth.cleanerProfile?.currency ?? 'GBP'
-
-  if (amount == null) return 'Not set yet'
-
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency,
-  }).format(amount / 100)
-})
-const ratingLabel = computed(() => {
-  if (!auth.cleanerProfile) return 'No rating yet'
-
-  return `${auth.cleanerProfile.average_rating.toFixed(1)} (${auth.cleanerProfile.review_count} reviews)`
-})
 const bookingTotals = computed(() => ({
   pending: bookings.value.filter((booking) => booking.status === 'pending').length,
   accepted: bookings.value.filter((booking) =>
@@ -159,46 +118,18 @@ async function loadBookings() {
     const supabase = requireSupabase()
     const { data, error } = await supabase
       .from('bookings')
-      .select('id, service_title_snapshot, scheduled_start, location_text, status, created_at')
-      .eq('cleaner_id', auth.userId)
+      .select('id, service_title_snapshot, location_text, scheduled_start, status')
+      .eq('customer_id', auth.userId)
       .order('scheduled_start', { ascending: true })
 
     if (error) throw error
 
-    bookings.value = (data ?? []) as Booking[]
+    bookings.value = (data ?? []) as BookingSummary[]
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Failed to load bookings.'
     bookings.value = []
   } finally {
     loading.value = false
-  }
-}
-
-async function acceptBooking(id: string) {
-  try {
-    const supabase = requireSupabase()
-    const { error } = await supabase.functions.invoke('accept-booking', {
-      body: { booking_id: id },
-    })
-
-    if (error) throw error
-
-    await loadBookings()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Failed to accept booking.'
-  }
-}
-
-async function declineBooking(id: string) {
-  try {
-    const supabase = requireSupabase()
-    const { error } = await supabase.from('bookings').update({ status: 'declined' }).eq('id', id)
-
-    if (error) throw error
-
-    await loadBookings()
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Failed to decline booking.'
   }
 }
 
@@ -228,30 +159,21 @@ function formatStatus(value: string) {
 
 .dashboardHero {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: 1.2fr 0.8fr;
   gap: 1.5rem;
   padding: 2rem;
-  background: linear-gradient(135deg, #10233d 0%, #1e4365 100%);
   color: #f7f2e9;
+  background: linear-gradient(135deg, #10233d 0%, #1e4365 100%);
 }
 
-.heroStatus {
-  padding: 1.25rem;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.statusLabel,
 .eyebrow,
 .panelEyebrow {
-  display: block;
   margin: 0 0 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.82rem;
 }
 
-.statusLabel,
 .eyebrow {
   color: rgba(247, 242, 233, 0.72);
 }
@@ -261,23 +183,20 @@ function formatStatus(value: string) {
 }
 
 h1,
-h2,
-.heroStatus strong,
-.heroStatus p,
+h2 {
+  margin: 0;
+  color: #10233d;
+}
+
+.dashboardHero h1,
 .dashboardHero p {
   color: #f7f2e9;
 }
 
-h1,
-h2 {
-  margin: 0;
-}
-
-.panel h2,
-.panel p,
-.panel dd,
-.panel dt {
-  color: #10233d;
+.heroActions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
 }
 
 .statsGrid,
@@ -295,8 +214,8 @@ h2 {
   grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
 }
 
-.panel,
-.statCard {
+.statCard,
+.panel {
   padding: 1.5rem;
   background: rgba(255, 252, 246, 0.94);
 }
@@ -310,6 +229,13 @@ h2 {
 .statCard strong {
   font-size: 2rem;
   color: #10233d;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
 }
 
 .bookingList {
@@ -334,15 +260,14 @@ h2 {
   color: #10233d;
 }
 
-.bookingMeta {
+.bookingMeta,
+.bookingAside p {
   margin: 0.25rem 0 0;
   color: #425168;
 }
 
 .bookingAside {
-  display: grid;
-  gap: 0.85rem;
-  justify-items: end;
+  text-align: right;
 }
 
 .statusPill {
@@ -377,43 +302,26 @@ h2 {
   color: #8f2d23;
 }
 
-.actionRow {
-  display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
+.tipsPanel {
+  background: linear-gradient(180deg, rgba(231, 237, 246, 0.92), rgba(255, 252, 246, 0.96));
 }
 
-.actionButton {
-  min-width: 110px;
-}
-
-.detailList {
-  display: grid;
-  gap: 1rem;
+.tipsList {
   margin: 1.25rem 0 0;
+  padding-left: 1.2rem;
+  color: #425168;
 }
 
-.detailList dt {
-  margin-bottom: 0.35rem;
-  color: rgba(16, 35, 61, 0.52);
-}
-
-.detailList dd {
-  margin: 0;
-  font-weight: 700;
+.emptyState,
+.message {
+  margin-top: 1rem;
 }
 
 .message.error {
-  margin-top: 1rem;
   padding: 0.85rem 1rem;
   border-radius: 16px;
   background: rgba(222, 82, 70, 0.12);
   color: #8f2d23;
-}
-
-.emptyState {
-  margin-top: 1rem;
-  color: #425168;
 }
 
 @media (max-width: 900px) {
@@ -423,12 +331,16 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .heroActions {
+    justify-content: flex-start;
+  }
+
   .bookingCard {
     flex-direction: column;
   }
 
   .bookingAside {
-    justify-items: start;
+    text-align: left;
   }
 }
 </style>

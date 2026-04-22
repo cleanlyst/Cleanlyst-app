@@ -15,12 +15,15 @@
       </div>
 
       <div class="navGroup navActions hide-mobile">
+        <router-link v-if="auth.hasRole('customer')" :to="{ name: 'CustomerDashboard' }" class="navLink">
+          Dashboard
+        </router-link>
         <router-link v-if="auth.hasRole('customer')" :to="{ name: 'BookCleaner' }" class="navLink">
           Book
         </router-link>
         <router-link
-          v-if="auth.hasRole('cleaner')"
-          :to="{ name: 'CleanerDashboard' }"
+          v-if="auth.hasRole('cleaner') || auth.hasRole('admin')"
+          :to="{ name: auth.dashboardRouteName }"
           class="navLink"
         >
           Dashboard
@@ -28,7 +31,7 @@
         <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Login' }" class="blueButton">
           Log in
         </router-link>
-        <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Signup' }" class="greenButton">
+        <router-link v-if="!auth.isAuthenticated" :to="{ name: 'SignupCustomer' }" class="greenButton">
           Sign up
         </router-link>
         <button v-else class="navLink navButton ghostButton" type="button" @click="handleSignOut">
@@ -116,6 +119,7 @@ const mobileActionItems = computed(() => {
   const items: Array<{ name: string; label: string }> = []
 
   if (auth.hasRole('customer')) {
+    items.push({ name: 'CustomerDashboard', label: 'Dashboard' })
     items.push({ name: 'BookCleaner', label: 'Book' })
   }
 
@@ -123,9 +127,13 @@ const mobileActionItems = computed(() => {
     items.push({ name: 'CleanerDashboard', label: 'Dashboard' })
   }
 
+  if (auth.hasRole('admin')) {
+    items.push({ name: 'AdminDashboard', label: 'Dashboard' })
+  }
+
   if (!auth.isAuthenticated) {
     items.push({ name: 'Login', label: 'Log in' })
-    items.push({ name: 'Auth', label: 'Register' })
+    items.push({ name: 'SignupCustomer', label: 'Register' })
   }
 
   return items

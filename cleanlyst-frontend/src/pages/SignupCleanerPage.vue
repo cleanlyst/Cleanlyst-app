@@ -1,5 +1,5 @@
 <template>
-  <AuthExperience variant="customer-signup" />
+  <AuthExperience variant="cleaner-signup" />
 </template>
 
 <script setup lang="ts">

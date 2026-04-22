@@ -15,10 +15,26 @@ export interface Profile {
   is_active: boolean
 }
 
+export interface CleanerProfile {
+  user_id: string
+  business_name: string | null
+  bio: string | null
+  service_radius_km: number | null
+  hourly_rate_cents: number | null
+  currency: string
+  status: 'pending' | 'approved' | 'rejected' | 'suspended'
+  onboarding_complete: boolean
+  average_rating: number
+  review_count: number
+}
+
+type PublicSignupRole = Exclude<Role, 'admin'>
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     userId: null as string | null,
     profile: null as Profile | null,
+    cleanerProfile: null as CleanerProfile | null,
     loading: true,
     initialized: false,
     authSubscription: null as Subscription | null,
@@ -27,6 +43,18 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (state) => !!state.userId,
     userRole: (state) => state.profile?.role ?? null,
+    dashboardRouteName(): 'CustomerDashboard' | 'CleanerDashboard' | 'AdminDashboard' | 'Home' {
+      switch (this.userRole) {
+        case 'customer':
+          return 'CustomerDashboard'
+        case 'cleaner':
+          return 'CleanerDashboard'
+        case 'admin':
+          return 'AdminDashboard'
+        default:
+          return 'Home'
+      }
+    },
   },
 
   actions: {
@@ -37,6 +65,7 @@ export const useAuthStore = defineStore('auth', {
         console.warn(supabaseConfigError)
         this.userId = null
         this.profile = null
+        this.cleanerProfile = null
         this.loading = false
         this.initialized = true
         return
@@ -49,6 +78,7 @@ export const useAuthStore = defineStore('auth', {
         console.error('Failed to get current user', error)
         this.userId = null
         this.profile = null
+        this.cleanerProfile = null
         this.loading = false
         this.initialized = true
         return
@@ -56,6 +86,7 @@ export const useAuthStore = defineStore('auth', {
 
       this.userId = data.user?.id ?? null
       this.profile = null
+      this.cleanerProfile = null
 
       if (this.userId) {
         const { data: profile, error: profileError } = await supabase
@@ -68,6 +99,20 @@ export const useAuthStore = defineStore('auth', {
           console.error('Failed to load profile', profileError)
         } else {
           this.profile = profile as Profile
+        }
+
+        if (this.profile?.role === 'cleaner') {
+          const { data: cleanerProfile, error: cleanerProfileError } = await supabase
+            .from('cleaner_profiles')
+            .select('*')
+            .eq('user_id', this.userId)
+            .maybeSingle()
+
+          if (cleanerProfileError) {
+            console.error('Failed to load cleaner profile', cleanerProfileError)
+          } else {
+            this.cleanerProfile = cleanerProfile as CleanerProfile | null
+          }
         }
       }
 
@@ -87,7 +132,7 @@ export const useAuthStore = defineStore('auth', {
       await this.init()
     },
 
-    async signUp(email: string, password: string, fullName: string, role: Role) {
+    async signUp(email: string, password: string, fullName: string, role: PublicSignupRole) {
       const supabase = requireSupabase()
       const { error } = await supabase.auth.signUp({
         email,
@@ -103,6 +148,68 @@ export const useAuthStore = defineStore('auth', {
       if (error) throw error
     },
 
+    async signInWithGoogle(redirectPath?: string, signupRole?: PublicSignupRole) {
+      const supabase = requireSupabase()
+      const redirectTo = new URL('/auth/callback', window.location.origin)
+
+      if (redirectPath) {
+        redirectTo.searchParams.set('redirect', redirectPath)
+      }
+
+      if (signupRole) {
+        redirectTo.searchParams.set('signupRole', signupRole)
+      }
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTo.toString(),
+        },
+      })
+
+      if (error) throw error
+    },
+
+    async provisionOAuthSignup(role?: PublicSignupRole) {
+      if (!role || !this.userId) return
+
+      if (role === 'customer') {
+        if (!this.profile) {
+          await this.init()
+        }
+        return
+      }
+
+      const supabase = requireSupabase()
+
+      if (this.profile?.role !== 'cleaner') {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ role: 'cleaner' })
+          .eq('id', this.userId)
+
+        if (error) throw error
+      }
+
+      const { data: cleanerProfile, error: cleanerProfileError } = await supabase
+        .from('cleaner_profiles')
+        .select('user_id')
+        .eq('user_id', this.userId)
+        .maybeSingle()
+
+      if (cleanerProfileError) throw cleanerProfileError
+
+      if (!cleanerProfile) {
+        const { error } = await supabase.from('cleaner_profiles').insert({
+          user_id: this.userId,
+        })
+
+        if (error) throw error
+      }
+
+      await this.init()
+    },
+
     async signOut() {
       const supabase = requireSupabase()
       const { error } = await supabase.auth.signOut()
@@ -110,6 +217,7 @@ export const useAuthStore = defineStore('auth', {
 
       this.userId = null
       this.profile = null
+      this.cleanerProfile = null
     },
 
     hasRole(role: Role) {

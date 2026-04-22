@@ -1,102 +1,87 @@
 <template>
-  <main class="dashboardPage">
-    <section class="dashboardHero">
-      <div>
-        <p class="eyebrow">Cleaner dashboard</p>
-        <h1>{{ greetingName ? `Welcome back, ${greetingName}.` : 'Manage your work.' }}</h1>
-        <p>
-          Stay on top of booking requests, confirm upcoming visits, and keep your onboarding
-          progress moving.
-        </p>
+  <div class="row no-gutter dashboard-container">
+    <section class="side-nav col-lg-2">
+      <ul class="side-nav-links">
+        <li v-for="item in navItems" :key="item.name">
+          <router-link :to="{ name: item.name }" class="nav-link" :class="{ active: activeRouteName === item.name }">
+            {{ item.label }}
+          </router-link>
+        </li>
+      </ul>
+    </section>
+    <section class="main-page col-lg-10">
+      <div class="greeting-header">
+        <h2 class="h4">{{ greetingName ? `Welcome back, ${greetingName}.` : 'Manage your work.' }}</h2>
       </div>
 
-      <div class="heroStatus">
-        <span class="statusLabel">Profile status</span>
-        <strong>{{ cleanerStatusLabel }}</strong>
-        <p v-if="auth.cleanerProfile && !auth.cleanerProfile.onboarding_complete">
-          Your onboarding is still incomplete.
-        </p>
+      <div v-if="activeRouteName === 'CleanerDashboard'" class="section-card">
+        <p class="boldFont">Dashboard</p>
+        <div class="stats-row">
+          <div class="stat-tile">
+            <p class="small no-margin">Total earnings to date</p>
+            <p class="boldFont no-margin">{{ earningsToDate }}</p>
+          </div>
+          <div class="stat-tile">
+            <p class="small no-margin">Pending bookings</p>
+            <p class="boldFont no-margin">{{ bookingTotals.accepted }}</p>
+          </div>
+          <div class="stat-tile">
+            <p class="small no-margin">Rating</p>
+            <p class="boldFont no-margin">{{ ratingLabel }}</p>
+          </div>
+        </div>
+        <div class="split-grid">
+          <div class="tile">
+            <p class="boldFont">Incoming requests</p>
+            <p class="small">Pending approvals: {{ bookingTotals.pending }}</p>
+          </div>
+          <div class="tile">
+            <p class="boldFont">Upcoming requests</p>
+            <p class="small">Approved/pending attendance: {{ bookingTotals.accepted }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="activeRouteName === 'CleanerBookings'" class="section-card">
+        <p class="boldFont">Bookings</p>
+        <p class="small">Incoming, pending attendance, and past bookings.</p>
+        <div class="stats-row">
+          <div class="stat-tile"><p class="small no-margin">Incoming</p><p class="boldFont no-margin">{{ bookingTotals.pending }}</p></div>
+          <div class="stat-tile"><p class="small no-margin">Pending attendance</p><p class="boldFont no-margin">{{ bookingTotals.accepted }}</p></div>
+          <div class="stat-tile"><p class="small no-margin">Past</p><p class="boldFont no-margin">{{ bookingTotals.completed }}</p></div>
+        </div>
+      </div>
+
+      <div v-if="activeRouteName === 'CleanerAvailability'" class="section-card">
+        <p class="boldFont">Availability</p>
+        <p class="small">Basic calendar slots where you can set available days and times.</p>
+        <div class="calendar-grid">
+          <span v-for="day in calendarDays" :key="day" class="calendar-day">{{ day }}</span>
+        </div>
+      </div>
+
+      <div v-if="activeRouteName === 'CleanerServicesPricing'" class="section-card">
+        <p class="boldFont">Services & Pricing</p>
+        <p class="small">Edit the services you provide and adjust your pricing.</p>
+      </div>
+
+      <div v-if="activeRouteName === 'CleanerFinancials'" class="section-card">
+        <p class="boldFont">Financials</p>
+        <p class="small">Earnings to date with month filter options.</p>
+        <p class="boldFont no-margin">{{ earningsToDate }}</p>
+      </div>
+
+      <div v-if="activeRouteName === 'CleanerReviews'" class="section-card">
+        <p class="boldFont">Reviews</p>
+        <p class="small">Customer feedback and ratings left for your completed bookings.</p>
       </div>
     </section>
-
-    <section class="statsGrid">
-      <article class="statCard">
-        <span>Pending</span>
-        <strong>{{ bookingTotals.pending }}</strong>
-      </article>
-      <article class="statCard">
-        <span>Accepted</span>
-        <strong>{{ bookingTotals.accepted }}</strong>
-      </article>
-      <article class="statCard">
-        <span>Completed</span>
-        <strong>{{ bookingTotals.completed }}</strong>
-      </article>
-    </section>
-
-    <section class="contentGrid">
-      <article class="panel">
-        <div class="panelHeader">
-          <div>
-            <p class="panelEyebrow">Bookings</p>
-            <h2>Incoming requests</h2>
-          </div>
-        </div>
-
-        <p v-if="errorMessage" class="message error">{{ errorMessage }}</p>
-        <p v-else-if="loading" class="emptyState">Loading bookings...</p>
-        <p v-else-if="!bookings.length" class="emptyState">
-          No bookings have been assigned yet. New requests will appear here.
-        </p>
-
-        <div v-else class="bookingList">
-          <article v-for="booking in bookings" :key="booking.id" class="bookingCard">
-            <div>
-              <p class="bookingTitle">{{ booking.service_title_snapshot || 'Service booking' }}</p>
-              <p class="bookingMeta">{{ formatDate(booking.scheduled_start) }}</p>
-              <p class="bookingMeta">{{ booking.location_text }}</p>
-            </div>
-
-            <div class="bookingAside">
-              <span class="statusPill" :class="booking.status">{{ formatStatus(booking.status) }}</span>
-
-              <div v-if="booking.status === 'pending'" class="actionRow">
-                <button class="greenButton actionButton" type="button" @click="acceptBooking(booking.id)">
-                  Accept
-                </button>
-                <button class="blueButton actionButton" type="button" @click="declineBooking(booking.id)">
-                  Decline
-                </button>
-              </div>
-            </div>
-          </article>
-        </div>
-      </article>
-
-      <article class="panel sidePanel">
-        <p class="panelEyebrow">Snapshot</p>
-        <h2>Your profile</h2>
-        <dl class="detailList">
-          <div>
-            <dt>Business</dt>
-            <dd>{{ auth.cleanerProfile?.business_name || 'Not set yet' }}</dd>
-          </div>
-          <div>
-            <dt>Hourly rate</dt>
-            <dd>{{ hourlyRateLabel }}</dd>
-          </div>
-          <div>
-            <dt>Rating</dt>
-            <dd>{{ ratingLabel }}</dd>
-          </div>
-        </dl>
-      </article>
-    </section>
-  </main>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
@@ -110,12 +95,24 @@ interface Booking {
 }
 
 const auth = useAuthStore()
+const route = useRoute()
 const bookings = ref<Booking[]>([])
 const loading = ref(true)
 const errorMessage = ref('')
+const navItems = [
+  { name: 'CleanerDashboard', label: 'Dashboard' },
+  { name: 'CleanerBookings', label: 'Bookings' },
+  { name: 'CleanerAvailability', label: 'Availability' },
+  { name: 'CleanerServicesPricing', label: 'Services & Pricing' },
+  { name: 'CleanerFinancials', label: 'Financials' },
+  { name: 'CleanerReviews', label: 'Reviews' },
+]
+const calendarDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const greetingName = computed(() => auth.profile?.full_name?.split(' ')[0] ?? '')
-const cleanerStatusLabel = computed(() => auth.cleanerProfile?.status ?? 'pending')
+const activeRouteName = computed(() =>
+  typeof route.name === 'string' ? route.name : 'CleanerDashboard',
+)
 const hourlyRateLabel = computed(() => {
   const amount = auth.cleanerProfile?.hourly_rate_cents
   const currency = auth.cleanerProfile?.currency ?? 'GBP'
@@ -131,6 +128,15 @@ const ratingLabel = computed(() => {
   if (!auth.cleanerProfile) return 'No rating yet'
 
   return `${auth.cleanerProfile.average_rating.toFixed(1)} (${auth.cleanerProfile.review_count} reviews)`
+})
+const earningsToDate = computed(() => {
+  const rate = auth.cleanerProfile?.hourly_rate_cents ?? 0
+  const estimatedHoursPerCompletedBooking = 2
+  const amount = (bookingTotals.value.completed * estimatedHoursPerCompletedBooking * rate) / 100
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: auth.cleanerProfile?.currency ?? 'GBP',
+  }).format(amount)
 })
 const bookingTotals = computed(() => ({
   pending: bookings.value.filter((booking) => booking.status === 'pending').length,
@@ -212,223 +218,22 @@ function formatStatus(value: string) {
 </script>
 
 <style scoped>
-.dashboardPage {
-  width: min(1120px, calc(100% - 2rem));
-  margin: 0 auto;
-  padding: 2rem 0 4rem;
-}
-
-.dashboardHero,
-.panel,
-.statCard {
-  border-radius: 28px;
-  border: 1px solid rgba(16, 35, 61, 0.08);
-  box-shadow: 0 24px 60px rgba(16, 35, 61, 0.08);
-}
-
-.dashboardHero {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 1.5rem;
-  padding: 2rem;
-  background: linear-gradient(135deg, #10233d 0%, #1e4365 100%);
-  color: #f7f2e9;
-}
-
-.heroStatus {
-  padding: 1.25rem;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.statusLabel,
-.eyebrow,
-.panelEyebrow {
-  display: block;
-  margin: 0 0 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.82rem;
-}
-
-.statusLabel,
-.eyebrow {
-  color: rgba(247, 242, 233, 0.72);
-}
-
-.panelEyebrow {
-  color: rgba(16, 35, 61, 0.52);
-}
-
-h1,
-h2,
-.heroStatus strong,
-.heroStatus p,
-.dashboardHero p {
-  color: #f7f2e9;
-}
-
-h1,
-h2 {
-  margin: 0;
-}
-
-.panel h2,
-.panel p,
-.panel dd,
-.panel dt {
-  color: #10233d;
-}
-
-.statsGrid,
-.contentGrid {
-  display: grid;
-  gap: 1.25rem;
-  margin-top: 1.25rem;
-}
-
-.statsGrid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.contentGrid {
-  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
-}
-
-.panel,
-.statCard {
-  padding: 1.5rem;
-  background: rgba(255, 252, 246, 0.94);
-}
-
-.statCard span {
-  display: block;
-  color: rgba(16, 35, 61, 0.58);
-  margin-bottom: 0.5rem;
-}
-
-.statCard strong {
-  font-size: 2rem;
-  color: #10233d;
-}
-
-.bookingList {
-  display: grid;
-  gap: 0.9rem;
-  margin-top: 1.25rem;
-}
-
-.bookingCard {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: flex-start;
-  padding: 1rem 1.1rem;
-  border-radius: 20px;
-  background: #f7f2e9;
-}
-
-.bookingTitle {
-  margin: 0;
-  font-weight: 700;
-  color: #10233d;
-}
-
-.bookingMeta {
-  margin: 0.25rem 0 0;
-  color: #425168;
-}
-
-.bookingAside {
-  display: grid;
-  gap: 0.85rem;
-  justify-items: end;
-}
-
-.statusPill {
-  display: inline-flex;
-  padding: 0.35rem 0.8rem;
-  border-radius: 999px;
-  text-transform: capitalize;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.statusPill.pending {
-  background: rgba(230, 117, 71, 0.14);
-  color: #b65c2d;
-}
-
-.statusPill.accepted,
-.statusPill.paid,
-.statusPill.in_progress {
-  background: rgba(64, 138, 113, 0.14);
-  color: #1f5f4d;
-}
-
-.statusPill.completed {
-  background: rgba(11, 45, 114, 0.12);
-  color: #0b2d72;
-}
-
-.statusPill.declined,
-.statusPill.cancelled {
-  background: rgba(222, 82, 70, 0.12);
-  color: #8f2d23;
-}
-
-.actionRow {
-  display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-
-.actionButton {
-  min-width: 110px;
-}
-
-.detailList {
-  display: grid;
-  gap: 1rem;
-  margin: 1.25rem 0 0;
-}
-
-.detailList dt {
-  margin-bottom: 0.35rem;
-  color: rgba(16, 35, 61, 0.52);
-}
-
-.detailList dd {
-  margin: 0;
-  font-weight: 700;
-}
-
-.message.error {
-  margin-top: 1rem;
-  padding: 0.85rem 1rem;
-  border-radius: 16px;
-  background: rgba(222, 82, 70, 0.12);
-  color: #8f2d23;
-}
-
-.emptyState {
-  margin-top: 1rem;
-  color: #425168;
-}
-
-@media (max-width: 900px) {
-  .dashboardHero,
-  .statsGrid,
-  .contentGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .bookingCard {
-    flex-direction: column;
-  }
-
-  .bookingAside {
-    justify-items: start;
-  }
+.dashboard-container { min-height: calc(100vh - 90px); padding: 12px; }
+ul.side-nav-links { background: var(--green); padding: 30px 8px; margin: 10px 9px; border-radius: 8px; }
+.side-nav-links li { margin-bottom: 20px; }
+.nav-link { color: var(--white); text-decoration: none; font-weight: 500; }
+.nav-link.active { text-decoration: underline; text-underline-offset: 6px; }
+section.main-page.col-lg-10 { padding: 10px; }
+.greeting-header { border-bottom: 1px solid grey; margin-bottom: 12px; }
+.section-card { border: 1px solid var(--blue); border-radius: 8px; padding: 20px; margin-top: 14px; }
+.stats-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.stat-tile { border: 1px solid var(--green); border-radius: 6px; padding: 12px; }
+.split-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.tile { border: 1px solid var(--green); border-radius: 6px; padding: 12px; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.calendar-day { border: 1px solid var(--green); border-radius: 6px; text-align: center; padding: 10px 0; }
+@media (max-width: 768px) {
+  .dashboard-container { padding: 4px; }
+  .stats-row, .split-grid, .calendar-grid { grid-template-columns: 1fr; }
 }
 </style>

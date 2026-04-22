@@ -2,28 +2,19 @@
   <div class="row no-gutter dashboard-container">
     <section class="side-nav col-lg-2">
       <ul class="side-nav-links hide-mobile">
-        <li>Dashboard</li>
-        <li>My bookings</li>
-        <li>Preferences</li>
-        <li>Settings</li>
+        <li v-for="item in navItems" :key="item.name">
+          <router-link :to="{ name: item.name }" class="nav-link" :class="{ active: activeRouteName === item.name }">
+            {{ item.label }}
+          </router-link>
+        </li>
       </ul>
 
       <ul class="side-nav-links hide-desktop">
-        <li>
-          <img class="side-nav-icons" src="../../assets/dashboard.png" alt="" />
-          <span class="white-text">Dashboard</span>
-        </li>
-        <li>
-          <img class="side-nav-icons" src="../../assets/bookings.png" alt="" />
-          <span class="white-text">My Bookings</span>
-        </li>
-        <li>
-          <img class="side-nav-icons" src="../../assets/preferences.png" alt="" />
-          <span class="white-text">Preferences</span>
-        </li>
-        <li>
-          <img class="side-nav-icons" src="../../assets/settings.png" alt="" />
-          <span class="white-text">Settings</span>
+        <li v-for="item in navItems" :key="`mobile-${item.name}`">
+          <router-link :to="{ name: item.name }" class="nav-link mobile-nav-link" :class="{ active: activeRouteName === item.name }">
+            <img class="side-nav-icons" :src="item.icon" :alt="item.label" />
+            <span class="white-text">{{ item.label }}</span>
+          </router-link>
         </li>
       </ul>
     </section>
@@ -35,7 +26,7 @@
         <router-link :to="{ name: 'BookCleaner' }" class="greenButton">Book a cleaner</router-link>
       </div>
 
-      <div class="cleaners-container">
+      <div v-if="activeRouteName === 'CustomerDashboard'" class="cleaners-container">
         <p class="boldFont">Cleaners near you</p>
         <div class="cleaner-card-container">
           <div class="cleaner-card">
@@ -86,7 +77,7 @@
         </div>
       </div>
 
-      <div class="booking-overview">
+      <div v-if="activeRouteName === 'CustomerDashboard'" class="booking-overview">
         <div class="upcoming-booking-container">
           <p class="boldFont">Upcoming booking</p>
           <p v-if="!bookings.length" class="emptyState">
@@ -140,15 +131,49 @@
           </div>
         </div>
       </div>
+
+      <div v-if="activeRouteName === 'CustomerBookings'" class="section-card">
+        <p class="boldFont">My bookings</p>
+        <p class="small">Track your pending, confirmed, and completed bookings in one place.</p>
+        <div class="stats-row">
+          <div class="stat-tile">
+            <p class="small no-margin">Pending approval</p>
+            <p class="boldFont no-margin">{{ bookingTotals.pending }}</p>
+          </div>
+          <div class="stat-tile">
+            <p class="small no-margin">Upcoming bookings</p>
+            <p class="boldFont no-margin">{{ bookingTotals.accepted }}</p>
+          </div>
+          <div class="stat-tile">
+            <p class="small no-margin">Completed</p>
+            <p class="boldFont no-margin">{{ bookingTotals.completed }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="activeRouteName === 'CustomerPreferences'" class="section-card">
+        <p class="boldFont">Preferences</p>
+        <p class="small">Set your preferred cleaning types, timing, and cleaner requirements.</p>
+      </div>
+
+      <div v-if="activeRouteName === 'CustomerSettings'" class="section-card">
+        <p class="boldFont">Settings</p>
+        <p class="small">Manage profile details, contact preferences, and account security.</p>
+      </div>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import fallbackPhoto from '@/assets/landingpage.png'
+import dashboardIcon from '@/assets/dashboard.png'
+import bookingsIcon from '@/assets/bookings.png'
+import preferencesIcon from '@/assets/preferences.png'
+import settingsIcon from '@/assets/settings.png'
 
 interface BookingSummary {
   id: string
@@ -159,11 +184,21 @@ interface BookingSummary {
 }
 
 const auth = useAuthStore()
+const route = useRoute()
 const bookings = ref<BookingSummary[]>([])
 const loading = ref(true)
 const errorMessage = ref('')
+const navItems = [
+  { name: 'CustomerDashboard', label: 'Dashboard', icon: dashboardIcon },
+  { name: 'CustomerBookings', label: 'My Bookings', icon: bookingsIcon },
+  { name: 'CustomerPreferences', label: 'Preferences', icon: preferencesIcon },
+  { name: 'CustomerSettings', label: 'Settings', icon: settingsIcon },
+]
 
 const greetingName = computed(() => auth.profile?.full_name?.split(' ')[0] ?? '')
+const activeRouteName = computed(() =>
+  typeof route.name === 'string' ? route.name : 'CustomerDashboard',
+)
 const bookingTotals = computed(() => ({
   pending: bookings.value.filter((booking) => booking.status === 'pending').length,
   accepted: bookings.value.filter((booking) =>
@@ -219,10 +254,16 @@ ul.side-nav-links {
   border-radius: 8px;
 }
 .side-nav-links li {
+  margin-bottom: 20px;
+}
+.nav-link {
   color: var(--white);
   font-weight: 500;
-  margin-bottom: 20px;
-  cursor: pointer;
+  text-decoration: none;
+}
+.nav-link.active {
+  text-decoration: underline;
+  text-underline-offset: 6px;
 }
 section.main-page.col-lg-10 {
   padding: 10px;
@@ -282,6 +323,23 @@ img.cleaner-avatar {
   flex-direction: row;
   justify-content: space-between;
 }
+.section-card {
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 14px;
+}
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.stat-tile {
+  border: 1px solid var(--green);
+  border-radius: 6px;
+  padding: 12px;
+}
 
 @media (max-width: 768px) {
   .dashboard-container {
@@ -318,9 +376,15 @@ img.cleaner-avatar {
     justify-content: space-between;
   }
   .side-nav-links li {
+    margin-bottom: 0;
+  }
+  .mobile-nav-link {
     display: flex;
     flex-direction: column;
     align-items: center;
+  }
+  .stats-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -1,11 +1,30 @@
 <template>
   <div class="row no-gutter dashboard-container">
     <section class="side-nav col-lg-2">
-      <ul class="side-nav-links">
+      <ul class="side-nav-links hide-mobile">
         <li>Dashboard</li>
         <li>My bookings</li>
         <li>Preferences</li>
         <li>Settings</li>
+      </ul>
+
+      <ul class="side-nav-links hide-desktop">
+        <li>
+          <img class="side-nav-icons" src="../../assets/dashboard.png" alt="" />
+          <span class="white-text">Dashboard</span>
+        </li>
+        <li>
+          <img class="side-nav-icons" src="../../assets/bookings.png" alt="" />
+          <span class="white-text">My Bookings</span>
+        </li>
+        <li>
+          <img class="side-nav-icons" src="../../assets/preferences.png" alt="" />
+          <span class="white-text">Preferences</span>
+        </li>
+        <li>
+          <img class="side-nav-icons" src="../../assets/settings.png" alt="" />
+          <span class="white-text">Settings</span>
+        </li>
       </ul>
     </section>
     <section class="main-page col-lg-10">
@@ -186,14 +205,6 @@ async function loadBookings() {
     loading.value = false
   }
 }
-
-function formatDate(value: string) {
-  return new Date(value).toLocaleString()
-}
-
-function formatStatus(value: string) {
-  return value.replace('_', ' ')
-}
 </script>
 
 <style scoped>
@@ -273,5 +284,43 @@ img.cleaner-avatar {
 }
 
 @media (max-width: 768px) {
+  .dashboard-container {
+    padding: 4px;
+  }
+  .upcoming-booking-container,
+  .recent-booking-container {
+    width: 100%;
+    margin: 10px 0;
+  }
+  .booking-overview {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin: 12px 0;
+  }
+  .greeting-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px 0;
+  }
+  .greeting-header h2 {
+    margin-bottom: 10px;
+    font-size: 22px;
+  }
+  img.side-nav-icons {
+    width: 24px;
+    filter: invert(1);
+  }
+  ul.side-nav-links.hide-desktop {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  .side-nav-links li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 }
 </style>

@@ -166,8 +166,17 @@ const mobileActionItems = computed(() => {
 })
 
 async function handleSignOut() {
-  await auth.signOut()
-  await router.push({ name: 'Home' })
+  // Clear local state first to prevent race conditions
+  showUserMenu.value = false
+
+  try {
+    await auth.signOut()
+  } catch {
+    // Ignore signOut errors - session may already be invalid
+  }
+
+  // Full page reload to clear all state and redirect to landing
+  window.location.href = '/'
 }
 </script>
 

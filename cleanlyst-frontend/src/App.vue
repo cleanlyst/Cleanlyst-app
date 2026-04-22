@@ -108,11 +108,10 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import FooterPage from '@/components/FooterPage.vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import peopleImage from '@/assets/people.png'
 
-const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
 const open = ref(false)

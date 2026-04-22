@@ -1,17 +1,28 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300..800&display=swap');
+
 :root {
   --body-font: 'Open Sans', sans-serif;
-  --boldFont: 'Open Sans', sans-serif;
+  --bold-font: 'Open Sans', sans-serif;
+
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
 }
 
 body {
   font-family: var(--body-font);
   font-size: 16px;
   line-height: 1.4rem;
+  font-weight: var(--font-weight-normal);
 }
+
 * {
   letter-spacing: 0px !important;
   font-synthesis: none;
+}
+
+.boldFont {
+  font-family: var(--bold-font);
+  font-weight: var(--font-weight-bold);
 }
 
 h1,
@@ -29,7 +40,7 @@ h6,
 .subtitle {
   font-family: var(--bold-font);
   line-height: 1.1;
-  font-weight: 400;
+  font-weight: var(--font-weight-bold);
 }
 
 h2,
@@ -126,6 +137,7 @@ p {
 .black-text {
   color: var(--black);
 }
+
 .red-text {
   color: var(--red);
 }
@@ -133,9 +145,11 @@ p {
 .green-text {
   color: var(--green);
 }
+
 .text-uppercase {
   text-transform: uppercase;
 }
+
 .text-underline {
   text-decoration: underline;
 }
@@ -143,6 +157,7 @@ p {
 strong,
 b {
   font-family: var(--bold-font);
+  font-weight: var(--font-weight-bold);
 }
 
 .text-end {

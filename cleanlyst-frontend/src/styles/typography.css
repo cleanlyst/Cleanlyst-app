@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300..800&display=swap');
+
+:root {
+  --body-font: 'Open Sans', sans-serif;
+  --bold-font: 'Open Sans', sans-serif;
+
+  --font-weight-normal: 400;
+  --font-weight-bold: 700;
+}
+
+body {
+  font-family: var(--body-font);
+  font-size: 16px;
+  line-height: 1.4rem;
+  font-weight: var(--font-weight-normal);
+}
+
+* {
+  letter-spacing: 0px !important;
+  font-synthesis: none;
+}
+
+.boldFont {
+  font-family: var(--bold-font);
+  font-weight: var(--font-weight-bold);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6,
+.subtitle {
+  font-family: var(--bold-font);
+  line-height: 1.1;
+  font-weight: var(--font-weight-bold);
+}
+
+h2,
+.h2 {
+  font-size: 3.75rem;
+}
+
+h2 + .subtitle,
+.h2 + .subtitle {
+  font-size: 1.875rem;
+}
+
+h2 + .subtitle,
+h2 + .subtitle + *,
+h2 + .subtitle-spacing,
+.h2 + .subtitle,
+.h2 + .subtitle + *,
+.h2 + .subtitle-spacing {
+  margin-top: 42px;
+}
+
+h3,
+.h3 {
+  font-size: 3.125rem;
+  margin-bottom: 35px;
+}
+
+h4,
+.h4 {
+  font-size: 2.5rem;
+}
+
+h4 + .subtitle,
+.h4 + .subtitle {
+  font-size: 1.25rem;
+}
+
+h4 + .subtitle,
+h4 + .subtitle + *,
+h4 + .subtitle-spacing,
+h4 + .subtitle-spacing + *,
+.h4 + .subtitle,
+.h4 + .subtitle + *,
+.h4 + .subtitle-spacing,
+.h4 + .subtitle-spacing + * {
+  margin-top: 28px;
+}
+
+h5,
+.h5 {
+  font-size: 1.875rem;
+  margin-bottom: 23px;
+}
+
+h5 + .subtitle,
+.h5 + .subtitle {
+  font-size: 1.125rem;
+}
+
+h5 + .subtitle,
+h5 + .subtitle + *,
+.h5 + .subtitle,
+.h5 + .subtitle + * {
+  margin-top: 23px;
+}
+
+h6,
+.h6 {
+  font-size: 1.625rem;
+  margin-bottom: 19px;
+}
+
+.large {
+  font-size: 1.25rem;
+}
+
+small,
+.small {
+  font-size: 0.75rem !important;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+.blue-text {
+  color: var(--blue);
+}
+
+.white-text {
+  color: var(--white);
+}
+
+.black-text {
+  color: var(--black);
+}
+
+.red-text {
+  color: var(--red);
+}
+
+.green-text {
+  color: var(--green);
+}
+
+.text-uppercase {
+  text-transform: uppercase;
+}
+
+.text-underline {
+  text-decoration: underline;
+}
+
+strong,
+b {
+  font-family: var(--bold-font);
+  font-weight: var(--font-weight-bold);
+}
+
+.text-end {
+  text-align: end;
+}

@@ -1,0 +1,12 @@
+{
+  "name": "cleanlyst-app",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev:backend && npm run dev:frontend",
+    "dev:frontend": "npm --prefix cleanlyst-frontend run dev",
+    "dev:backend": "node -e \"console.log('Using hosted Supabase backend at https://wklmgkqgnwhllnywhfhb.supabase.co')\"",
+    "stop:backend": "cd cleanlyst-backend && npx supabase stop",
+    "type-check": "npm --prefix cleanlyst-frontend run type-check",
+    "build": "npm --prefix cleanlyst-frontend run build"
+  }
+}

@@ -1,0 +1,28 @@
+-- Create test users for Cleanlyst via Supabase Dashboard
+-- 
+-- Since SQL admin functions don't work in hosted Supabase, use the Dashboard UI:
+--
+-- 1. Go to https://supabase.com/dashboard
+-- 2. Select your project
+-- 3. Go to Authentication → Users
+-- 4. Click "Add user" and fill in:
+--
+-- User 1 - Customer:
+--   Email: tilda93@hotmail.co.uk
+--   Password: profile123
+--   Confirm email: ✓ (checked)
+--   Metadata: {"full_name": "Tilda User", "role": "customer"}
+--
+-- User 2 - Cleaner:
+--   Email: ugobrendan@gmail.com
+--   Password: profile123
+--   Confirm email: ✓ (checked)
+--   Metadata: {"full_name": "Brendan Cleaner", "role": "cleaner"}
+--
+-- User 3 - Admin:
+--   Email: brendan@cleanlyst.co.uk
+--   Password: profile123
+--   Confirm email: ✓ (checked)
+--   Metadata: {"full_name": "Brendan Admin", "role": "admin"}
+--
+-- The profiles will be auto-created by the handle_new_user trigger on signup.

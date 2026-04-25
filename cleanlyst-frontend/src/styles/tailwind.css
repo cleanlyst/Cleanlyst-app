@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-cleanlyst-blue: #0b2d72;
+  --color-cleanlyst-green: #408a71;
+  --color-cleanlyst-cream: #f7f2e9;
+  --color-cleanlyst-ink: #10233d;
+}

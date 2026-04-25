@@ -1,0 +1,2 @@
+-- Intentionally left blank.
+-- This placeholder keeps `supabase db reset` aligned with config.toml until seed data is added.

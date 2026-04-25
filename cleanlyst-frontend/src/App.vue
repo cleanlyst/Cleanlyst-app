@@ -1,5 +1,5 @@
 <template>
-  <div class="navbar">
+  <div v-if="!isComingSoonRoute" class="navbar">
     <nav class="headerNav">
       <div class="navGroup">
         <router-link :to="{ name: 'Home' }" class="brandLink">
@@ -102,7 +102,7 @@
   </div>
 
   <router-view />
-  <FooterPage />
+  <FooterPage :compact="isComingSoonRoute" />
 </template>
 
 <script setup lang="ts">
@@ -116,6 +116,7 @@ const route = useRoute()
 const auth = useAuthStore()
 const open = ref(false)
 const showUserMenu = ref(false)
+const isComingSoonRoute = computed(() => route.name === 'ComingSoon')
 
 function toggleNav() {
   open.value = !open.value

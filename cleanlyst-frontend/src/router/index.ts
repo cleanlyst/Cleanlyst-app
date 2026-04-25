@@ -21,6 +21,12 @@ const router = createRouter({
       component: () => import('../components/IndexPage.vue'),
     },
     {
+      path: '/coming-soon',
+      name: 'ComingSoon',
+      meta: { title: 'Coming Soon' },
+      component: () => import('../pages/ComingSoonPage.vue'),
+    },
+    {
       path: '/about',
       name: 'About',
       meta: { title: 'About Us' },
@@ -172,6 +178,14 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore(pinia)
+  const hostname = window.location.hostname.toLowerCase()
+  const isLiveDomain = hostname === 'cleanlyst.co.uk' || hostname === 'www.cleanlyst.co.uk'
+  const canonicalComingSoonUrl = 'https://www.cleanlyst.co.uk/coming-soon'
+
+  if (isLiveDomain && to.path !== '/coming-soon') {
+    window.location.replace(canonicalComingSoonUrl)
+    return false
+  }
 
   if (!auth.initialized) {
     await auth.init()

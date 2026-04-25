@@ -1,6 +1,6 @@
 <template>
   <footer class="footerPage">
-    <div class="footerInner">
+    <div class="footerInner" :class="{ compactFooter: compact }">
       <div class="footerColumn brandColumn">
         <router-link :to="{ name: 'Home' }" class="footerBrand">
           <img src="/logo-text.svg" alt="Cleanlyst logo" class="footerLogo" />
@@ -43,7 +43,7 @@
         </div>
       </div>
 
-      <div class="footerColumn linkColumn">
+      <div v-if="!compact" class="footerColumn linkColumn">
         <h2 class="footerTitle text-underline">Explore</h2>
         <div class="footerLinks">
           <router-link :to="{ name: 'About' }" class="footerLink">About Us</router-link>
@@ -61,6 +61,17 @@
     </div>
   </footer>
 </template>
+
+<script setup lang="ts">
+withDefaults(
+  defineProps<{
+    compact?: boolean
+  }>(),
+  {
+    compact: false,
+  },
+)
+</script>
 
 <style scoped>
 .footerPage {
@@ -145,6 +156,11 @@
 
 @media (max-width: 720px) {
   .footerInner {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .footerInner.compactFooter {
     flex-direction: row;
     gap: 1.5rem;
   }

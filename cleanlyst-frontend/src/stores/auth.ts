@@ -2,7 +2,7 @@ import type { AuthChangeEvent, Subscription } from '@supabase/supabase-js'
 import { defineStore } from 'pinia'
 import { hasSupabaseConfig, requireSupabase, supabaseConfigError } from '@/lib/supabase'
 
-export type Role = 'customer' | 'cleaner' | 'admin'
+export type Role = 'customer' | 'cleaner_pending' | 'cleaner_active' | 'admin'
 
 export interface Profile {
   id: string
@@ -28,7 +28,7 @@ export interface CleanerProfile {
   review_count: number
 }
 
-type PublicSignupRole = Exclude<Role, 'admin'>
+type PublicSignupRole = 'customer' | 'cleaner_pending'
 const AUTH_SESSION_MISSING_ERROR = 'AuthSessionMissingError'
 
 export const useAuthStore = defineStore('auth', {
@@ -44,12 +44,14 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (state) => !!state.userId,
     userRole: (state) => state.profile?.role ?? null,
-    dashboardRouteName(): 'CustomerDashboard' | 'CleanerDashboard' | 'AdminDashboard' | 'Home' {
+    dashboardRouteName(): 'CustomerDashboard' | 'CleanerDashboard' | 'AdminDashboard' | 'SignupCleaner' | 'Home' {
       switch (this.userRole) {
         case 'customer':
           return 'CustomerDashboard'
-        case 'cleaner':
+        case 'cleaner_active':
           return 'CleanerDashboard'
+        case 'cleaner_pending':
+          return 'SignupCleaner'
         case 'admin':
           return 'AdminDashboard'
         default:
@@ -112,7 +114,7 @@ export const useAuthStore = defineStore('auth', {
           this.profile = profile as Profile
         }
 
-        if (this.profile?.role === 'cleaner') {
+        if (this.profile?.role === 'cleaner_pending' || this.profile?.role === 'cleaner_active') {
           const { data: cleanerProfile, error: cleanerProfileError } = await supabase
             .from('cleaner_profiles')
             .select('*')
@@ -193,10 +195,10 @@ export const useAuthStore = defineStore('auth', {
 
       const supabase = requireSupabase()
 
-      if (this.profile?.role !== 'cleaner') {
+      if (this.profile?.role !== 'cleaner_pending' && this.profile?.role !== 'cleaner_active') {
         const { error } = await supabase
           .from('profiles')
-          .update({ role: 'cleaner' })
+          .update({ role: 'cleaner_pending' })
           .eq('id', this.userId)
 
         if (error) throw error

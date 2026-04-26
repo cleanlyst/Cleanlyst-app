@@ -6,7 +6,7 @@ declare module 'vue-router' {
   interface RouteMeta {
     title?: string
     requiresAuth?: boolean
-    requiresRole?: 'customer' | 'cleaner' | 'admin'
+    requiresRole?: 'customer' | 'cleaner_pending' | 'cleaner_active' | 'admin'
     redirectIfAuthenticated?: boolean
   }
 }
@@ -107,37 +107,37 @@ const router = createRouter({
     {
       path: '/cleaner/dashboard',
       name: 'CleanerDashboard',
-      meta: { title: 'Cleaner Dashboard', requiresAuth: true, requiresRole: 'cleaner' },
+      meta: { title: 'Cleaner Dashboard', requiresAuth: true, requiresRole: 'cleaner_active' },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
       path: '/cleaner/dashboard/bookings',
       name: 'CleanerBookings',
-      meta: { title: 'Cleaner Bookings', requiresAuth: true, requiresRole: 'cleaner' },
+      meta: { title: 'Cleaner Bookings', requiresAuth: true, requiresRole: 'cleaner_active' },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
       path: '/cleaner/dashboard/availability',
       name: 'CleanerAvailability',
-      meta: { title: 'Availability', requiresAuth: true, requiresRole: 'cleaner' },
+      meta: { title: 'Availability', requiresAuth: true, requiresRole: 'cleaner_active' },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
       path: '/cleaner/dashboard/services-pricing',
       name: 'CleanerServicesPricing',
-      meta: { title: 'Services & Pricing', requiresAuth: true, requiresRole: 'cleaner' },
+      meta: { title: 'Services & Pricing', requiresAuth: true, requiresRole: 'cleaner_active' },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
       path: '/cleaner/dashboard/financials',
       name: 'CleanerFinancials',
-      meta: { title: 'Financials', requiresAuth: true, requiresRole: 'cleaner' },
+      meta: { title: 'Financials', requiresAuth: true, requiresRole: 'cleaner_active' },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
       path: '/cleaner/dashboard/reviews',
       name: 'CleanerReviews',
-      meta: { title: 'Reviews', requiresAuth: true, requiresRole: 'cleaner' },
+      meta: { title: 'Reviews', requiresAuth: true, requiresRole: 'cleaner_active' },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {

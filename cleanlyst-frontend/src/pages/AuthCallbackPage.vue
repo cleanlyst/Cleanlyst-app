@@ -35,7 +35,7 @@ onMounted(async () => {
     }
 
     const signupRole = route.query.signupRole
-    if (signupRole === 'customer' || signupRole === 'cleaner') {
+    if (signupRole === 'customer' || signupRole === 'cleaner_pending') {
       await auth.provisionOAuthSignup(signupRole)
     }
 

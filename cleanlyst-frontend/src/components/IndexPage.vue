@@ -115,7 +115,7 @@ async function handleBookCleaner() {
     return
   }
 
-  if (auth.hasRole('cleaner')) {
+  if (auth.hasRole('cleaner_pending') || auth.hasRole('cleaner_active')) {
     await router.push({ name: 'CleanerDashboard' })
     return
   }

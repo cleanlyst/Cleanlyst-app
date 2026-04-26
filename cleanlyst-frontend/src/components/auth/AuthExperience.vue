@@ -101,9 +101,9 @@ const errorMessage = ref('')
 const successMessage = ref('')
 
 const isSignup = computed(() => props.variant !== 'login')
-const signupRole = computed<'customer' | 'cleaner' | null>(() => {
+const signupRole = computed<'customer' | 'cleaner_pending' | null>(() => {
   if (props.variant === 'customer-signup') return 'customer'
-  if (props.variant === 'cleaner-signup') return 'cleaner'
+  if (props.variant === 'cleaner-signup') return 'cleaner_pending'
   return null
 })
 const redirectTarget = computed(() => {

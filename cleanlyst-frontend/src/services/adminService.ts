@@ -1,0 +1,31 @@
+import { getSupabaseClient } from '@/services/supabaseClient'
+
+export async function getPendingCleanerApplications() {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase
+    .from('cleaner_applications')
+    .select('*')
+    .in('status', ['submitted', 'under_review', 'needs_info'])
+    .order('updated_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+export async function reviewCleanerApplication(
+  applicationId: string,
+  action: 'approved' | 'rejected' | 'needs_info',
+  notes?: string,
+  requestedInfo?: string,
+) {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('admin_review_cleaner_application', {
+    p_application_id: applicationId,
+    p_action: action,
+    p_notes: notes ?? null,
+    p_requested_info: requestedInfo ?? null,
+  })
+
+  if (error) throw error
+  return data
+}

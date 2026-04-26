@@ -43,7 +43,10 @@
               <div class="landing-page-CTA">
                 <button class="blueButton bookingButton" type="submit">Book a cleaner</button>
 
-                <router-link :to="{ name: 'Login' }" class="pointer text-underline"
+                <router-link
+                  v-if="!auth.isAuthenticated"
+                  :to="{ name: 'Login' }"
+                  class="pointer text-underline"
                   >Log in</router-link
                 >
               </div>

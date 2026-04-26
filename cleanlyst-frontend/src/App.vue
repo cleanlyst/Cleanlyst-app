@@ -12,8 +12,14 @@
         <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Home' }" class="navLink"
           >Home</router-link
         >
-        <router-link :to="{ name: 'Services' }" class="navLink">Services</router-link>
-        <router-link :to="{ name: 'About' }" class="navLink">About</router-link>
+        <router-link
+          v-for="item in desktopNavItems"
+          :key="item.name"
+          :to="{ name: item.name }"
+          class="navLink"
+        >
+          {{ item.label }}
+        </router-link>
       </div>
 
       <div class="navGroup navActions hide-mobile">
@@ -147,6 +153,21 @@ const mobileNavItems = computed(() => {
 
   if (!auth.isAuthenticated) {
     items.push({ name: 'Home', label: 'Home' })
+  }
+  if (auth.isAuthenticated) {
+    items.push({ name: auth.dashboardRouteName, label: 'Dashboard' })
+  }
+  items.push({ name: 'Services', label: 'Services' })
+  items.push({ name: 'About', label: 'About' })
+
+  return items
+})
+
+const desktopNavItems = computed(() => {
+  const items: Array<{ name: string; label: string }> = []
+
+  if (auth.isAuthenticated) {
+    items.push({ name: auth.dashboardRouteName, label: 'Dashboard' })
   }
   items.push({ name: 'Services', label: 'Services' })
   items.push({ name: 'About', label: 'About' })

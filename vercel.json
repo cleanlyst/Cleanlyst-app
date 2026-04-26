@@ -1,0 +1,5 @@
+{
+  "installCommand": "npm --prefix cleanlyst-frontend install",
+  "buildCommand": "npm --prefix cleanlyst-frontend run build",
+  "outputDirectory": "cleanlyst-frontend/dist"
+}

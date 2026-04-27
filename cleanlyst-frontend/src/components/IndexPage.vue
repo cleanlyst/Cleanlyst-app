@@ -1,69 +1,42 @@
 <template>
   <main class="landingPage">
-    <section class="booking- container">
-      <div class="row">
-        <div class="col-lg-1 hide-mobile"></div>
-        <!--Empty container for spacing-->
-        <div class="col-lg-5">
-          <div class="landing-page-booking-form">
-            <h2 class="h4">Book Trusted Cleaners in Minutes</h2>
-            <p>
-              Cleanlyst helps you find cleaners in minutes and not after ten tabs and three phone
-              calls.
-            </p>
+    <section class="booking-container" :style="{ backgroundImage: `url(${landingImage})` }">
+      <div class="landing-page-booking-form">
+        <h2 class="h4">Book Trusted <span class="green-text">Cleaners</span> in Minutes</h2>
+        <p>
+          Cleanlyst helps you find cleaners in minutes and not after ten tabs and three phone calls.
+        </p>
 
-            <form class="bookingForm" @submit.prevent="handleBookCleaner">
-              <label class="formField">
-                <span class="visually-hidden">Address</span>
-                <input
-                  v-model.trim="location"
-                  type="text"
-                  placeholder="Enter your address"
-                  class="addressInput"
-                  required
-                  aria-label="Enter your address"
-                />
-              </label>
+        <form class="bookingForm" @submit.prevent="handleBookCleaner">
+          <label class="formField">
+            <span class="visually-hidden">Service type</span>
+            <select
+              v-model="selectedService"
+              class="serviceSelect"
+              required
+              aria-label="Select a service type"
+            >
+              <option disabled value="">Choose a main service</option>
+              <option v-for="service in mainServices" :key="service" :value="service">
+                {{ service }}
+              </option>
+            </select>
+          </label>
 
-              <label class="formField">
-                <span class="visually-hidden">Service type</span>
-                <select
-                  v-model="selectedService"
-                  class="serviceSelect"
-                  required
-                  aria-label="Select a service type"
-                >
-                  <option disabled value="">Choose a main service</option>
-                  <option v-for="service in mainServices" :key="service" :value="service">
-                    {{ service }}
-                  </option>
-                </select>
-              </label>
+          <div class="landing-page-CTA">
+            <button class="blueButton bookingButton" type="submit">Book a cleaner</button>
 
-              <div class="landing-page-CTA">
-                <button class="blueButton bookingButton" type="submit">Book a cleaner</button>
-
-                <router-link
-                  v-if="!auth.isAuthenticated"
-                  :to="{ name: 'Login' }"
-                  class="pointer text-underline"
-                  >Log in</router-link
-                >
-              </div>
-            </form>
+            <router-link
+              v-if="!auth.isAuthenticated"
+              :to="{ name: 'Login' }"
+              class="pointer text-underline"
+              >Log in</router-link
+            >
           </div>
-        </div>
-        <div class="col-lg-5 hide-mobile">
-          <div class="landing-image-box">
-            <img src="../assets/landingpage.png" alt="" class="landing-image" />
-          </div>
-        </div>
-        <div class="col-lg-1 hide-mobile"></div>
-        <!--Empty container for spacing-->
+        </form>
       </div>
     </section>
 
-    <HowItWorksSection />
     <OurServicesSection />
     <BecomeProfessionalSection />
   </main>
@@ -72,10 +45,10 @@
 <script lang="ts" setup>
 import BecomeProfessionalSection from '@/components/BecomeProfessionalSection.vue'
 import { ref } from 'vue'
-import HowItWorksSection from '@/components/HowItWorksSection.vue'
 import OurServicesSection from '@/components/OurServicesSection.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import landingImage from '@/assets/landingBG.jpg'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -128,8 +101,36 @@ async function handleBookCleaner() {
 </script>
 
 <style scoped>
-section.booking-.container {
+section.booking-container {
+  position: relative;
+  width: 100%;
+  min-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center center;
   padding: 25px 0;
+}
+
+section.booking-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.18);
+
+  z-index: 1;
+}
+
+.landing-page-booking-form {
+  position: relative;
+  z-index: 2;
+  padding: 2rem 2.5rem;
+  margin-left: 17px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .landing-image-box {
@@ -137,32 +138,23 @@ section.booking-.container {
   height: 420px;
 }
 
-.landing-page-booking-form {
-  width: 100%;
-  min-height: 400px;
-  padding: 1.5rem 2.5rem;
-}
-
 .bookingForm {
-  display: grid;
-  gap: 0.85rem;
+  display: flex;
+  flex-direction: row;
   margin-top: 1.25rem;
-  width: 75%;
 }
 
 .formField {
-  display: grid;
-  gap: 0.45rem;
+  margin-right: 13px;
 }
 
-.formField span {
-  font-weight: 700;
-  color: #20314d;
+.landing-page-CTA {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
 .bookingButton {
-  justify-self: start;
-  margin-top: 0.25rem;
   margin-right: 10px;
 }
 
@@ -172,25 +164,34 @@ img.landing-image {
   height: 100%;
   border-radius: 28px;
 }
-
-@media (max-width: 720px) {
-  section.booking-.container {
+@media (min-width: 769px) {
+  section.booking-container {
+    padding: 10px 0;
+  }
+}
+@media (max-width: 768px) {
+  section.booking-container {
     padding: 10px;
   }
 
-  .col-lg-4,
-  .col-lg-8 {
-    display: block;
+  .bookingForm[data-v-c3327e39] {
+    display: flex;
+    flex-direction: column;
+    margin-top: 1rem;
+    width: 100%;
   }
 
+  .landing-page-CTA[data-v-c3327e39] {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+  }
   .landing-page-booking-form {
     min-height: auto;
     margin-bottom: 2rem;
     padding: 0.5rem;
-  }
-
-  .landing-image-box {
-    height: auto;
   }
 }
 </style>

@@ -2,7 +2,7 @@
   <section class="becomeProfessional">
     <div class="professionalGrid">
       <div class="contentCard">
-        <h2 class="h4">Become a Cleanlyst Professional</h2>
+        <h2 class="h6">Become a Cleanlyst Professional</h2>
         <p class="supportText">
           Join Cleanlyst to receive booking requests, grow your client base, and manage your work
           from one place.

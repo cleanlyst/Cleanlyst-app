@@ -253,8 +253,11 @@ async function handleSignOut() {
 }
 
 .navLink {
-  color: var(--blue);
   font-weight: 600;
+  margin: 0 10px;
+}
+a.router-link-active.router-link-exact-active.navLink {
+  text-decoration: overline;
 }
 
 .ghostButton {
@@ -286,13 +289,12 @@ async function handleSignOut() {
 
 @media (min-width: 720px) {
   .headerNav {
-    width: min(1120px, calc(100% - 2rem));
     min-height: 82px;
-    margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    padding: 1px 3rem;
   }
 }
 @media (max-width: 720px) {

@@ -1,7 +1,14 @@
 <template>
   <section class="ourServices">
     <div class="sectionIntro">
-      <h2 class="h4">Our Services</h2>
+      <div class="section-header">
+        <h2 class="h6">Our Services</h2>
+
+        <router-link :to="{ name: 'Services' }">
+          <span class="pointer text-underline">View all</span>
+        </router-link>
+      </div>
+
       <p>
         Professional cleaning support across homes, workplaces, outdoor areas, and specialist jobs.
       </p>
@@ -28,13 +35,6 @@
             <p class="small no-margin">{{ service.description }}</p>
           </div>
         </article>
-
-        <router-link :to="{ name: 'Services' }" class="serviceMoreCard serviceCardLink">
-          <img :src="moreImage" alt="More services we offer" class="moreImage" />
-          <div class="serviceContent">
-            <p>More services we offer</p>
-          </div>
-        </router-link>
       </div>
 
       <button
@@ -54,7 +54,6 @@ import homeImage from '@/assets/home.jpg'
 import officeImage from '@/assets/office.jpg'
 import windowImage from '@/assets/window.jpg'
 import vehicleImage from '@/assets/vehicle.jpg'
-import moreImage from '@/assets/more.png'
 
 const carouselRef = ref<HTMLElement | null>(null)
 
@@ -95,11 +94,11 @@ const featuredServices = [
 .ourServices {
   padding: 2rem 3rem;
 }
-
-.sectionIntro {
-  max-width: 42rem;
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-
 .sectionIntro h2 {
   margin: 0;
 }
@@ -109,10 +108,8 @@ const featuredServices = [
 }
 
 .servicesGrid {
-  width: min(1120px, 100%);
-  margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
 }
 .serviceCard {
@@ -122,7 +119,7 @@ const featuredServices = [
 }
 img.serviceImage {
   width: 100%;
-  height: 150px;
+  height: 250px;
   object-fit: cover;
   border-radius: 18px;
 }

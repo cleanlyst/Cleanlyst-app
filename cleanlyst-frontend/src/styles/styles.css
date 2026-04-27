@@ -59,17 +59,17 @@ a {
 }
 
 .blueButton {
-  border: 1px solid var(--blue);
+  border: 1px solid var(--white);
   cursor: pointer;
   text-align: center;
   padding: 4px 20px;
-  background: var(--white);
-  color: var(--blue);
+  background: var(--blue);
+  color: var(--white);
   border-radius: 10px;
 }
 .blueButton:hover {
-  background-color: var(--blue);
-  color: var(--white);
+  background-color: var(--white);
+  color: var(--blue);
   cursor: pointer;
 }
 

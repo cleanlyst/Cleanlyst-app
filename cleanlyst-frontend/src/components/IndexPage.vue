@@ -24,7 +24,7 @@
           </label>
 
           <div class="landing-page-CTA">
-            <button class="blueButton bookingButton" type="submit">Book a cleaner</button>
+            <button class="greenButton bookingButton" type="submit">Book a cleaner</button>
 
             <router-link
               v-if="!auth.isAuthenticated"
@@ -163,6 +163,12 @@ img.landing-image {
   width: 100%;
   height: 100%;
   border-radius: 28px;
+}
+.addressInput,
+.serviceSelect {
+  background: none;
+  color: var(--green) !important;
+  font-weight: 700 !important;
 }
 @media (min-width: 769px) {
   section.booking-container {

@@ -25,7 +25,7 @@
             class="addressInput"
             v-model.trim="email"
             type="email"
-            placeholder="please enter a valid email address"
+            placeholder="Email Address"
             required
           />
         </label>
@@ -36,7 +36,7 @@
             class="addressInput"
             v-model="password"
             type="password"
-            placeholder="At least 6 characters"
+            placeholder="Password"
             required
           />
         </label>

@@ -3,7 +3,11 @@
     <section class="side-nav col-lg-2">
       <ul class="side-nav-links hide-mobile">
         <li v-for="item in navItems" :key="item.name">
-          <router-link :to="{ name: item.name }" class="nav-link" :class="{ active: activeRouteName === item.name }">
+          <router-link
+            :to="{ name: item.name }"
+            class="nav-link"
+            :class="{ active: activeRouteName === item.name }"
+          >
             {{ item.label }}
           </router-link>
         </li>
@@ -11,7 +15,11 @@
 
       <ul class="side-nav-links hide-desktop">
         <li v-for="item in navItems" :key="`mobile-${item.name}`">
-          <router-link :to="{ name: item.name }" class="nav-link mobile-nav-link" :class="{ active: activeRouteName === item.name }">
+          <router-link
+            :to="{ name: item.name }"
+            class="nav-link mobile-nav-link"
+            :class="{ active: activeRouteName === item.name }"
+          >
             <img class="side-nav-icons" :src="item.icon" :alt="item.label" />
             <span class="white-text">{{ item.label }}</span>
           </router-link>
@@ -26,54 +34,35 @@
         <router-link :to="{ name: 'BookCleaner' }" class="greenButton">Book a cleaner</router-link>
       </div>
 
-      <div v-if="activeRouteName === 'CustomerDashboard'" class="cleaners-container">
-        <p class="boldFont">Cleaners near you</p>
-        <div class="cleaner-card-container">
-          <div class="cleaner-card">
-            <div class="cleaner-profile">
-              <img :src="fallbackPhoto" alt="Cleaner" class="cleaner-avatar" />
-              <div class="name-rating">
-                <p class="cleaner-name no-margin">Jane Doe</p>
-                <p class="cleaner-rating no-margin">Rating: 4.8/5</p>
-              </div>
+      <div class="top-dash-container row no-gutter">
+        <div class="col-lg-9 cleaners-near-you">
+          <div v-if="activeRouteName === 'CustomerDashboard'" class="cleaners-container">
+            <div class="section-title">
+              <p class="boldFont no-margin">Cleaners near you</p>
+              <span class="text no-margin text-underline">See all</span>
             </div>
 
-            <div class="cleaner-info">
-              <p>Services</p>
-              <p>Price per hour</p>
-              <p>Available:</p>
-            </div>
-          </div>
-          <div class="cleaner-card">
-            <div class="cleaner-profile">
-              <img :src="fallbackPhoto" alt="Cleaner" class="cleaner-avatar" />
-              <div class="name-rating">
-                <p class="cleaner-name no-margin">Jane Doe</p>
-                <p class="cleaner-rating no-margin">Rating: 4.8/5</p>
+            <div class="cleaner-card-container">
+              <div v-for="cleaner in cleanersData" :key="cleaner.id" class="cleaner-card">
+                <div class="cleaner-profile">
+                  <img :src="cleaner.photo || fallbackPhoto" alt="Cleaner" class="cleaner-avatar" />
+                  <div class="name-rating">
+                    <p class="cleaner-name no-margin">{{ cleaner.name }}</p>
+                    <p class="cleaner-rating no-margin">Rating: {{ cleaner.rating }}/5</p>
+                  </div>
+                </div>
+
+                <div class="cleaner-info">
+                  <p>{{ cleaner.services }}</p>
+                  <p>{{ cleaner.price }}</p>
+                  <p>{{ cleaner.available }}</p>
+                </div>
               </div>
             </div>
-
-            <div class="cleaner-info">
-              <p>Services</p>
-              <p>Price per hour</p>
-              <p>Available:</p>
-            </div>
           </div>
-          <div class="cleaner-card">
-            <div class="cleaner-profile">
-              <img :src="fallbackPhoto" alt="Cleaner" class="cleaner-avatar" />
-              <div class="name-rating">
-                <p class="cleaner-name no-margin">Jane Doe</p>
-                <p class="cleaner-rating no-margin">Rating: 4.8/5</p>
-              </div>
-            </div>
-
-            <div class="cleaner-info">
-              <p>Services</p>
-              <p>Price per hour</p>
-              <p>Available:</p>
-            </div>
-          </div>
+        </div>
+        <div class="col-lg-3 messages-notifications">
+          <p class="boldFont">Messages</p>
         </div>
       </div>
 
@@ -101,28 +90,10 @@
             You have not requested a cleaner yet. Start a booking when you're ready.
           </p>
           <div class="recent-card">
-            <div class="recent-cleaner-card">
+            <div v-for="booking in recentBookings" :key="booking.id" class="recent-cleaner-card">
               <div class="recent-details">
-                <p class="no-margin">Jane Doe</p>
-                <p class="small">12/Apr/26 - Home Cleaning</p>
-              </div>
-              <div class="rebook-button">
-                <button class="blueButton">Rebook</button>
-              </div>
-            </div>
-            <div class="recent-cleaner-card">
-              <div class="recent-details">
-                <p class="no-margin">Jane Doe</p>
-                <p class="small">12/Apr/26 - Home Cleaning</p>
-              </div>
-              <div class="rebook-button">
-                <button class="blueButton">Rebook</button>
-              </div>
-            </div>
-            <div class="recent-cleaner-card">
-              <div class="recent-details">
-                <p class="no-margin">Jane Doe</p>
-                <p class="small">12/Apr/26 - Home Cleaning</p>
+                <p class="no-margin">{{ booking.name }}</p>
+                <p class="small">{{ booking.detail }}</p>
               </div>
               <div class="rebook-button">
                 <button class="blueButton">Rebook</button>
@@ -169,6 +140,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import cleanerData from '@/data/cleanerData.json'
 import fallbackPhoto from '@/assets/landingpage.png'
 import dashboardIcon from '@/assets/dashboard.png'
 import bookingsIcon from '@/assets/bookings.png'
@@ -183,11 +155,28 @@ interface BookingSummary {
   status: 'pending' | 'accepted' | 'declined' | 'paid' | 'in_progress' | 'completed' | 'cancelled'
 }
 
+interface CleanerDataItem {
+  id: string
+  name: string
+  rating: number
+  services: string
+  price: string
+  available: string
+  photo?: string
+}
+
+interface CleanerDataJson {
+  cleanersData: CleanerDataItem[]
+  recentBookings: Array<{ id: string; name: string; detail: string }>
+}
+
 const auth = useAuthStore()
 const route = useRoute()
 const bookings = ref<BookingSummary[]>([])
 const loading = ref(true)
 const errorMessage = ref('')
+const cleanersData = (cleanerData as CleanerDataJson).cleanersData
+const recentBookings = (cleanerData as CleanerDataJson).recentBookings
 const navItems = [
   { name: 'CustomerDashboard', label: 'Dashboard', icon: dashboardIcon },
   { name: 'CustomerBookings', label: 'My Bookings', icon: bookingsIcon },
@@ -245,10 +234,12 @@ async function loadBookings() {
 <style scoped>
 .dashboard-container {
   min-height: calc(100vh - 90px);
-  padding: 12px;
+  padding: 0 12px;
+}
+section.side-nav.col-lg-2 {
+  border-right: 1px solid var(--grey);
 }
 ul.side-nav-links {
-  background: var(--green);
   padding: 30px 8px;
   margin: 10px 9px;
   border-radius: 8px;
@@ -257,11 +248,12 @@ ul.side-nav-links {
   margin-bottom: 20px;
 }
 .nav-link {
-  color: var(--white);
+  color: var(--grey);
   font-weight: 500;
   text-decoration: none;
 }
 .nav-link.active {
+  color: var(--black);
   text-decoration: underline;
   text-underline-offset: 6px;
 }
@@ -274,31 +266,54 @@ section.main-page.col-lg-10 {
   justify-content: space-between;
   border-bottom: 1px solid grey;
 }
-.cleaners-container {
-  padding: 10px 0;
+.top-dash-container.row.no-gutter {
+  margin: 10px 0;
+}
+.cleaners-near-you {
+  padding: 0 10px;
+}
+.cleaners-container,
+.messages-notifications {
+  padding: 10px;
+  box-shadow: 0 7px 9px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 5px;
+}
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
 }
 .cleaner-card-container {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 15px;
 }
-img.cleaner-avatar {
+.cleaner-card {
+  background: var(--white);
+  border-radius: 5px;
+  padding: 16px 14px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.cleaner-profile {
+  display: flex;
+  align-items: center;
+}
+.cleaner-avatar {
   width: 50px;
   height: 50px;
   border-radius: 50%;
   object-fit: cover;
   margin-right: 10px;
 }
+
 .booking-overview {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   margin: 12px 0;
-}
-.cleaner-card {
-  border: 1px solid var(--green);
-  border-radius: 5px;
-  padding: 12px 6px;
 }
 .upcoming-booking-container,
 .recent-booking-container {
@@ -306,6 +321,9 @@ img.cleaner-avatar {
   padding: 20px;
   border-radius: 8px;
   width: 45%;
+}
+.upcoming-card {
+  margin-top: 12px;
 }
 .upcoming-CTAs {
   border-top: 2px solid grey;
@@ -317,6 +335,9 @@ img.cleaner-avatar {
 }
 .upcoming-CTAs button {
   width: 45%;
+}
+.recent-card {
+  margin-top: 16px;
 }
 .recent-cleaner-card {
   display: flex;
@@ -345,6 +366,9 @@ img.cleaner-avatar {
   .dashboard-container {
     padding: 4px;
   }
+  section.main-page.col-lg-10 {
+    padding: 3px;
+  }
   .upcoming-booking-container,
   .recent-booking-container {
     width: 100%;
@@ -358,13 +382,16 @@ img.cleaner-avatar {
   }
   .greeting-header {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
     padding: 10px 0;
   }
   .greeting-header h2 {
-    margin-bottom: 10px;
     font-size: 22px;
+  }
+  .cleaners-near-you {
+    padding: 0;
+    margin-bottom: 10px;
   }
   img.side-nav-icons {
     width: 24px;
@@ -374,6 +401,7 @@ img.cleaner-avatar {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    background-color: var(--green);
   }
   .side-nav-links li {
     margin-bottom: 0;
@@ -385,6 +413,11 @@ img.cleaner-avatar {
   }
   .stats-row {
     grid-template-columns: 1fr;
+  }
+  .cleaner-card-container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
   }
 }
 </style>

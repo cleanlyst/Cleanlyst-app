@@ -1,0 +1,45 @@
+{
+  "cleanersData": [
+    {
+      "id": "cleaner-1",
+      "name": "Jane Doe",
+      "rating": 4.8,
+      "services": "Home Cleaning",
+      "price": "$25 / hr",
+      "available": "Available today"
+    },
+    {
+      "id": "cleaner-2",
+      "name": "Mia Watson",
+      "rating": 4.9,
+      "services": "Commercial & Office Cleaning",
+      "price": "$30 / hr",
+      "available": "Available tomorrow"
+    },
+    {
+      "id": "cleaner-3",
+      "name": "Sam Lee",
+      "rating": 4.7,
+      "services": "Windows & Glass",
+      "price": "$28 / hr",
+      "available": "Available this week"
+    }
+  ],
+  "recentBookings": [
+    {
+      "id": "booking-1",
+      "name": "Jane Doe",
+      "detail": "12/Apr/26 - Home Cleaning"
+    },
+    {
+      "id": "booking-2",
+      "name": "Mia Watson",
+      "detail": "11/Apr/26 - Office Cleaning"
+    },
+    {
+      "id": "booking-3",
+      "name": "Sam Lee",
+      "detail": "10/Apr/26 - Window Cleaning"
+    }
+  ]
+}

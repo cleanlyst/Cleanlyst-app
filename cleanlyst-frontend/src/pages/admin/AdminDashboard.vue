@@ -15,41 +15,13 @@
     </section>
     <section class="main-page col-lg-10">
       <div class="greeting-header">
-        <h2 class="h4">Yes Boss</h2>
+        <h2 class="h4">Admin Overview</h2>
       </div>
 
-      <div v-if="activeRouteName === 'AdminDashboard'" class="section-card">
-        <p class="boldFont">Dashboard</p>
-        <div class="stats-row">
-          <div class="stat-tile">
-            <p class="small no-margin">Total bookings</p>
-            <p class="boldFont no-margin">1,268</p>
-          </div>
-          <div class="stat-tile">
-            <p class="small no-margin">Cancellations</p>
-            <p class="boldFont no-margin">94</p>
-          </div>
-          <div class="stat-tile">
-            <p class="small no-margin">Revenue</p>
-            <p class="boldFont no-margin">GBP 124,650</p>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="activeRouteName === 'AdminApprovals'" class="section-card">
-        <p class="boldFont">Approvals</p>
-        <p class="small">Review and approve new cleaner applications.</p>
-      </div>
-
-      <div v-if="activeRouteName === 'AdminSubscription'" class="section-card">
-        <p class="boldFont">Subscription</p>
-        <p class="small">Manage cleaner subscription settings and booking fees.</p>
-      </div>
-
-      <div v-if="activeRouteName === 'AdminFinancials'" class="section-card">
-        <p class="boldFont">Financials</p>
-        <p class="small">View overall revenue and platform performance.</p>
-      </div>
+      <AdminDashboardSection v-if="activeRouteName === 'AdminDashboard'" />
+      <AdminApprovalsSection v-if="activeRouteName === 'AdminApprovals'" />
+      <AdminSubscriptionSection v-if="activeRouteName === 'AdminSubscription'" />
+      <AdminFinancialsSection v-if="activeRouteName === 'AdminFinancials'" />
     </section>
   </div>
 </template>
@@ -57,6 +29,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import AdminDashboardSection from './components/AdminDashboardSection.vue'
+import AdminApprovalsSection from './components/AdminApprovalsSection.vue'
+import AdminSubscriptionSection from './components/AdminSubscriptionSection.vue'
+import AdminFinancialsSection from './components/AdminFinancialsSection.vue'
 
 const route = useRoute()
 
@@ -72,13 +48,15 @@ const activeRouteName = computed(() =>
 )
 </script>
 
-<style scoped>
+<style>
 .dashboard-container {
   min-height: calc(100vh - 90px);
   padding: 12px;
 }
+section.side-nav.col-lg-2 {
+  border-right: 1px solid var(--grey);
+}
 ul.side-nav-links {
-  background: var(--green);
   padding: 30px 8px;
   margin: 10px 9px;
   border-radius: 8px;
@@ -87,11 +65,12 @@ ul.side-nav-links {
   margin-bottom: 20px;
 }
 .nav-link {
-  color: var(--white);
-  text-decoration: none;
+  color: var(--grey);
   font-weight: 500;
+  text-decoration: none;
 }
 .nav-link.active {
+  color: var(--black);
   text-decoration: underline;
   text-underline-offset: 6px;
 }

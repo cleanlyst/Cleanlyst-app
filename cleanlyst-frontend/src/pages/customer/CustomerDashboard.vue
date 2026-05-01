@@ -31,121 +31,22 @@
         <router-link :to="{ name: 'BookCleaner' }" class="greenButton">Book a cleaner</router-link>
       </div>
 
-      <div class="top-dash-container row no-gutter">
-        <div class="col-lg-9 cleaners-near-you">
-          <div
-            v-if="activeRouteName === 'CustomerDashboard'"
-            class="cleaners-container card-shadow"
-          >
-            <div class="section-title">
-              <p class="boldFont no-margin">Cleaners near you</p>
-              <span class="text no-margin text-underline">See all</span>
-            </div>
+      <CustomerDashboardSection
+        v-if="activeRouteName === 'CustomerDashboard'"
+        :cleanersData="cleanersData"
+        :fallbackPhoto="fallbackPhoto"
+        :bookings="bookings"
+        :recentBookings="recentBookings"
+      />
 
-            <div class="cleaner-card-container">
-              <div
-                v-for="cleaner in cleanersData"
-                :key="cleaner.id"
-                class="cleaner-card card-shadow"
-              >
-                <div class="cleaner-profile">
-                  <img :src="cleaner.photo || fallbackPhoto" alt="Cleaner" class="cleaner-avatar" />
-                  <div class="name-rating">
-                    <p class="cleaner-name no-margin">{{ cleaner.name }}</p>
-                    <p class="cleaner-rating no-margin">Rating: {{ cleaner.rating }}/5</p>
-                  </div>
-                </div>
+      <CustomerBookingsSection
+        v-if="activeRouteName === 'CustomerBookings'"
+        :bookingTotals="bookingTotals"
+      />
 
-                <div class="cleaner-info">
-                  <p>{{ cleaner.services }}</p>
-                  <p>{{ cleaner.price }}</p>
-                  <p>{{ cleaner.available }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div
-          v-if="activeRouteName === 'CustomerDashboard'"
-          class="col-lg-3 messages-notifications card-shadow"
-        >
-          <p class="boldFont">Messages</p>
-        </div>
-      </div>
+      <CustomerPreferencesSection v-if="activeRouteName === 'CustomerPreferences'" />
 
-      <div v-if="activeRouteName === 'CustomerDashboard'" class="booking-overview">
-        <div class="upcoming-booking-container card-shadow">
-          <div class="section-title">
-            <p class="boldFont no-margin">Upcoming Booking</p>
-            <span class="text no-margin text-underline">See all</span>
-          </div>
-
-          <p v-if="!bookings.length" class="emptyState">
-            You have not requested a cleaner yet. Start a booking when you're ready.
-          </p>
-          <div class="upcoming-card">
-            <p class="no-margin">Cleaner</p>
-            <p class="no-margin">Service</p>
-            <p class="no-margin">Date</p>
-            <p class="no-margin">Time</p>
-
-            <div class="upcoming-CTAs">
-              <button class="blueButton">View Booking</button>
-              <button class="blueButton">Reschedule</button>
-            </div>
-          </div>
-        </div>
-        <div class="recent-booking-container card-shadow">
-          <div class="section-title">
-            <p class="boldFont no-margin">Recent Bookings</p>
-            <span class="text no-margin text-underline">See all</span>
-          </div>
-
-          <p v-if="!bookings.length" class="emptyState">
-            You have not requested a cleaner yet. Start a booking when you're ready.
-          </p>
-          <div class="recent-card">
-            <div v-for="booking in recentBookings" :key="booking.id" class="recent-cleaner-card">
-              <div class="recent-details">
-                <p class="no-margin">{{ booking.name }}</p>
-                <p class="small">{{ booking.detail }}</p>
-              </div>
-              <div class="rebook-button">
-                <button class="blueButton">Rebook</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="activeRouteName === 'CustomerBookings'" class="section-card">
-        <p class="boldFont">My bookings</p>
-        <p class="small">Track your pending, confirmed, and completed bookings in one place.</p>
-        <div class="stats-row">
-          <div class="stat-tile">
-            <p class="small no-margin">Pending approval</p>
-            <p class="boldFont no-margin">{{ bookingTotals.pending }}</p>
-          </div>
-          <div class="stat-tile">
-            <p class="small no-margin">Upcoming bookings</p>
-            <p class="boldFont no-margin">{{ bookingTotals.accepted }}</p>
-          </div>
-          <div class="stat-tile">
-            <p class="small no-margin">Completed</p>
-            <p class="boldFont no-margin">{{ bookingTotals.completed }}</p>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="activeRouteName === 'CustomerPreferences'" class="section-card">
-        <p class="boldFont">Preferences</p>
-        <p class="small">Set your preferred cleaning types, timing, and cleaner requirements.</p>
-      </div>
-
-      <div v-if="activeRouteName === 'CustomerSettings'" class="section-card">
-        <p class="boldFont">Settings</p>
-        <p class="small">Manage profile details, contact preferences, and account security.</p>
-      </div>
+      <CustomerSettingsSection v-if="activeRouteName === 'CustomerSettings'" />
     </section>
   </div>
 </template>
@@ -161,6 +62,10 @@ import dashboardIcon from '@/assets/dashboard.png'
 import bookingsIcon from '@/assets/bookings.png'
 import preferencesIcon from '@/assets/preferences.png'
 import settingsIcon from '@/assets/settings.png'
+import CustomerDashboardSection from './components/CustomerDashboardSection.vue'
+import CustomerBookingsSection from './components/CustomerBookingsSection.vue'
+import CustomerPreferencesSection from './components/CustomerPreferencesSection.vue'
+import CustomerSettingsSection from './components/CustomerSettingsSection.vue'
 
 interface BookingSummary {
   id: string
@@ -245,7 +150,7 @@ async function loadBookings() {
 }
 </script>
 
-<style scoped>
+<style>
 .dashboard-container {
   min-height: calc(100vh - 90px);
   padding: 0 12px;
@@ -301,11 +206,7 @@ section.main-page.col-lg-10 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 15px;
 }
-.cleaner-card {
-  background: var(--white);
-  border-radius: 5px;
-  padding: 16px 14px;
-}
+
 .cleaner-profile {
   display: flex;
   align-items: center;

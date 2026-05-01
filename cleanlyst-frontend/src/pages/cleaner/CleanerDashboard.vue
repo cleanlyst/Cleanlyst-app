@@ -14,120 +14,42 @@
       </ul>
     </section>
     <section class="main-page col-lg-10">
-      <div class="greeting-header">
-        <h2 class="h4">
-          {{ greetingName ? `Welcome back, ${greetingName}.` : 'Manage your work.' }}
-        </h2>
-      </div>
+      <CleanerDashboardSection
+        v-if="activeRouteName === 'CleanerDashboard'"
+        :earningsToDate="earningsToDate"
+        :bookingTotals="bookingTotals"
+        :ratingLabel="ratingLabel"
+        :errorMessage="errorMessage"
+      />
 
-      <div v-if="activeRouteName === 'CleanerDashboard'" class="section-card">
-        <p class="boldFont">Dashboard</p>
-        <div class="stats-row">
-          <div class="stat-tile">
-            <p class="small no-margin">Total earnings to date</p>
-            <p class="boldFont no-margin">{{ earningsToDate }}</p>
-          </div>
-          <div class="stat-tile">
-            <p class="small no-margin">Pending bookings</p>
-            <p class="boldFont no-margin">{{ bookingTotals.accepted }}</p>
-          </div>
-          <div class="stat-tile">
-            <p class="small no-margin">Rating</p>
-            <p class="boldFont no-margin">{{ ratingLabel }}</p>
-          </div>
-        </div>
-        <p v-if="errorMessage" class="message error">{{ errorMessage }}</p>
-        <div class="split-grid">
-          <div class="tile">
-            <p class="boldFont">Incoming requests</p>
-            <p class="small">Pending approvals: {{ bookingTotals.pending }}</p>
-          </div>
-          <div class="tile">
-            <p class="boldFont">Upcoming requests</p>
-            <p class="small">Approved/pending attendance: {{ bookingTotals.accepted }}</p>
-          </div>
-        </div>
-      </div>
+      <CleanerBookingsSection
+        v-if="activeRouteName === 'CleanerBookings'"
+        :bookingTotals="bookingTotals"
+        :errorMessage="errorMessage"
+        :loading="loading"
+        :bookings="bookings"
+        :acceptBooking="acceptBooking"
+        :declineBooking="declineBooking"
+        :formatDate="formatDate"
+        :formatStatus="formatStatus"
+      />
 
-      <div v-if="activeRouteName === 'CleanerBookings'" class="section-card">
-        <p class="boldFont">Bookings</p>
-        <p class="small">Incoming, pending attendance, and past bookings.</p>
-        <p v-if="errorMessage" class="message error">{{ errorMessage }}</p>
-        <div class="stats-row">
-          <div class="stat-tile">
-            <p class="small no-margin">Incoming</p>
-            <p class="boldFont no-margin">{{ bookingTotals.pending }}</p>
-          </div>
-          <div class="stat-tile">
-            <p class="small no-margin">Pending attendance</p>
-            <p class="boldFont no-margin">{{ bookingTotals.accepted }}</p>
-          </div>
-          <div class="stat-tile">
-            <p class="small no-margin">Past</p>
-            <p class="boldFont no-margin">{{ bookingTotals.completed }}</p>
-          </div>
-        </div>
+      <CleanerAvailabilitySection
+        v-if="activeRouteName === 'CleanerAvailability'"
+        :calendarDays="calendarDays"
+      />
 
-        <p v-if="loading" class="small">Loading bookings...</p>
-        <div v-else-if="bookings.length === 0" class="empty-state">
-          <p class="small no-margin">No bookings assigned yet.</p>
-        </div>
-        <div v-else class="booking-list">
-          <article v-for="booking in bookings" :key="booking.id" class="booking-card">
-            <div>
-              <p class="boldFont no-margin">
-                {{ booking.service_title_snapshot ?? 'Cleaning booking' }}
-              </p>
-              <p class="small no-margin">{{ formatDate(booking.scheduled_start) }}</p>
-              <p class="small no-margin">{{ booking.location_text }}</p>
-            </div>
-            <div class="booking-actions">
-              <span class="status-pill">{{ formatStatus(booking.status) }}</span>
-              <button
-                v-if="booking.status === 'pending_request'"
-                type="button"
-                class="greenButton action-button"
-                @click="acceptBooking(booking.id)"
-              >
-                Accept
-              </button>
-              <button
-                v-if="booking.status === 'pending_request'"
-                type="button"
-                class="blueButton action-button"
-                @click="declineBooking(booking.id)"
-              >
-                Decline
-              </button>
-            </div>
-          </article>
-        </div>
-      </div>
+      <CleanerServicesPricingSection
+        v-if="activeRouteName === 'CleanerServicesPricing'"
+        :hourlyRateLabel="hourlyRateLabel"
+      />
 
-      <div v-if="activeRouteName === 'CleanerAvailability'" class="section-card">
-        <p class="boldFont">Availability</p>
-        <p class="small">Basic calendar slots where you can set available days and times.</p>
-        <div class="calendar-grid">
-          <span v-for="day in calendarDays" :key="day" class="calendar-day">{{ day }}</span>
-        </div>
-      </div>
+      <CleanerFinancialsSection
+        v-if="activeRouteName === 'CleanerFinancials'"
+        :earningsToDate="earningsToDate"
+      />
 
-      <div v-if="activeRouteName === 'CleanerServicesPricing'" class="section-card">
-        <p class="boldFont">Services & Pricing</p>
-        <p class="small">Edit the services you provide and adjust your pricing.</p>
-        <p class="boldFont no-margin">{{ hourlyRateLabel }}</p>
-      </div>
-
-      <div v-if="activeRouteName === 'CleanerFinancials'" class="section-card">
-        <p class="boldFont">Financials</p>
-        <p class="small">Earnings to date with month filter options.</p>
-        <p class="boldFont no-margin">{{ earningsToDate }}</p>
-      </div>
-
-      <div v-if="activeRouteName === 'CleanerReviews'" class="section-card">
-        <p class="boldFont">Reviews</p>
-        <p class="small">Customer feedback and ratings left for your completed bookings.</p>
-      </div>
+      <CleanerReviewsSection v-if="activeRouteName === 'CleanerReviews'" />
     </section>
   </div>
 </template>
@@ -138,6 +60,12 @@ import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { transitionBookingState } from '@/services/bookingService'
+import CleanerDashboardSection from './components/CleanerDashboardSection.vue'
+import CleanerBookingsSection from './components/CleanerBookingsSection.vue'
+import CleanerAvailabilitySection from './components/CleanerAvailabilitySection.vue'
+import CleanerServicesPricingSection from './components/CleanerServicesPricingSection.vue'
+import CleanerFinancialsSection from './components/CleanerFinancialsSection.vue'
+import CleanerReviewsSection from './components/CleanerReviewsSection.vue'
 import type { BookingStatus } from '@/types/domain'
 
 interface Booking {
@@ -164,7 +92,6 @@ const navItems = [
 ]
 const calendarDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-const greetingName = computed(() => auth.profile?.full_name?.split(' ')[0] ?? '')
 const activeRouteName = computed(() =>
   typeof route.name === 'string' ? route.name : 'CleanerDashboard',
 )
@@ -273,13 +200,15 @@ function formatStatus(value: string) {
 }
 </script>
 
-<style scoped>
+<style>
 .dashboard-container {
   min-height: calc(100vh - 90px);
   padding: 12px;
 }
+section.side-nav.col-lg-2 {
+  border-right: 1px solid var(--grey);
+}
 ul.side-nav-links {
-  background: var(--green);
   padding: 30px 8px;
   margin: 10px 9px;
   border-radius: 8px;
@@ -288,11 +217,12 @@ ul.side-nav-links {
   margin-bottom: 20px;
 }
 .nav-link {
-  color: var(--white);
-  text-decoration: none;
+  color: var(--grey);
   font-weight: 500;
+  text-decoration: none;
 }
 .nav-link.active {
+  color: var(--black);
   text-decoration: underline;
   text-underline-offset: 6px;
 }

@@ -98,3 +98,8 @@ a {
   background: var(--white);
   color: var(--black);
 }
+.card-shadow {
+  box-shadow: 0 7px 9px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 5px;
+}

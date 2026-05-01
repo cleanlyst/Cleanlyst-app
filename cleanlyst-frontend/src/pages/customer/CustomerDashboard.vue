@@ -20,30 +20,34 @@
             class="nav-link mobile-nav-link"
             :class="{ active: activeRouteName === item.name }"
           >
-            <img class="side-nav-icons" :src="item.icon" :alt="item.label" />
-            <span class="white-text">{{ item.label }}</span>
+            <span class="">{{ item.label }}</span>
           </router-link>
         </li>
       </ul>
     </section>
     <section class="main-page col-lg-10">
       <div class="greeting-header">
-        <h2 class="h4">
-          {{ greetingName ? `Welcome back, ${greetingName}.` : 'Manage your bookings.' }}
-        </h2>
+        <h2 class="h4">Manage your bookings.</h2>
         <router-link :to="{ name: 'BookCleaner' }" class="greenButton">Book a cleaner</router-link>
       </div>
 
       <div class="top-dash-container row no-gutter">
         <div class="col-lg-9 cleaners-near-you">
-          <div v-if="activeRouteName === 'CustomerDashboard'" class="cleaners-container">
+          <div
+            v-if="activeRouteName === 'CustomerDashboard'"
+            class="cleaners-container card-shadow"
+          >
             <div class="section-title">
               <p class="boldFont no-margin">Cleaners near you</p>
               <span class="text no-margin text-underline">See all</span>
             </div>
 
             <div class="cleaner-card-container">
-              <div v-for="cleaner in cleanersData" :key="cleaner.id" class="cleaner-card">
+              <div
+                v-for="cleaner in cleanersData"
+                :key="cleaner.id"
+                class="cleaner-card card-shadow"
+              >
                 <div class="cleaner-profile">
                   <img :src="cleaner.photo || fallbackPhoto" alt="Cleaner" class="cleaner-avatar" />
                   <div class="name-rating">
@@ -61,14 +65,21 @@
             </div>
           </div>
         </div>
-        <div class="col-lg-3 messages-notifications">
+        <div
+          v-if="activeRouteName === 'CustomerDashboard'"
+          class="col-lg-3 messages-notifications card-shadow"
+        >
           <p class="boldFont">Messages</p>
         </div>
       </div>
 
       <div v-if="activeRouteName === 'CustomerDashboard'" class="booking-overview">
-        <div class="upcoming-booking-container">
-          <p class="boldFont">Upcoming booking</p>
+        <div class="upcoming-booking-container card-shadow">
+          <div class="section-title">
+            <p class="boldFont no-margin">Upcoming Booking</p>
+            <span class="text no-margin text-underline">See all</span>
+          </div>
+
           <p v-if="!bookings.length" class="emptyState">
             You have not requested a cleaner yet. Start a booking when you're ready.
           </p>
@@ -84,8 +95,12 @@
             </div>
           </div>
         </div>
-        <div class="recent-booking-container">
-          <p class="boldFont">Recent bookings</p>
+        <div class="recent-booking-container card-shadow">
+          <div class="section-title">
+            <p class="boldFont no-margin">Recent Bookings</p>
+            <span class="text no-margin text-underline">See all</span>
+          </div>
+
           <p v-if="!bookings.length" class="emptyState">
             You have not requested a cleaner yet. Start a booking when you're ready.
           </p>
@@ -184,7 +199,6 @@ const navItems = [
   { name: 'CustomerSettings', label: 'Settings', icon: settingsIcon },
 ]
 
-const greetingName = computed(() => auth.profile?.full_name?.split(' ')[0] ?? '')
 const activeRouteName = computed(() =>
   typeof route.name === 'string' ? route.name : 'CustomerDashboard',
 )
@@ -275,15 +289,12 @@ section.main-page.col-lg-10 {
 .cleaners-container,
 .messages-notifications {
   padding: 10px;
-  box-shadow: 0 7px 9px rgba(15, 23, 42, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 5px;
 }
 .section-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
 }
 .cleaner-card-container {
   display: grid;
@@ -294,8 +305,6 @@ section.main-page.col-lg-10 {
   background: var(--white);
   border-radius: 5px;
   padding: 16px 14px;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 .cleaner-profile {
   display: flex;
@@ -317,10 +326,9 @@ section.main-page.col-lg-10 {
 }
 .upcoming-booking-container,
 .recent-booking-container {
-  border: 1px solid var(--blue);
   padding: 20px;
-  border-radius: 8px;
-  width: 45%;
+  width: 50%;
+  margin: 0 6px;
 }
 .upcoming-card {
   margin-top: 12px;
@@ -401,7 +409,8 @@ section.main-page.col-lg-10 {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    background-color: var(--green);
+    padding: 8px 8px;
+    margin: 4px 9px;
   }
   .side-nav-links li {
     margin-bottom: 0;

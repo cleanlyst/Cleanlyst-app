@@ -35,6 +35,7 @@
         </router-link>
         <!-- User Avatar Dropdown -->
         <div v-if="auth.isAuthenticated" class="userDropdown">
+          <span class="userName">{{ greetingName }} </span>
           <button
             type="button"
             class="userAvatarButton"
@@ -53,6 +54,7 @@
         <div class="mobileNavLinks hide-desktop">
           <!-- User Avatar Dropdown (Mobile) -->
           <div v-if="auth.isAuthenticated" class="userDropdown mobileUserDropdown">
+            <span class="userName">{{ greetingName }} </span>
             <button
               type="button"
               class="userAvatarButton"
@@ -174,6 +176,8 @@ const desktopNavItems = computed(() => {
 
   return items
 })
+
+const greetingName = computed(() => auth.profile?.full_name?.split(' ')[0] ?? '')
 
 const mobileActionItems = computed(() => {
   const items: Array<{ name: string; label: string }> = []
@@ -348,6 +352,11 @@ a.router-link-active.router-link-exact-active.navLink {
 /* User Dropdown Styles */
 .userDropdown {
   position: relative;
+  display: flex;
+  align-items: center;
+}
+.userName {
+  margin-right: 8px;
 }
 
 .userAvatarButton {

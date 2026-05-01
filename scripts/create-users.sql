@@ -17,7 +17,7 @@
 --   Email: ugobrendan@gmail.com
 --   Password: profile123
 --   Confirm email: ✓ (checked)
---   Metadata: {"full_name": "Brendan Cleaner", "role": "cleaner"}
+--   Metadata: {"full_name": "Brendan Cleaner", "role": "cleaner_pending"}
 --
 -- User 3 - Admin:
 --   Email: brendan@cleanlyst.co.uk

@@ -1,12 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { pinia } from '@/stores'
+import type { Role } from '@/stores/auth'
 
 declare module 'vue-router' {
   interface RouteMeta {
     title?: string
     requiresAuth?: boolean
-    requiresRole?: 'customer' | 'cleaner_pending' | 'cleaner_active' | 'admin'
+    requiresRole?: Role | Role[]
     redirectIfAuthenticated?: boolean
   }
 }
@@ -107,37 +108,61 @@ const router = createRouter({
     {
       path: '/cleaner/dashboard',
       name: 'CleanerDashboard',
-      meta: { title: 'Cleaner Dashboard', requiresAuth: true, requiresRole: 'cleaner_active' },
+      meta: {
+        title: 'Cleaner Dashboard',
+        requiresAuth: true,
+        requiresRole: ['cleaner_pending', 'cleaner_active'],
+      },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
       path: '/cleaner/dashboard/bookings',
       name: 'CleanerBookings',
-      meta: { title: 'Cleaner Bookings', requiresAuth: true, requiresRole: 'cleaner_active' },
+      meta: {
+        title: 'Cleaner Bookings',
+        requiresAuth: true,
+        requiresRole: ['cleaner_pending', 'cleaner_active'],
+      },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
       path: '/cleaner/dashboard/availability',
       name: 'CleanerAvailability',
-      meta: { title: 'Availability', requiresAuth: true, requiresRole: 'cleaner_active' },
+      meta: {
+        title: 'Availability',
+        requiresAuth: true,
+        requiresRole: ['cleaner_pending', 'cleaner_active'],
+      },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
       path: '/cleaner/dashboard/services-pricing',
       name: 'CleanerServicesPricing',
-      meta: { title: 'Services & Pricing', requiresAuth: true, requiresRole: 'cleaner_active' },
+      meta: {
+        title: 'Services & Pricing',
+        requiresAuth: true,
+        requiresRole: ['cleaner_pending', 'cleaner_active'],
+      },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
       path: '/cleaner/dashboard/financials',
       name: 'CleanerFinancials',
-      meta: { title: 'Financials', requiresAuth: true, requiresRole: 'cleaner_active' },
+      meta: {
+        title: 'Financials',
+        requiresAuth: true,
+        requiresRole: ['cleaner_pending', 'cleaner_active'],
+      },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
       path: '/cleaner/dashboard/reviews',
       name: 'CleanerReviews',
-      meta: { title: 'Reviews', requiresAuth: true, requiresRole: 'cleaner_active' },
+      meta: {
+        title: 'Reviews',
+        requiresAuth: true,
+        requiresRole: ['cleaner_pending', 'cleaner_active'],
+      },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
@@ -203,7 +228,15 @@ router.beforeEach(async (to) => {
     return { name: 'Login', query: { redirect: to.fullPath } }
   }
 
-  if (to.meta.requiresRole && !auth.hasRole(to.meta.requiresRole)) {
+  if (to.meta.requiresRole) {
+    const allowedRoles = Array.isArray(to.meta.requiresRole)
+      ? to.meta.requiresRole
+      : [to.meta.requiresRole]
+
+    if (allowedRoles.some((role) => auth.hasRole(role))) {
+      return
+    }
+
     if (auth.isAuthenticated) {
       return { name: auth.dashboardRouteName }
     }

@@ -150,14 +150,19 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
+const userDashboardRoute = computed(() => {
+  if (!auth.initialized || !auth.isAuthenticated) return 'Home'
+  return auth.dashboardRouteName
+})
+
 const mobileNavItems = computed(() => {
   const items: Array<{ name: string; label: string }> = []
 
   if (!auth.isAuthenticated) {
     items.push({ name: 'Home', label: 'Home' })
   }
-  if (auth.isAuthenticated) {
-    items.push({ name: auth.dashboardRouteName, label: 'Dashboard' })
+  if (auth.initialized && auth.isAuthenticated) {
+    items.push({ name: userDashboardRoute.value, label: 'Dashboard' })
   }
   items.push({ name: 'Services', label: 'Services' })
   items.push({ name: 'About', label: 'About' })
@@ -168,8 +173,8 @@ const mobileNavItems = computed(() => {
 const desktopNavItems = computed(() => {
   const items: Array<{ name: string; label: string }> = []
 
-  if (auth.isAuthenticated) {
-    items.push({ name: auth.dashboardRouteName, label: 'Dashboard' })
+  if (auth.initialized && auth.isAuthenticated) {
+    items.push({ name: userDashboardRoute.value, label: 'Dashboard' })
   }
   items.push({ name: 'Services', label: 'Services' })
   items.push({ name: 'About', label: 'About' })

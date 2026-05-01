@@ -44,14 +44,13 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (state) => !!state.userId,
     userRole: (state) => state.profile?.role ?? null,
-    dashboardRouteName(): 'CustomerDashboard' | 'CleanerDashboard' | 'AdminDashboard' | 'SignupCleaner' | 'Home' {
+    dashboardRouteName(): 'CustomerDashboard' | 'CleanerDashboard' | 'AdminDashboard' | 'Home' {
       switch (this.userRole) {
         case 'customer':
           return 'CustomerDashboard'
         case 'cleaner_active':
-          return 'CleanerDashboard'
         case 'cleaner_pending':
-          return 'SignupCleaner'
+          return 'CleanerDashboard'
         case 'admin':
           return 'AdminDashboard'
         default:
@@ -140,7 +139,7 @@ export const useAuthStore = defineStore('auth', {
         password,
       })
 
-      if (error) throw error;
+      if (error) throw error
 
       await this.init()
     },

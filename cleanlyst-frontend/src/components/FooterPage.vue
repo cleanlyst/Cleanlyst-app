@@ -1,63 +1,18 @@
 <template>
-  <footer class="footerPage">
-    <div class="footerInner" :class="{ compactFooter: compact }">
-      <div class="footerColumn brandColumn">
-        <router-link :to="{ name: 'Home' }" class="footerBrand">
-          <img src="/logo-text.svg" alt="Cleanlyst logo" class="footerLogo" />
-        </router-link>
-
-        <div class="socialLinks">
-          <a href="#" aria-label="Instagram" class="socialLink">
-            <svg
-              viewBox="0 0 24 24"
-              class="socialIcon"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect
-                x="3"
-                y="3"
-                width="18"
-                height="18"
-                rx="5"
-                stroke="currentColor"
-                stroke-width="1.8"
-              />
-              <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8" />
-              <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" />
-            </svg>
-          </a>
-          <a href="#" aria-label="Facebook" class="socialLink">
-            <svg
-              viewBox="0 0 24 24"
-              class="socialIcon"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M13.5 21V13.2H16.1L16.5 10.2H13.5V8.3C13.5 7.43 13.73 6.84 14.98 6.84H16.6V4.15C16.32 4.11 15.37 4 14.26 4C11.95 4 10.36 5.41 10.36 8V10.2H7.8V13.2H10.36V21H13.5Z"
-                fill="currentColor"
-              />
-            </svg>
-          </a>
-        </div>
+  <footer class="app-footer" :class="{ 'app-footer--compact': compact }">
+    <div class="app-footer__inner">
+      <div class="app-footer__brand">
+        <router-link :to="{ name: 'Home' }" class="app-footer__logo"> Cleanlyst </router-link>
+        <p class="app-footer__copy">© 2026 Cleanlyst Marketplace.</p>
       </div>
 
-      <div v-if="!compact" class="footerColumn linkColumn">
-        <h2 class="footerTitle text-underline">Explore</h2>
-        <div class="footerLinks">
-          <router-link :to="{ name: 'About' }" class="footerLink">About Us</router-link>
-          <router-link :to="{ name: 'Services' }" class="footerLink">Services</router-link>
-        </div>
-      </div>
-
-      <div class="footerColumn contactColumn">
-        <h2 class="footerTitle text-underline">About Us</h2>
-        <div class="contactList">
-          <a href="tel:+442079460821" class="footerLink">+44 20 7946 0821</a>
-          <a href="mailto:hello@cleanlyst.co" class="footerLink">hello@cleanlyst.co</a>
-        </div>
-      </div>
+      <nav class="app-footer__nav">
+        <router-link :to="{ name: 'About' }" class="app-footer__link"> About Us </router-link>
+        <a href="#" class="app-footer__link app-footer__link--active"> Terms of Service </a>
+        <a href="#" class="app-footer__link"> Privacy Policy </a>
+        <a href="#" class="app-footer__link"> Trust &amp; Safety </a>
+        <a href="#" class="app-footer__link"> Support </a>
+      </nav>
     </div>
   </footer>
 </template>
@@ -74,95 +29,115 @@ withDefaults(
 </script>
 
 <style scoped>
-.footerPage {
-  background: var(--black);
-  color: var(--white);
-  padding: 2.5rem 1rem;
+.app-footer {
+  width: 100%;
+  padding: 3rem 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  background: #fafafa;
+  border-top: 1px solid #e4e4e7;
 }
 
-.footerInner {
-  width: min(1120px, 100%);
-  margin: 0 auto;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  gap: 2rem;
+.app-footer--compact {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
 }
 
-.footerColumn {
+.app-footer__inner {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  flex: 1 1 0;
-}
-
-.footerBrand {
-  display: inline-flex;
-  align-self: flex-start;
-}
-
-.footerLogo {
-  height: 100px;
-  object-fit: contain;
-  filter: invert(1);
-}
-
-.footerTitle {
-  margin-bottom: 10px;
-  font-size: 1.05rem;
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.socialLinks {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 0.85rem;
   align-items: center;
-}
-.contactList,
-.footerLinks {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-  gap: 0.85rem;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 80rem;
+  gap: 2rem;
+  padding: 0 1.5rem;
+  margin: 0 auto;
 }
 
-.footerLink,
-.socialLink {
-  color: rgba(255, 255, 255, 0.8);
+.app-footer__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.app-footer__logo {
+  color: #18181b;
+  font-size: 1.125rem;
+  font-weight: 700;
   text-decoration: none;
 }
 
-.footerLink:hover,
-.socialLink:hover {
-  color: var(--white);
+.app-footer__copy {
+  margin: 0;
+  color: #71717a;
+  text-align: center;
 }
 
-.socialLink {
-  display: inline-flex;
-  align-items: center;
+.app-footer__nav {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-
-  border-radius: 999px;
+  gap: 1.5rem;
 }
 
-.socialIcon {
-  width: 18px;
-  height: 18px;
+.app-footer__link {
+  color: #71717a;
+  text-decoration: none;
+  opacity: 1;
+  transition:
+    color 200ms ease,
+    opacity 200ms ease;
 }
 
-@media (max-width: 720px) {
-  .footerInner {
-    flex-direction: column;
-    gap: 1.5rem;
+.app-footer__link:hover {
+  color: #18181b;
+  opacity: 0.8;
+}
+
+.app-footer__link--active {
+  color: #18181b;
+  text-decoration: underline;
+}
+
+:global(.dark) .app-footer {
+  background: #18181b;
+  border-top-color: #27272a;
+}
+
+:global(.dark) .app-footer__logo,
+:global(.dark) .app-footer__link--active {
+  color: #fafafa;
+}
+
+:global(.dark) .app-footer__copy,
+:global(.dark) .app-footer__link {
+  color: #a1a1aa;
+}
+
+:global(.dark) .app-footer__link:hover {
+  color: #f4f4f5;
+}
+
+@media (min-width: 768px) {
+  .app-footer__inner {
+    flex-direction: row;
   }
 
-  .footerInner.compactFooter {
-    flex-direction: row;
-    gap: 1.5rem;
+  .app-footer__brand {
+    align-items: flex-start;
+  }
+
+  .app-footer__copy {
+    text-align: left;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-footer__inner {
+    padding-right: 3rem;
+    padding-left: 3rem;
   }
 }
 </style>

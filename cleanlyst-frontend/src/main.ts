@@ -5,10 +5,10 @@ import router from './router'
 import { pinia } from './stores'
 import { useAuthStore } from './stores/auth'
 
-import '../src/styles/tailwind.css'
-import '../src/styles/layout.css'
-import '../src/styles/typography.css'
-import '../src/styles/styles.css'
+import './styles/tailwind.css'
+import './styles/layout.css'
+import './styles/typography.css'
+import './styles/styles.css'
 
 const app = createApp(App)
 const auth = useAuthStore(pinia)

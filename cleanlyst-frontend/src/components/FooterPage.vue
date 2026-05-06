@@ -3,7 +3,7 @@
     <div class="app-footer__inner">
       <div class="app-footer__brand">
         <router-link :to="{ name: 'Home' }" class="app-footer__logo"> Cleanlyst </router-link>
-        <p class="app-footer__copy">© 2026 Cleanlyst Marketplace.</p>
+        <p class="app-footer__copy">© 2026 cleanlyst.app</p>
       </div>
 
       <nav v-if="showFooterNav" class="app-footer__nav">

@@ -79,9 +79,11 @@
           <h2>Trusted by thousands of residents.</h2>
           <p>Our cleaners specialize in deep cleans, move-ins, and recurring weekly maintenance.</p>
         </div>
-        <a href="#" class="link-secondary"
-          >View all services <span class="material-symbols-outlined">arrow_forward</span></a
-        >
+        <router-link :to="{ name: 'Services' }">
+          <a class="link-secondary"
+            >View all services <span class="material-symbols-outlined">arrow_forward</span></a
+          >
+        </router-link>
       </div>
 
       <div class="listing-grid">
@@ -93,8 +95,8 @@
             />
           </div>
           <div class="listing-card__content">
-            <h3 class="listing-card__title">Residential Deep Clean</h3>
-            <p class="listing-card__price">From $120</p>
+            <h3 class="listing-card__title">Home Cleaning</h3>
+            <p class="listing-card__price">From £19/hr</p>
           </div>
         </article>
 
@@ -106,8 +108,8 @@
             />
           </div>
           <div class="listing-card__content">
-            <h3 class="listing-card__title">Kitchen Specialist</h3>
-            <p class="listing-card__price">From $85</p>
+            <h3 class="listing-card__title">Commercial & Office Cleaning</h3>
+            <p class="listing-card__price">From £19/hr</p>
           </div>
         </article>
 
@@ -119,8 +121,8 @@
             />
           </div>
           <div class="listing-card__content">
-            <h3 class="listing-card__title">Sanitized Bathrooms</h3>
-            <p class="listing-card__price">From $75</p>
+            <h3 class="listing-card__title">Window & Glass</h3>
+            <p class="listing-card__price">From £19/hr</p>
           </div>
         </article>
 
@@ -132,7 +134,7 @@
             />
           </div>
           <div class="listing-card__content">
-            <h3 class="listing-card__title">Post-Construction</h3>
+            <h3 class="listing-card__title">Vehicle & Mobility Cleaning</h3>
             <p class="listing-card__price">Custom Quote</p>
           </div>
         </article>
@@ -141,14 +143,15 @@
 
     <section class="cta-panel">
       <div class="callout-panel">
-        <h2>Ready for a cleaner home?</h2>
+        <h2>Start earning with Cleanlyst</h2>
         <p>
-          Join the thousands who trust Cleanlyst for their weekly maintenance. Sign up today and get
-          your first clean scheduled in under 5 minutes.
+          Join a growing network of professional cleaners and get access to consistent, high-quality
+          bookings. Set your availability, manage your schedule, and get paid reliably — all in one
+          place.
         </p>
         <div class="callout-actions">
-          <a href="#" class="button-primary">Join Waiting List</a>
-          <a href="#" class="button-secondary">Contact Support</a>
+          <a href="#" class="button-primary">Join as a Cleaner</a>
+          <a href="#" class="button-secondary">Learn More</a>
         </div>
       </div>
     </section>

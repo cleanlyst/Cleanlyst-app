@@ -16,18 +16,41 @@
       </div>
       <!-- Signup Form -->
       <div class="coming-soon-signup">
-        <form class="coming-soon-form">
-          <div class="coming-soon-form__field">
-            <label class="coming-soon-form__label" for="email">Email address</label>
-            <input
-              class="coming-soon-form__input"
-              id="email"
-              name="email"
-              placeholder="Enter your email address"
-              type="email"
-            />
+        <form class="coming-soon-form" @submit.prevent="onSubmit">
+          <div class="coming-soon-form__row">
+            <div class="coming-soon-form__field">
+              <label class="coming-soon-form__label" for="email">Email address</label>
+              <input
+                id="email"
+                v-model.trim="email"
+                class="coming-soon-form__input"
+                name="email"
+                autocomplete="email"
+                placeholder="Enter your email address"
+                type="email"
+                required
+              />
+            </div>
+            <button
+              class="coming-soon-form__button"
+              type="submit"
+              :disabled="submitting"
+              :aria-busy="submitting"
+            >
+              {{ submitting ? 'Sending…' : 'Notify Me' }}
+            </button>
           </div>
-          <button class="coming-soon-form__button" type="submit">Notify Me</button>
+          <div class="coming-soon-form__consent">
+            <input id="waitlist-consent" v-model="consent" type="checkbox" name="consent" />
+            <label for="waitlist-consent">
+              I agree to be emailed once when Cleanlyst goes live in the UK. I have read the
+              <a class="coming-soon-form__consent-link" :href="WAITLIST_PRIVACY_POLICY_URL">
+                Privacy Policy
+              </a>
+              (version {{ WAITLIST_PRIVACY_VERSION }}).
+            </label>
+          </div>
+          <p v-if="feedback" class="coming-soon-form__feedback" role="status">{{ feedback }}</p>
         </form>
         <p class="coming-soon-form__note">
           Notify me when Cleanlyst launches in my area. No spam, we promise.
@@ -73,7 +96,73 @@
   </main>
 </template>
 <script lang="ts" setup>
+import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import comingsoon from '@/assets/comingsoon.png'
+import { hasSupabaseConfig, requireSupabase } from '@/lib/supabase'
+import {
+  WAITLIST_PRIVACY_POLICY_URL,
+  WAITLIST_PRIVACY_VERSION,
+} from '@/constants/waitlist'
+
+const route = useRoute()
+const email = ref('')
+const consent = ref(false)
+const submitting = ref(false)
+const feedback = ref('')
+
+type WaitlistInterest = 'customer' | 'cleaner' | 'unknown'
+
+function interestFromRoute(): WaitlistInterest {
+  const raw = typeof route.query.intent === 'string' ? route.query.intent : ''
+  if (raw === 'customer' || raw === 'cleaner') return raw
+  return 'unknown'
+}
+
+async function onSubmit() {
+  feedback.value = ''
+
+  if (!hasSupabaseConfig) {
+    feedback.value = 'Waitlist sign-up is temporarily unavailable. Please try again later.'
+    return
+  }
+
+  if (!consent.value) {
+    feedback.value = 'Please tick the box to confirm you want a one-off launch email.'
+    return
+  }
+
+  submitting.value = true
+  try {
+    const supabase = requireSupabase()
+    const { data, error } = await supabase.rpc('submit_waitlist_signup', {
+      p_email: email.value,
+      p_interest: interestFromRoute(),
+      p_consent: true,
+      p_privacy_version: WAITLIST_PRIVACY_VERSION,
+      p_source_path: route.fullPath,
+    })
+
+    if (error) throw error
+
+    const row = Array.isArray(data) ? data[0] : data
+    const status = row && typeof row === 'object' && 'status' in row ? String(row.status) : ''
+
+    if (status === 'created') {
+      feedback.value = 'Thanks — we will email you when we go live.'
+      email.value = ''
+      consent.value = false
+    } else if (status === 'duplicate') {
+      feedback.value = 'You are already on the list.'
+    } else {
+      feedback.value = 'Please check your email address and try again.'
+    }
+  } catch {
+    feedback.value = 'Something went wrong. Please try again later.'
+  } finally {
+    submitting.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -167,6 +256,12 @@ import comingsoon from '@/assets/comingsoon.png'
   gap: 0.75rem;
 }
 
+.coming-soon-form__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .coming-soon-form__field {
   flex-grow: 1;
 }
@@ -231,6 +326,45 @@ import comingsoon from '@/assets/comingsoon.png'
   transform: scale(0.95);
 }
 
+.coming-soon-form__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.coming-soon-form__consent {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  max-width: 28rem;
+  margin: 0 auto;
+  text-align: left;
+  color: var(--secondary);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.coming-soon-form__consent input {
+  flex-shrink: 0;
+  margin-top: 0.2rem;
+}
+
+.coming-soon-form__consent-link {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.coming-soon-form__feedback {
+  margin: 0;
+  color: var(--primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
 .coming-soon-form__note {
   margin: 1rem 0 0;
   color: var(--outline);
@@ -281,8 +415,13 @@ import comingsoon from '@/assets/comingsoon.png'
 }
 
 @media (min-width: 640px) {
-  .coming-soon-form {
+  .coming-soon-form__row {
     flex-direction: row;
+    align-items: stretch;
+  }
+
+  .coming-soon-form__field {
+    flex: 1;
   }
 }
 

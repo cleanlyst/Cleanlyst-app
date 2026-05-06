@@ -1,19 +1,7 @@
 <template>
-  <div class="row no-gutter dashboard-container">
-    <section class="side-nav col-lg-2">
-      <ul class="side-nav-links">
-        <li v-for="item in navItems" :key="item.name">
-          <router-link
-            :to="{ name: item.name }"
-            class="nav-link"
-            :class="{ active: activeRouteName === item.name }"
-          >
-            {{ item.label }}
-          </router-link>
-        </li>
-      </ul>
-    </section>
-    <section class="main-page col-lg-10">
+  <div class="dashboard-layout dashboard-container">
+    <DashboardSideBar :links="cleanerDashboardLinks" />
+    <section class="main-page">
       <CleanerDashboardSection
         v-if="activeRouteName === 'CleanerDashboard'"
         :earningsToDate="earningsToDate"
@@ -60,6 +48,8 @@ import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { transitionBookingState } from '@/services/bookingService'
+import DashboardSideBar from '../components/DashboardSideBar.vue'
+import { cleanerDashboardLinks } from '../dasboardLinks'
 import CleanerDashboardSection from './components/CleanerDashboardSection.vue'
 import CleanerBookingsSection from './components/CleanerBookingsSection.vue'
 import CleanerAvailabilitySection from './components/CleanerAvailabilitySection.vue'
@@ -82,14 +72,6 @@ const route = useRoute()
 const bookings = ref<Booking[]>([])
 const loading = ref(true)
 const errorMessage = ref('')
-const navItems = [
-  { name: 'CleanerDashboard', label: 'Dashboard' },
-  { name: 'CleanerBookings', label: 'Bookings' },
-  { name: 'CleanerAvailability', label: 'Availability' },
-  { name: 'CleanerServicesPricing', label: 'Services & Pricing' },
-  { name: 'CleanerFinancials', label: 'Financials' },
-  { name: 'CleanerReviews', label: 'Reviews' },
-]
 const calendarDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const activeRouteName = computed(() =>
@@ -203,31 +185,17 @@ function formatStatus(value: string) {
 <style>
 .dashboard-container {
   min-height: calc(100vh - 90px);
-  padding: 12px;
 }
-section.side-nav.col-lg-2 {
-  border-right: 1px solid var(--grey);
+
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
 }
-ul.side-nav-links {
-  padding: 30px 8px;
-  margin: 10px 9px;
-  border-radius: 8px;
-}
-.side-nav-links li {
-  margin-bottom: 20px;
-}
-.nav-link {
-  color: var(--grey);
-  font-weight: 500;
-  text-decoration: none;
-}
-.nav-link.active {
-  color: var(--black);
-  text-decoration: underline;
-  text-underline-offset: 6px;
-}
-section.main-page.col-lg-10 {
-  padding: 10px;
+
+section.main-page {
+  width: 100%;
+  max-width: 100%;
+  padding: 1rem;
 }
 .greeting-header {
   border-bottom: 1px solid grey;
@@ -315,7 +283,7 @@ section.main-page.col-lg-10 {
 }
 @media (max-width: 768px) {
   .dashboard-container {
-    padding: 4px;
+    padding: 0;
   }
   .stats-row,
   .split-grid,
@@ -327,6 +295,17 @@ section.main-page.col-lg-10 {
   }
   .booking-actions {
     justify-content: flex-start;
+  }
+}
+
+@media (min-width: 768px) {
+  .dashboard-layout {
+    flex-direction: row;
+  }
+
+  section.main-page {
+    width: calc(100% - 16rem);
+    padding: 1.5rem;
   }
 }
 </style>

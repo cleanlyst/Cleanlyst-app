@@ -1,31 +1,7 @@
 <template>
-  <div class="row no-gutter dashboard-container">
-    <section class="side-nav col-lg-2">
-      <ul class="side-nav-links hide-mobile">
-        <li v-for="item in navItems" :key="item.name">
-          <router-link
-            :to="{ name: item.name }"
-            class="nav-link"
-            :class="{ active: activeRouteName === item.name }"
-          >
-            {{ item.label }}
-          </router-link>
-        </li>
-      </ul>
-
-      <ul class="side-nav-links hide-desktop">
-        <li v-for="item in navItems" :key="`mobile-${item.name}`">
-          <router-link
-            :to="{ name: item.name }"
-            class="nav-link mobile-nav-link"
-            :class="{ active: activeRouteName === item.name }"
-          >
-            <span class="">{{ item.label }}</span>
-          </router-link>
-        </li>
-      </ul>
-    </section>
-    <section class="main-page col-lg-10">
+  <div class="dashboard-layout dashboard-container">
+    <DashboardSideBar :links="customerDashboardLinks" />
+    <section class="main-page">
       <div class="greeting-header">
         <h2 class="h4">Manage your bookings.</h2>
         <router-link :to="{ name: 'BookCleaner' }" class="greenButton">Book a cleaner</router-link>
@@ -58,10 +34,8 @@ import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import cleanerData from '@/data/cleanerData.json'
 import fallbackPhoto from '@/assets/landingpage.png'
-import dashboardIcon from '@/assets/dashboard.png'
-import bookingsIcon from '@/assets/bookings.png'
-import preferencesIcon from '@/assets/preferences.png'
-import settingsIcon from '@/assets/settings.png'
+import DashboardSideBar from '../components/DashboardSideBar.vue'
+import { customerDashboardLinks } from '../dasboardLinks'
 import CustomerDashboardSection from './components/CustomerDashboardSection.vue'
 import CustomerBookingsSection from './components/CustomerBookingsSection.vue'
 import CustomerPreferencesSection from './components/CustomerPreferencesSection.vue'
@@ -97,12 +71,6 @@ const loading = ref(true)
 const errorMessage = ref('')
 const cleanersData = (cleanerData as CleanerDataJson).cleanersData
 const recentBookings = (cleanerData as CleanerDataJson).recentBookings
-const navItems = [
-  { name: 'CustomerDashboard', label: 'Dashboard', icon: dashboardIcon },
-  { name: 'CustomerBookings', label: 'My Bookings', icon: bookingsIcon },
-  { name: 'CustomerPreferences', label: 'Preferences', icon: preferencesIcon },
-  { name: 'CustomerSettings', label: 'Settings', icon: settingsIcon },
-]
 
 const activeRouteName = computed(() =>
   typeof route.name === 'string' ? route.name : 'CustomerDashboard',
@@ -153,31 +121,17 @@ async function loadBookings() {
 <style>
 .dashboard-container {
   min-height: calc(100vh - 90px);
-  padding: 0 12px;
 }
-section.side-nav.col-lg-2 {
-  border-right: 1px solid var(--grey);
+
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
 }
-ul.side-nav-links {
-  padding: 30px 8px;
-  margin: 10px 9px;
-  border-radius: 8px;
-}
-.side-nav-links li {
-  margin-bottom: 20px;
-}
-.nav-link {
-  color: var(--grey);
-  font-weight: 500;
-  text-decoration: none;
-}
-.nav-link.active {
-  color: var(--black);
-  text-decoration: underline;
-  text-underline-offset: 6px;
-}
-section.main-page.col-lg-10 {
-  padding: 10px;
+
+section.main-page {
+  width: 100%;
+  max-width: 100%;
+  padding: 1rem;
 }
 .greeting-header {
   display: flex;
@@ -273,10 +227,10 @@ section.main-page.col-lg-10 {
 
 @media (max-width: 768px) {
   .dashboard-container {
-    padding: 4px;
+    padding: 0;
   }
-  section.main-page.col-lg-10 {
-    padding: 3px;
+  section.main-page {
+    padding: 0.75rem;
   }
   .upcoming-booking-container,
   .recent-booking-container {
@@ -302,25 +256,6 @@ section.main-page.col-lg-10 {
     padding: 0;
     margin-bottom: 10px;
   }
-  img.side-nav-icons {
-    width: 24px;
-    filter: invert(1);
-  }
-  ul.side-nav-links.hide-desktop {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    padding: 8px 8px;
-    margin: 4px 9px;
-  }
-  .side-nav-links li {
-    margin-bottom: 0;
-  }
-  .mobile-nav-link {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
   .stats-row {
     grid-template-columns: 1fr;
   }
@@ -328,6 +263,17 @@ section.main-page.col-lg-10 {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 15px;
+  }
+}
+
+@media (min-width: 768px) {
+  .dashboard-layout {
+    flex-direction: row;
+  }
+
+  section.main-page {
+    width: calc(100% - 16rem);
+    padding: 1.5rem;
   }
 }
 </style>

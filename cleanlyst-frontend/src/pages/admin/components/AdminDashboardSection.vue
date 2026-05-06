@@ -1,11 +1,11 @@
 <template>
-  <main class="flex-grow lg:ml-64 p-6 lg:p-12">
+  <main class="flex-grow">
     <div class="max-w-6xl mx-auto">
       <header class="mb-12">
         <h1 class="font-h1 text-h1 text-on-background mb-2">Admin Dashboard</h1>
         <p class="text-secondary">Overview of marketplace performance and operations.</p>
       </header>
-      <!-- High-level Stats: Bento Grid Layout -->
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
         <div class="bg-surface-container-lowest border border-outline-variant p-padding-card">
           <div class="flex justify-between items-start mb-4">
@@ -65,7 +65,6 @@
               <button class="text-caption font-caption underline">View All</button>
             </div>
             <div class="divide-y divide-outline-variant">
-              <!-- Pending Item 1 -->
               <div
                 class="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
               >
@@ -93,7 +92,7 @@
                   </button>
                 </div>
               </div>
-              <!-- Pending Item 2 -->
+
               <div
                 class="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
               >
@@ -121,7 +120,7 @@
                   </button>
                 </div>
               </div>
-              <!-- Pending Item 3 -->
+
               <div
                 class="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
               >
@@ -161,7 +160,6 @@
               </h2>
             </div>
             <div class="p-6 space-y-6">
-              <!-- Activity 1 -->
               <div class="flex gap-4">
                 <div class="relative">
                   <div class="w-2 h-2 rounded-full bg-primary mt-2"></div>
@@ -177,7 +175,7 @@
                   </p>
                 </div>
               </div>
-              <!-- Activity 2 -->
+
               <div class="flex gap-4">
                 <div class="relative">
                   <div class="w-2 h-2 rounded-full bg-primary mt-2"></div>
@@ -193,7 +191,7 @@
                   </p>
                 </div>
               </div>
-              <!-- Activity 3 -->
+
               <div class="flex gap-4">
                 <div class="relative">
                   <div class="w-2 h-2 rounded-full bg-primary mt-2"></div>
@@ -209,7 +207,7 @@
                   </p>
                 </div>
               </div>
-              <!-- Activity 4 -->
+
               <div class="flex gap-4">
                 <div class="relative">
                   <div class="w-2 h-2 rounded-full bg-primary mt-2"></div>

@@ -23,15 +23,6 @@
         </nav>
 
         <div class="app-actions">
-          <button
-            v-if="auth.isAuthenticated"
-            class="app-account-button"
-            type="button"
-            aria-label="Account"
-          >
-            <span class="material-symbols-outlined app-account-button__icon"> account_circle </span>
-          </button>
-
           <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Login' }" class="app-action-link">
             Log in
           </router-link>

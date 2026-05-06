@@ -9,6 +9,7 @@ export const adminDashboardLinks: DashboardLinkItem[] = [
   { name: 'AdminApprovals', label: 'Applications', icon: 'person_check' },
   { name: 'AdminSubscription', label: 'Platform Fees', icon: 'account_balance_wallet' },
   { name: 'AdminFinancials', label: 'Financials', icon: 'list_alt' },
+  { name: 'BookingManagement', label: 'Booking Management', icon: 'admin_panel_settings' },
 ]
 
 export const customerDashboardLinks: DashboardLinkItem[] = [
@@ -25,4 +26,5 @@ export const cleanerDashboardLinks: DashboardLinkItem[] = [
   { name: 'CleanerServicesPricing', label: 'Services & Pricing', icon: 'sell' },
   { name: 'CleanerFinancials', label: 'Financials', icon: 'payments' },
   { name: 'CleanerReviews', label: 'Reviews', icon: 'star' },
+  { name: 'CleanerProfile', label: 'Profile', icon: 'person' },
 ]

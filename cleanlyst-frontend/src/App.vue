@@ -90,6 +90,10 @@
 
   <router-view />
   <FooterPage :compact="isComingSoonRoute" />
+
+  <div v-if="signingOut" class="logout-overlay">
+    <div class="logout-spinner"></div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -102,6 +106,7 @@ import companyLogo from '/logo.svg'
 const route = useRoute()
 const auth = useAuthStore()
 const open = ref(false)
+const signingOut = ref(false)
 const isComingSoonRoute = computed(() => route.name === 'ComingSoon')
 const dashboardRoute = computed<RouteLocationRaw>(() =>
   auth.isAuthenticated ? { name: auth.dashboardRouteName } : { name: 'Login' },
@@ -127,12 +132,13 @@ function toggleNav() {
 }
 
 async function handleSignOut() {
+  signingOut.value = true
   try {
     await auth.signOut()
   } catch {
     // ignore sign out errors
   }
-  window.location.href = '/'
+  window.location.href = '/login'
 }
 </script>
 
@@ -341,6 +347,31 @@ async function handleSignOut() {
 :global(.dark) .app-mobile-menu {
   background: #09090b;
   border-top-color: #27272a;
+}
+
+.logout-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (min-width: 768px) {

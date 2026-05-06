@@ -76,6 +76,7 @@
                   >
                     <img
                       src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIItl1G86Hb4a_z1tE2wNBHZZ4n6GRHCVaw_jm7bpKjT9D1TF3DsUMjO5HKMaahJgO_tRiJ2E7MnaY74ZJ7GE9EwrP0HIovtDFpmUteIEUXIx0Qatj2rrY39Z9ygfVWW5v3eV-p_8lrUAA0Dcx-3_x23fQwo2kRAhBx3sLF9VrAZR_l8qHmEX4DpXVhVIohrPE9mgd4DHzsCv6tdidxvN8wS6wLU0vbKVpJlTC3xKa7QTQy5aBbuIs3pUBaniRC17YUZYkdlpauw"
+                      alt=""
                       class="w-full h-full object-cover"
                     />
                   </div>
@@ -121,7 +122,7 @@
                 <button
                   class="px-3 py-1.5 font-label-md text-on-surface bg-surface-container-lowest border border-outline-variant rounded hover:bg-surface-variant transition-colors"
                 >
-                  Review Application
+                  Review
                 </button>
               </td>
             </tr>

@@ -20,7 +20,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import type { DashboardLinkItem } from '../dasboardLinks'
+import type { DashboardLinkItem } from '../pages/dasboardLinks'
 
 defineProps<{
   links: DashboardLinkItem[]
@@ -28,9 +28,7 @@ defineProps<{
 
 const route = useRoute()
 
-const activeRouteName = computed(() =>
-  typeof route.name === 'string' ? route.name : '',
-)
+const activeRouteName = computed(() => (typeof route.name === 'string' ? route.name : ''))
 </script>
 
 <style scoped>

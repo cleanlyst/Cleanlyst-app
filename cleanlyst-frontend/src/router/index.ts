@@ -166,6 +166,16 @@ const router = createRouter({
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
     },
     {
+      path: '/cleaner/dashboard/profile',
+      name: 'CleanerProfile',
+      meta: {
+        title: 'Profile',
+        requiresAuth: true,
+        requiresRole: ['cleaner_pending', 'cleaner_active'],
+      },
+      component: () => import('../pages/cleaner/CleanerDashboard.vue'),
+    },
+    {
       path: '/admin/dashboard',
       name: 'AdminDashboard',
       meta: { title: 'Admin Dashboard', requiresAuth: true, requiresRole: 'admin' },
@@ -187,6 +197,12 @@ const router = createRouter({
       path: '/admin/dashboard/financials',
       name: 'AdminFinancials',
       meta: { title: 'Admin Financials', requiresAuth: true, requiresRole: 'admin' },
+      component: () => import('../pages/admin/AdminDashboard.vue'),
+    },
+    {
+      path: '/admin/dashboard/bookingmanagement',
+      name: 'BookingManagement',
+      meta: { title: 'Booking Management', requiresAuth: true, requiresRole: 'admin' },
       component: () => import('../pages/admin/AdminDashboard.vue'),
     },
   ],

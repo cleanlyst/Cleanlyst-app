@@ -7,6 +7,7 @@
         <AdminApprovalsSection v-if="activeRouteName === 'AdminApprovals'" />
         <AdminSubscriptionSection v-if="activeRouteName === 'AdminSubscription'" />
         <AdminFinancialsSection v-if="activeRouteName === 'AdminFinancials'" />
+        <BookingManagement v-if="activeRouteName === 'BookingManagement'" />
       </div>
     </div>
   </div>
@@ -15,12 +16,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import DashboardSideBar from '../components/DashboardSideBar.vue'
+import DashboardSideBar from '../../components/DashboardSideBar.vue'
 import { adminDashboardLinks } from '../dasboardLinks'
 import AdminDashboardSection from './components/AdminDashboardSection.vue'
 import AdminApprovalsSection from './components/AdminApprovalsSection.vue'
 import AdminSubscriptionSection from './components/AdminSubscriptionSection.vue'
 import AdminFinancialsSection from './components/AdminFinancialsSection.vue'
+import BookingManagement from './components/BookingManagement.vue'
 
 const route = useRoute()
 

@@ -38,6 +38,8 @@
       />
 
       <CleanerReviewsSection v-if="activeRouteName === 'CleanerReviews'" />
+
+      <CleanerProfile v-if="activeRouteName === 'CleanerProfile'" />
     </section>
   </div>
 </template>
@@ -48,7 +50,7 @@ import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { transitionBookingState } from '@/services/bookingService'
-import DashboardSideBar from '../components/DashboardSideBar.vue'
+import DashboardSideBar from '../../components/DashboardSideBar.vue'
 import { cleanerDashboardLinks } from '../dasboardLinks'
 import CleanerDashboardSection from './components/CleanerDashboardSection.vue'
 import CleanerBookingsSection from './components/CleanerBookingsSection.vue'
@@ -56,6 +58,7 @@ import CleanerAvailabilitySection from './components/CleanerAvailabilitySection.
 import CleanerServicesPricingSection from './components/CleanerServicesPricingSection.vue'
 import CleanerFinancialsSection from './components/CleanerFinancialsSection.vue'
 import CleanerReviewsSection from './components/CleanerReviewsSection.vue'
+import CleanerProfile from './components/CleanerProfile.vue'
 import type { BookingStatus } from '@/types/domain'
 
 interface Booking {

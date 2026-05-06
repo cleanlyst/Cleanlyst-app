@@ -181,12 +181,12 @@ async function handleGoogleAuth() {
   }
 }
 
-async function redirectAfterAuth() {
+function redirectAfterAuth() {
   if (redirectTarget.value && auth.hasRole('customer')) {
-    await router.replace(redirectTarget.value)
+    window.location.href = redirectTarget.value
     return
   }
 
-  await router.replace({ name: auth.dashboardRouteName })
+  window.location.href = router.resolve({ name: auth.dashboardRouteName }).href
 }
 </script>

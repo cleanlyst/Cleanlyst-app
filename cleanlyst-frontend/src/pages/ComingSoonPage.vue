@@ -5,21 +5,13 @@
       <!-- Visual Placeholder for Market Vibe -->
       <div class="coming-soon-visual">
         <img class="coming-soon-visual__image" :src="comingsoon" alt="coming-soon" />
-        <div class="coming-soon-visual__icon-wrap">
-          <span
-            class="material-symbols-outlined coming-soon-visual__icon"
-            data-icon="cleaning_services"
-            >cleaning_services</span
-          >
-        </div>
       </div>
       <!-- Content -->
       <div class="coming-soon-content">
-        <h1>Launching soon in your city.</h1>
+        <h1>Trusted local cleaners, booked with confidence.</h1>
         <p>
-          We are building the infrastructure for professional cleaning services. Cleanlyst connects
-          vetted specialists with residents who value meticulous standards and systematic
-          reliability.
+          Cleanlyst is launching soon in your area! A simple way to book vetted, reliable cleaners
+          in your area.
         </p>
       </div>
       <!-- Signup Form -->
@@ -38,7 +30,7 @@
           <button class="coming-soon-form__button" type="submit">Notify Me</button>
         </form>
         <p class="coming-soon-form__note">
-          Be the first to know when we open bookings in your neighborhood.
+          Notify me when Cleanlyst launches in my area. No spam, we promise.
         </p>
       </div>
     </section>
@@ -52,15 +44,19 @@
           >verified_user</span
         >
         <h3>Vetted Professionals</h3>
-        <p>Every cleaner undergoes a rigorous multi-step background check and skill assessment.</p>
+        <p>
+          Every cleaner on Cleanlyst goes through a verification process before joining. Identity
+          checks, background screening, and insurance help ensure you book with confidence.
+        </p>
       </div>
       <div class="coming-soon-highlight">
         <span class="material-symbols-outlined coming-soon-highlight__icon" data-icon="schedule"
           >schedule</span
         >
-        <h3>Systematic Scheduling</h3>
+        <h3>Smart Booking</h3>
         <p>
-          Our automated dispatch system ensures punctual arrivals and consistent service windows.
+          Find cleaners based on your location, availability and needs. Bookings are simple,
+          flexible, and designed to fit around your schedule.
         </p>
       </div>
       <div class="coming-soon-highlight">
@@ -69,8 +65,8 @@
         >
         <h3>Transparent Pricing</h3>
         <p>
-          No hidden fees or complex quotes. Standardized rates based on square footage and service
-          tier.
+          Know the cost before you book. Clear hourly rates and upfront pricing mean no surprises
+          when your cleaner arrives.
         </p>
       </div>
     </section>

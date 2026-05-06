@@ -6,7 +6,7 @@
         <p class="app-footer__copy">© 2026 Cleanlyst Marketplace.</p>
       </div>
 
-      <nav class="app-footer__nav">
+      <nav v-if="showFooterNav" class="app-footer__nav">
         <router-link :to="{ name: 'About' }" class="app-footer__link"> About Us </router-link>
         <a href="#" class="app-footer__link app-footer__link--active"> Terms of Service </a>
         <a href="#" class="app-footer__link"> Privacy Policy </a>
@@ -18,6 +18,12 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const showFooterNav = computed(() => route.name !== 'ComingSoon')
+
 withDefaults(
   defineProps<{
     compact?: boolean

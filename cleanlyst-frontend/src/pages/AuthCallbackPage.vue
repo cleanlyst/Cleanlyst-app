@@ -4,9 +4,11 @@
       <p class="eyebrow">Cleanlyst sign-in</p>
       <h1>{{ errorMessage ? 'We could not finish sign-in.' : 'Finalising your session...' }}</h1>
       <p>
-        {{ errorMessage
-          ? errorMessage
-          : 'Hold tight while we complete your authentication and take you to the right dashboard.' }}
+        {{
+          errorMessage
+            ? errorMessage
+            : 'Hold tight while we complete your authentication and take you to the right dashboard.'
+        }}
       </p>
       <router-link v-if="errorMessage" :to="{ name: 'Login' }" class="blueButton">
         Back to login
@@ -36,7 +38,11 @@ onMounted(async () => {
 
     const signupRole = route.query.signupRole
     if (signupRole === 'customer' || signupRole === 'cleaner_pending') {
-      await auth.provisionOAuthSignup(signupRole)
+      const businessName = route.query.businessName
+      await auth.provisionOAuthSignup(
+        signupRole,
+        typeof businessName === 'string' ? businessName : undefined,
+      )
     }
 
     const redirect = route.query.redirect

@@ -144,23 +144,43 @@ export const useAuthStore = defineStore('auth', {
       await this.init()
     },
 
-    async signUp(email: string, password: string, fullName: string, role: PublicSignupRole) {
+    async signUp(
+      email: string,
+      password: string,
+      fullName: string,
+      role: PublicSignupRole,
+      businessName?: string,
+    ) {
       const supabase = requireSupabase()
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
             role,
+            business_name: businessName,
           },
         },
       })
 
       if (error) throw error
+
+      if (role === 'cleaner_pending' && businessName && data.session?.user) {
+        const { error: cleanerProfileError } = await supabase.from('cleaner_profiles').upsert({
+          user_id: data.session.user.id,
+          business_name: businessName,
+        })
+
+        if (cleanerProfileError) throw cleanerProfileError
+      }
     },
 
-    async signInWithGoogle(redirectPath?: string, signupRole?: PublicSignupRole) {
+    async signInWithGoogle(
+      redirectPath?: string,
+      signupRole?: PublicSignupRole,
+      businessName?: string,
+    ) {
       const supabase = requireSupabase()
       const redirectTo = new URL('/auth/callback', window.location.origin)
 
@@ -170,6 +190,10 @@ export const useAuthStore = defineStore('auth', {
 
       if (signupRole) {
         redirectTo.searchParams.set('signupRole', signupRole)
+      }
+
+      if (businessName) {
+        redirectTo.searchParams.set('businessName', businessName)
       }
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -182,7 +206,7 @@ export const useAuthStore = defineStore('auth', {
       if (error) throw error
     },
 
-    async provisionOAuthSignup(role?: PublicSignupRole) {
+    async provisionOAuthSignup(role?: PublicSignupRole, businessName?: string) {
       if (!role || !this.userId) return
 
       if (role === 'customer') {
@@ -214,7 +238,15 @@ export const useAuthStore = defineStore('auth', {
       if (!cleanerProfile) {
         const { error } = await supabase.from('cleaner_profiles').insert({
           user_id: this.userId,
+          business_name: businessName,
         })
+
+        if (error) throw error
+      } else if (businessName) {
+        const { error } = await supabase
+          .from('cleaner_profiles')
+          .update({ business_name: businessName })
+          .eq('user_id', this.userId)
 
         if (error) throw error
       }

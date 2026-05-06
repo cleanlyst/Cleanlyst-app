@@ -73,7 +73,7 @@ const router = createRouter({
       path: '/signup/cleaner',
       name: 'SignupCleaner',
       meta: { title: 'Cleaner Sign up', redirectIfAuthenticated: true },
-      component: () => import('../pages/SignupCleanerPage.vue'),
+      component: () => import('../pages/SignupPage.vue'),
     },
     {
       path: '/book',

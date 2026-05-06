@@ -203,13 +203,21 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore(pinia)
-  const hostname = window.location.hostname.toLowerCase()
-  const isLiveDomain = hostname === 'cleanlyst.co.uk' || hostname === 'www.cleanlyst.co.uk'
-  const canonicalComingSoonUrl = 'https://www.cleanlyst.co.uk/coming-soon'
 
-  if (isLiveDomain && to.path !== '/coming-soon') {
-    window.location.replace(canonicalComingSoonUrl)
-    return false
+  const hostname = window.location.hostname.toLowerCase()
+
+  const lockedDomains = [
+    'cleanlyst.co.uk',
+    'www.cleanlyst.co.uk',
+    'cleanlyst.app',
+    'www.cleanlyst.app',
+  ]
+
+  const isLockedDomain = lockedDomains.includes(hostname)
+
+  // 🔒 GLOBAL LOCK: force coming soon page
+  if (isLockedDomain && to.name !== 'ComingSoon') {
+    return { name: 'ComingSoon' }
   }
 
   if (!auth.initialized) {

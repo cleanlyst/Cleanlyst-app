@@ -44,9 +44,9 @@
             <input id="waitlist-consent" v-model="consent" type="checkbox" name="consent" />
             <label for="waitlist-consent">
               I agree to be emailed once when Cleanlyst goes live in the UK. I have read the
-              <a class="coming-soon-form__consent-link" :href="WAITLIST_PRIVACY_POLICY_URL">
+              <router-link class="coming-soon-form__consent-link" :to="WAITLIST_PRIVACY_POLICY_URL">
                 Privacy Policy
-              </a>
+              </router-link>
               (version {{ WAITLIST_PRIVACY_VERSION }}).
             </label>
           </div>
@@ -100,10 +100,7 @@ import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 import comingsoon from '@/assets/comingsoon.png'
 import { hasSupabaseConfig, requireSupabase } from '@/lib/supabase'
-import {
-  WAITLIST_PRIVACY_POLICY_URL,
-  WAITLIST_PRIVACY_VERSION,
-} from '@/constants/waitlist'
+import { WAITLIST_PRIVACY_POLICY_URL, WAITLIST_PRIVACY_VERSION } from '@/constants/waitlist'
 
 const route = useRoute()
 const email = ref('')

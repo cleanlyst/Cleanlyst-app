@@ -61,11 +61,7 @@
           <span class="th-label th-label--right">Amount</span>
           <span class="th-label">Status</span>
         </div>
-        <div
-          v-for="b in recentBookings"
-          :key="b.id"
-          class="transaction-row"
-        >
+        <div v-for="b in recentBookings" :key="b.id" class="transaction-row">
           <div class="tx-service">
             <span class="material-symbols-outlined tx-icon">cleaning_services</span>
             {{ b.service_title_snapshot ?? 'Cleaning Booking' }}

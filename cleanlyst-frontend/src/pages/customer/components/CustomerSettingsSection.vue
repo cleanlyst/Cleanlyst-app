@@ -58,12 +58,7 @@
           Profile updated successfully.
         </p>
         <p v-else-if="profileStatus === 'error'" class="save-error">{{ profileError }}</p>
-        <button
-          class="btn-primary"
-          :disabled="profileSaving"
-          type="button"
-          @click="saveProfile"
-        >
+        <button class="btn-primary" :disabled="profileSaving" type="button" @click="saveProfile">
           {{ profileSaving ? 'Saving…' : 'Save Changes' }}
         </button>
       </div>

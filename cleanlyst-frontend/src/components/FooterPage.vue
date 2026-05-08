@@ -8,6 +8,9 @@
 
       <nav v-if="showFooterNav" class="app-footer__nav">
         <router-link :to="{ name: 'About' }" class="app-footer__link"> About Us </router-link>
+        <router-link :to="{ name: 'TermsOfService' }" class="app-footer__link">
+          Terms of Service
+        </router-link>
         <router-link :to="{ name: 'PrivacyPolicy' }" class="app-footer__link">
           Privacy Policy
         </router-link>

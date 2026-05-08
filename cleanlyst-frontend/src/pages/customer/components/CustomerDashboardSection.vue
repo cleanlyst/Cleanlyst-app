@@ -5,7 +5,9 @@
         <h1 class="header-title">Welcome back, {{ auth.profile?.full_name ?? 'Cleaner' }}</h1>
       </div>
       <div>
-        <a href="#" class="button-secondary">+ Book a Cleaner</a>
+        <router-link :to="{ name: 'BookCleaner' }" class="button-secondary">
+          + Book a Cleaner
+        </router-link>
       </div>
     </section>
 

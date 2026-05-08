@@ -182,8 +182,14 @@
             <div class="mt-8 text-center">
               <p class="font-caption text-caption text-zinc-500">
                 By creating an account, you agree to our
-                <a class="underline hover:text-primary" href="#">Terms of Service</a> and
-                <a class="underline hover:text-primary" href="#">Privacy Policy</a>.
+                <router-link class="underline hover:text-primary" :to="{ name: 'TermsOfService' }">
+                  Terms of Service
+                </router-link>
+                and
+                <router-link class="underline hover:text-primary" :to="{ name: 'PrivacyPolicy' }">
+                  Privacy Policy
+                </router-link>
+                .
               </p>
             </div>
           </div>
@@ -224,8 +230,12 @@ const successMessage = ref('')
 
 const redirectTarget = computed(() => {
   const redirect = route.query.redirect
-  return typeof redirect === 'string' && redirect.startsWith('/') ? redirect : undefined
+  return typeof redirect === 'string' && isSafeRedirectPath(redirect) ? redirect : undefined
 })
+
+function isSafeRedirectPath(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('//')
+}
 
 watch(
   () => route.name,

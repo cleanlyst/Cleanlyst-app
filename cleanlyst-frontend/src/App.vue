@@ -105,11 +105,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import FooterPage from '@/components/FooterPage.vue'
-import { useRoute, type RouteLocationRaw } from 'vue-router'
+import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import companyLogo from '/logo.svg'
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 const open = ref(false)
 const signingOut = ref(false)
@@ -144,7 +145,7 @@ async function handleSignOut() {
   } catch {
     // ignore sign out errors
   }
-  window.location.href = '/login'
+  await router.replace({ name: 'Login' })
 }
 </script>
 

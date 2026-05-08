@@ -8,8 +8,12 @@
           experts, and a spotless home guaranteed.
         </p>
         <div class="hero-actions">
-          <a href="#" class="button-primary">Join Waiting List</a>
-          <a href="#" class="button-secondary">Sign Up</a>
+          <router-link :to="{ name: 'About' }" class="button-primary">
+            Join Waiting List
+          </router-link>
+          <router-link :to="{ name: 'SignupCustomer' }" class="button-secondary">
+            Sign Up
+          </router-link>
         </div>
       </div>
     </section>
@@ -79,10 +83,8 @@
           <h2>Trusted by thousands of residents.</h2>
           <p>Our cleaners specialize in deep cleans, move-ins, and recurring weekly maintenance.</p>
         </div>
-        <router-link :to="{ name: 'Services' }">
-          <a class="link-secondary"
-            >View all services <span class="material-symbols-outlined">arrow_forward</span></a
-          >
+        <router-link :to="{ name: 'Services' }" class="link-secondary">
+          View all services <span class="material-symbols-outlined">arrow_forward</span>
         </router-link>
       </div>
 
@@ -150,8 +152,10 @@
           place.
         </p>
         <div class="callout-actions">
-          <a href="#" class="button-primary">Join as a Cleaner</a>
-          <a href="#" class="button-secondary">Learn More</a>
+          <router-link :to="{ name: 'SignupCleaner' }" class="button-primary">
+            Join as a Cleaner
+          </router-link>
+          <router-link :to="{ name: 'About' }" class="button-secondary">Learn More</router-link>
         </div>
       </div>
     </section>

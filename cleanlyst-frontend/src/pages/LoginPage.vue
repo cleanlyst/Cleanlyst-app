@@ -77,7 +77,7 @@
                   >
                   <a
                     class="font-caption text-caption text-secondary hover:text-primary underline"
-                    href="#"
+                    href="mailto:support@cleanlyst.app?subject=Password%20reset"
                     >Forgot password?</a
                   >
                 </div>
@@ -151,8 +151,12 @@ const errorMessage = ref('')
 
 const redirectTarget = computed(() => {
   const redirect = route.query.redirect
-  return typeof redirect === 'string' && redirect.startsWith('/') ? redirect : undefined
+  return typeof redirect === 'string' && isSafeRedirectPath(redirect) ? redirect : undefined
 })
+
+function isSafeRedirectPath(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('//')
+}
 
 async function handleLogin() {
   errorMessage.value = ''
@@ -181,12 +185,12 @@ async function handleGoogleAuth() {
   }
 }
 
-function redirectAfterAuth() {
+async function redirectAfterAuth() {
   if (redirectTarget.value && auth.hasRole('customer')) {
-    window.location.href = redirectTarget.value
+    await router.replace(redirectTarget.value)
     return
   }
 
-  window.location.href = router.resolve({ name: auth.dashboardRouteName }).href
+  await router.replace({ name: auth.dashboardRouteName })
 }
 </script>

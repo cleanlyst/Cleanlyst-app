@@ -32,12 +32,7 @@
               class="time-option"
               :class="{ 'time-option--selected': form.preferredTime === opt.value }"
             >
-              <input
-                v-model="form.preferredTime"
-                :value="opt.value"
-                class="sr-only"
-                type="radio"
-              />
+              <input v-model="form.preferredTime" :value="opt.value" class="sr-only" type="radio" />
               <span class="time-option-name">{{ opt.label }}</span>
               <span class="time-option-desc">{{ opt.desc }}</span>
             </label>

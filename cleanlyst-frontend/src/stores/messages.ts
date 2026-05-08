@@ -3,7 +3,10 @@ import { getSupabaseClient } from '@/services/supabaseClient'
 
 export const useMessagesStore = defineStore('messages', {
   state: () => ({
-    byBooking: {} as Record<string, Array<{ id: string; body: string; created_at: string; sender_id: string }>>,
+    byBooking: {} as Record<
+      string,
+      Array<{ id: string; body: string; created_at: string; sender_id: string }>
+    >,
   }),
   actions: {
     async loadBookingMessages(bookingId: string) {

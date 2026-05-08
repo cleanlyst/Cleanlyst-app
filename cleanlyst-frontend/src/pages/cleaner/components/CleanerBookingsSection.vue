@@ -37,7 +37,9 @@
       <section class="book-section">
         <div class="section-header">
           <h2 class="section-title">Incoming Requests</h2>
-          <span v-if="pendingBookings.length" class="section-badge">{{ pendingBookings.length }}</span>
+          <span v-if="pendingBookings.length" class="section-badge">{{
+            pendingBookings.length
+          }}</span>
         </div>
         <div v-if="!pendingBookings.length" class="empty-state">
           <span class="material-symbols-outlined empty-icon">inbox</span>
@@ -49,7 +51,9 @@
             <div class="booking-body">
               <div class="booking-title-row">
                 <div>
-                  <h3 class="booking-title">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h3>
+                  <h3 class="booking-title">
+                    {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
+                  </h3>
                   <p class="booking-address">
                     <span class="material-symbols-outlined meta-icon">location_on</span>
                     {{ b.location_text }}
@@ -66,7 +70,9 @@
             </div>
             <div class="booking-ctas">
               <button class="btn-start" type="button" @click="acceptBooking(b.id)">Accept</button>
-              <button class="btn-decline" type="button" @click="declineBooking(b.id)">Decline</button>
+              <button class="btn-decline" type="button" @click="declineBooking(b.id)">
+                Decline
+              </button>
             </div>
           </article>
         </div>
@@ -87,7 +93,9 @@
             <div class="booking-body">
               <div class="booking-title-row">
                 <div>
-                  <h3 class="booking-title">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h3>
+                  <h3 class="booking-title">
+                    {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
+                  </h3>
                   <p class="booking-address">
                     <span class="material-symbols-outlined meta-icon">location_on</span>
                     {{ b.location_text }}
@@ -126,13 +134,17 @@
             <div class="booking-body">
               <div class="booking-title-row">
                 <div>
-                  <h3 class="booking-title">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h3>
+                  <h3 class="booking-title">
+                    {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
+                  </h3>
                   <p class="booking-address">
                     <span class="material-symbols-outlined meta-icon">location_on</span>
                     {{ b.location_text }}
                   </p>
                 </div>
-                <span class="status-pill" :class="statusClass(b.status)">{{ formatStatus(b.status) }}</span>
+                <span class="status-pill" :class="statusClass(b.status)">{{
+                  formatStatus(b.status)
+                }}</span>
               </div>
               <div class="booking-meta">
                 <div class="booking-meta-item">

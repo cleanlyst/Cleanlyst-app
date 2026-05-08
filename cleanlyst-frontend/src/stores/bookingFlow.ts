@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia'
 import type { BookingStatus } from '@/types/domain'
-import { getBookingRequestsForCleaner, getMyBookings, transitionBookingState } from '@/services/bookingService'
+import {
+  getBookingRequestsForCleaner,
+  getMyBookings,
+  transitionBookingState,
+} from '@/services/bookingService'
 import { createCheckoutSession } from '@/services/paymentService'
 
 export const useBookingFlowStore = defineStore('bookingFlow', {

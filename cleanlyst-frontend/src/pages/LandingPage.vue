@@ -40,6 +40,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
@@ -54,6 +55,7 @@ interface Service {
 }
 
 const auth = useAuthStore()
+const route = useRoute()
 
 const services = ref<Service[]>([])
 const loading = ref(true)
@@ -87,9 +89,29 @@ onMounted(async () => {
   }
 
   services.value = (data ?? []) as Service[]
-  selectedServiceId.value = services.value[0]?.id ?? null
+  selectedServiceId.value = preferredServiceId() ?? services.value[0]?.id ?? null
   loading.value = false
 })
+
+function preferredServiceId(): string | null {
+  const requestedService = typeof route.query.service === 'string' ? route.query.service : ''
+  if (!requestedService) return null
+
+  return (
+    services.value.find((service) => {
+      const candidates = [service.title, service.category ?? ''].map(slugify)
+      return candidates.includes(requestedService)
+    })?.id ?? null
+  )
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
 
 async function createBooking() {
   success.value = false

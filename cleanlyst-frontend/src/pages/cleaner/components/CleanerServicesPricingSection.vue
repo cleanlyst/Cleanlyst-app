@@ -26,12 +26,7 @@
     <section class="services-section">
       <div class="section-header">
         <h2 class="section-title">My Services</h2>
-        <button
-          v-if="!showAddForm"
-          class="btn-add"
-          type="button"
-          @click="openAddForm"
-        >
+        <button v-if="!showAddForm" class="btn-add" type="button" @click="openAddForm">
           <span class="material-symbols-outlined">add</span>
           Add Service
         </button>

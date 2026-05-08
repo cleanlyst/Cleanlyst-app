@@ -33,7 +33,7 @@
       <span class="material-symbols-outlined empty-icon">event_busy</span>
       <p class="empty-title">No bookings yet</p>
       <p class="empty-copy">When you book a cleaner, it will appear here.</p>
-      <a class="btn-primary" href="/book">+ Book a Cleaner</a>
+      <router-link class="btn-primary" :to="{ name: 'BookCleaner' }">+ Book a Cleaner</router-link>
     </div>
 
     <div v-else class="booking-list">
@@ -52,7 +52,9 @@
               </span>
             </div>
           </div>
-          <span class="status-pill" :class="statusClass(b.status)">{{ formatStatus(b.status) }}</span>
+          <span class="status-pill" :class="statusClass(b.status)">{{
+            formatStatus(b.status)
+          }}</span>
         </div>
         <div v-if="canCancel(b.status)" class="card-actions">
           <button class="btn-danger" type="button" @click="cancelBooking(b.id)">

@@ -2,10 +2,7 @@ import { getSupabaseClient } from '@/services/supabaseClient'
 
 const functionsBaseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
 
-async function callFunction<TPayload extends object>(
-  functionName: string,
-  payload: TPayload,
-) {
+async function callFunction<TPayload extends object>(functionName: string, payload: TPayload) {
   const supabase = getSupabaseClient()
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
   if (sessionError) throw sessionError

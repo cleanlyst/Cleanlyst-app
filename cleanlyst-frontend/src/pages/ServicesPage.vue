@@ -4,7 +4,11 @@
     <section class="hero-section">
       <div class="hero-wrapper">
         <h1 class="hero-title">Our Cleaning Services</h1>
-        <p class="hero-copy">Professional, reliable cleaning solutions tailored to your needs. From routine home upkeep to specialized industrial deep cleans, our marketplace connects you with vetted professionals for every surface.</p>
+        <p class="hero-copy">
+          Professional, reliable cleaning solutions tailored to your needs. From routine home upkeep
+          to specialized industrial deep cleans, our marketplace connects you with vetted
+          professionals for every surface.
+        </p>
         <div class="hero-divider"></div>
       </div>
     </section>
@@ -16,108 +20,188 @@
           <div>
             <span class="material-symbols-outlined service-icon" data-icon="home">home</span>
             <h2 class="service-title">Home Cleaning</h2>
-            <p class="service-description">Routine cleaning for apartments, houses, and everyday household upkeep. Includes dusting, vacuuming, and kitchen sanitation.</p>
+            <p class="service-description">
+              Routine cleaning for apartments, houses, and everyday household upkeep. Includes
+              dusting, vacuuming, and kitchen sanitation.
+            </p>
           </div>
-          <a class="service-link" href="#">
-            Learn More
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward">arrow_forward</span>
-          </a>
+          <router-link
+            class="service-link"
+            :to="{ name: 'BookCleaner', query: { service: 'home-cleaning' } }"
+          >
+            Book This Service
+            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
+              >arrow_forward</span
+            >
+          </router-link>
         </div>
         <!-- Commercial & Office Cleaning -->
         <div class="service-card">
           <div>
-            <span class="material-symbols-outlined service-icon" data-icon="corporate_fare">corporate_fare</span>
+            <span class="material-symbols-outlined service-icon" data-icon="corporate_fare"
+              >corporate_fare</span
+            >
             <h2 class="service-title">Commercial &amp; Office Cleaning</h2>
-            <p class="service-description">Reliable cleaning for offices, shops, studios, and shared workspaces. Custom schedules to fit your business hours.</p>
+            <p class="service-description">
+              Reliable cleaning for offices, shops, studios, and shared workspaces. Custom schedules
+              to fit your business hours.
+            </p>
           </div>
-          <a class="service-link" href="#">
-            Learn More
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward">arrow_forward</span>
-          </a>
+          <router-link
+            class="service-link"
+            :to="{ name: 'BookCleaner', query: { service: 'commercial-office-cleaning' } }"
+          >
+            Book This Service
+            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
+              >arrow_forward</span
+            >
+          </router-link>
         </div>
         <!-- Windows & Glass -->
         <div class="service-card">
           <div>
             <span class="material-symbols-outlined service-icon" data-icon="window">window</span>
             <h2 class="service-title">Windows &amp; Glass</h2>
-            <p class="service-description">Cleaning for windows, mirrors, partitions, and glass surfaces inside and out. Streak-free finishes for maximum clarity.</p>
+            <p class="service-description">
+              Cleaning for windows, mirrors, partitions, and glass surfaces inside and out.
+              Streak-free finishes for maximum clarity.
+            </p>
           </div>
-          <a class="service-link" href="#">
-            Learn More
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward">arrow_forward</span>
-          </a>
+          <router-link
+            class="service-link"
+            :to="{ name: 'BookCleaner', query: { service: 'windows-glass' } }"
+          >
+            Book This Service
+            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
+              >arrow_forward</span
+            >
+          </router-link>
         </div>
         <!-- Vehicle & Mobility Cleaning -->
         <div class="service-card">
           <div>
-            <span class="material-symbols-outlined service-icon" data-icon="directions_car">directions_car</span>
+            <span class="material-symbols-outlined service-icon" data-icon="directions_car"
+              >directions_car</span
+            >
             <h2 class="service-title">Vehicle &amp; Mobility Cleaning</h2>
-            <p class="service-description">Interior and surface cleaning for cars, vans, and mobility equipment. Specialized care for leather and hard surfaces.</p>
+            <p class="service-description">
+              Interior and surface cleaning for cars, vans, and mobility equipment. Specialized care
+              for leather and hard surfaces.
+            </p>
           </div>
-          <a class="service-link" href="#">
-            Learn More
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward">arrow_forward</span>
-          </a>
+          <router-link
+            class="service-link"
+            :to="{ name: 'BookCleaner', query: { service: 'vehicle-mobility-cleaning' } }"
+          >
+            Book This Service
+            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
+              >arrow_forward</span
+            >
+          </router-link>
         </div>
         <!-- Specialist Interior Cleaning -->
         <div class="service-card service-card--wide">
           <div>
             <span class="material-symbols-outlined service-icon" data-icon="texture">texture</span>
             <h2 class="service-title">Specialist Interior Cleaning</h2>
-            <p class="service-description">Focused cleaning for carpets, upholstery, mattresses, and delicate interior finishes. Advanced stain removal techniques.</p>
+            <p class="service-description">
+              Focused cleaning for carpets, upholstery, mattresses, and delicate interior finishes.
+              Advanced stain removal techniques.
+            </p>
           </div>
-          <a class="service-link" href="#">
-            Learn More
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward">arrow_forward</span>
-          </a>
+          <router-link
+            class="service-link"
+            :to="{ name: 'BookCleaner', query: { service: 'specialist-interior-cleaning' } }"
+          >
+            Book This Service
+            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
+              >arrow_forward</span
+            >
+          </router-link>
         </div>
         <!-- Exterior & Outdoor Cleaning -->
         <div class="service-card">
           <div>
             <span class="material-symbols-outlined service-icon" data-icon="deck">deck</span>
             <h2 class="service-title">Exterior &amp; Outdoor Cleaning</h2>
-            <p class="service-description">Practical cleaning for patios, driveways, garden areas, and outdoor surfaces. Power washing and seasonal maintenance.</p>
+            <p class="service-description">
+              Practical cleaning for patios, driveways, garden areas, and outdoor surfaces. Power
+              washing and seasonal maintenance.
+            </p>
           </div>
-          <a class="service-link" href="#">
-            Learn More
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward">arrow_forward</span>
-          </a>
+          <router-link
+            class="service-link"
+            :to="{ name: 'BookCleaner', query: { service: 'exterior-outdoor-cleaning' } }"
+          >
+            Book This Service
+            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
+              >arrow_forward</span
+            >
+          </router-link>
         </div>
         <!-- Bin & Waste Cleaning -->
         <div class="service-card">
           <div>
-            <span class="material-symbols-outlined service-icon" data-icon="delete_outline">delete_outline</span>
+            <span class="material-symbols-outlined service-icon" data-icon="delete_outline"
+              >delete_outline</span
+            >
             <h2 class="service-title">Bin &amp; Waste Cleaning</h2>
-            <p class="service-description">Sanitising and refreshing bins, waste storage areas, and high-use disposal spaces. Odor elimination and hygiene focus.</p>
+            <p class="service-description">
+              Sanitising and refreshing bins, waste storage areas, and high-use disposal spaces.
+              Odor elimination and hygiene focus.
+            </p>
           </div>
-          <a class="service-link" href="#">
-            Learn More
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward">arrow_forward</span>
-          </a>
+          <router-link
+            class="service-link"
+            :to="{ name: 'BookCleaner', query: { service: 'bin-waste-cleaning' } }"
+          >
+            Book This Service
+            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
+              >arrow_forward</span
+            >
+          </router-link>
         </div>
         <!-- Specialist & High-Level Services -->
         <div class="service-card">
           <div>
-            <span class="material-symbols-outlined service-icon" data-icon="architecture">architecture</span>
+            <span class="material-symbols-outlined service-icon" data-icon="architecture"
+              >architecture</span
+            >
             <h2 class="service-title">Specialist &amp; High-Level Services</h2>
-            <p class="service-description">Support for deep cleans, post-build work, and harder-to-reach areas. Professional equipment for industrial standards.</p>
+            <p class="service-description">
+              Support for deep cleans, post-build work, and harder-to-reach areas. Professional
+              equipment for industrial standards.
+            </p>
           </div>
-          <a class="service-link" href="#">
-            Learn More
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward">arrow_forward</span>
-          </a>
+          <router-link
+            class="service-link"
+            :to="{ name: 'BookCleaner', query: { service: 'specialist-high-level-services' } }"
+          >
+            Book This Service
+            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
+              >arrow_forward</span
+            >
+          </router-link>
         </div>
         <!-- Personal Item Cleaning -->
         <div class="service-card service-card--full">
           <div>
             <span class="material-symbols-outlined service-icon" data-icon="apparel">apparel</span>
             <h2 class="service-title">Personal Item Cleaning</h2>
-            <p class="service-description">Care for selected personal items such as trainers, bags, curtains, and more. Detailed restoration for items that require a professional touch.</p>
+            <p class="service-description">
+              Care for selected personal items such as trainers, bags, curtains, and more. Detailed
+              restoration for items that require a professional touch.
+            </p>
           </div>
-          <a class="service-link" href="#">
-            Learn More
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward">arrow_forward</span>
-          </a>
+          <router-link
+            class="service-link"
+            :to="{ name: 'BookCleaner', query: { service: 'personal-item-cleaning' } }"
+          >
+            Book This Service
+            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
+              >arrow_forward</span
+            >
+          </router-link>
         </div>
       </div>
     </section>
@@ -127,14 +211,24 @@
         <div class="promo-content">
           <p class="promo-label">Professional Network</p>
           <h2 class="promo-title">Can't find what you're looking for?</h2>
-          <p class="promo-copy">Our network of cleaners is diverse. We offer bespoke quotes for unique cleaning requirements. Get in touch with our support team today.</p>
+          <p class="promo-copy">
+            Our network of cleaners is diverse. We offer bespoke quotes for unique cleaning
+            requirements. Get in touch with our support team today.
+          </p>
           <div class="promo-actions">
-            <button class="btn-primary">Request a Quote</button>
-            <button class="btn-outline">Contact Support</button>
+            <router-link class="btn-primary" :to="{ name: 'BookCleaner' }"
+              >Request a Quote</router-link
+            >
+            <a class="btn-outline" href="mailto:support@cleanlyst.app">Contact Support</a>
           </div>
         </div>
         <div class="promo-media">
-          <img alt="Professional Cleaning Supplies" class="promo-img" data-alt="A macro shot of a perfectly organized collection of professional cleaning tools and supplies, including microfiber cloths, neutral-colored spray bottles, and soft brushes. The scene is shot in a high-key, minimalist studio with bright, soft directional light casting gentle shadows. The color palette is strictly monochromatic, dominated by whites, light greys, and matte blacks, reflecting a modern and professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDp26spW589Zr6HLccfQ4gAwOfTQ8W_AdJjic_wVw-gXM8Lmft_ck81eym4fHyqw1jiuS5FEkfOCs33bZzeR4AQv7AoQQNNyEuATxdldqrq5-4QLbw8RPhWF_NrZdyKFNdTKz8HHulcw8E0aiwL7meqAh9e3VwLrLY1QMMbw3xmK6pR-y4DFZexssGQz3v3Uvt8MufhYOctrY5kdlsLJ8eu4Zl5Bf7dLw-dt6omNy_kAKCEX7kieXV3In9jltDeg96zBZ2qeNvjrw" />
+          <img
+            alt="Professional Cleaning Supplies"
+            class="promo-img"
+            data-alt="A macro shot of a perfectly organized collection of professional cleaning tools and supplies, including microfiber cloths, neutral-colored spray bottles, and soft brushes. The scene is shot in a high-key, minimalist studio with bright, soft directional light casting gentle shadows. The color palette is strictly monochromatic, dominated by whites, light greys, and matte blacks, reflecting a modern and professional aesthetic."
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDp26spW589Zr6HLccfQ4gAwOfTQ8W_AdJjic_wVw-gXM8Lmft_ck81eym4fHyqw1jiuS5FEkfOCs33bZzeR4AQv7AoQQNNyEuATxdldqrq5-4QLbw8RPhWF_NrZdyKFNdTKz8HHulcw8E0aiwL7meqAh9e3VwLrLY1QMMbw3xmK6pR-y4DFZexssGQz3v3Uvt8MufhYOctrY5kdlsLJ8eu4Zl5Bf7dLw-dt6omNy_kAKCEX7kieXV3In9jltDeg96zBZ2qeNvjrw"
+          />
         </div>
       </div>
     </section>

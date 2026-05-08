@@ -4,5 +4,4 @@
  */
 export const WAITLIST_PRIVACY_VERSION = '2026-05-06'
 
-/** Replace with your live privacy URL when available. */
-export const WAITLIST_PRIVACY_POLICY_URL = '#'
+export const WAITLIST_PRIVACY_POLICY_URL = '/privacy-policy'

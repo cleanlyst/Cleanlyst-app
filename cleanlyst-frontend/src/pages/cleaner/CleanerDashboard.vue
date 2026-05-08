@@ -177,7 +177,8 @@ async function markCompleted(id: string) {
     await transitionBookingState(id, 'completion_pending_customer')
     await loadBookings()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Failed to mark booking as completed.'
+    errorMessage.value =
+      error instanceof Error ? error.message : 'Failed to mark booking as completed.'
   }
 }
 

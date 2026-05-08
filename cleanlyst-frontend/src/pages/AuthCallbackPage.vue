@@ -46,7 +46,7 @@ onMounted(async () => {
     }
 
     const redirect = route.query.redirect
-    if (typeof redirect === 'string' && redirect.startsWith('/') && auth.hasRole('customer')) {
+    if (typeof redirect === 'string' && isSafeRedirectPath(redirect) && auth.hasRole('customer')) {
       await router.replace(redirect)
       return
     }
@@ -56,6 +56,10 @@ onMounted(async () => {
     errorMessage.value = error instanceof Error ? error.message : 'Something went wrong.'
   }
 })
+
+function isSafeRedirectPath(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('//')
+}
 </script>
 
 <style scoped>

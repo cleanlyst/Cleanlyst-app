@@ -18,7 +18,8 @@
               :key="n"
               class="material-symbols-outlined star-icon"
               :class="n <= Math.round(avgRating) ? 'star-icon--filled' : 'star-icon--empty'"
-            >star</span>
+              >star</span
+            >
           </div>
           <p class="rating-count">
             {{ reviewCount }} {{ reviewCount === 1 ? 'review' : 'reviews' }}
@@ -29,10 +30,7 @@
             <span class="bar-label">{{ n }}</span>
             <span class="material-symbols-outlined bar-star">star</span>
             <div class="bar-track">
-              <div
-                class="bar-fill"
-                :style="{ width: barWidth(n) }"
-              ></div>
+              <div class="bar-fill" :style="{ width: barWidth(n) }"></div>
             </div>
             <span class="bar-count">{{ ratingBuckets[n] ?? 0 }}</span>
           </div>
@@ -75,7 +73,8 @@
                 :key="n"
                 class="material-symbols-outlined review-star"
                 :class="n <= r.rating ? 'review-star--filled' : 'review-star--empty'"
-              >star</span>
+                >star</span
+              >
             </div>
           </div>
           <p v-if="r.comment" class="review-comment">{{ r.comment }}</p>

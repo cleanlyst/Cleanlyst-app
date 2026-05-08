@@ -82,6 +82,12 @@ const router = createRouter({
       component: () => import('../components/PrivacyPolicy.vue'),
     },
     {
+      path: '/terms-of-service',
+      name: 'TermsOfService',
+      meta: { title: 'Terms of Service' },
+      component: () => import('../components/TermsOfService.vue'),
+    },
+    {
       path: '/book',
       name: 'BookCleaner',
       meta: { title: 'Book a Cleaner', requiresAuth: true, requiresRole: 'customer' },
@@ -211,6 +217,11 @@ const router = createRouter({
       meta: { title: 'Booking Management', requiresAuth: true, requiresRole: 'admin' },
       component: () => import('../pages/admin/AdminDashboard.vue'),
     },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      redirect: { name: 'Home' },
+    },
   ],
   scrollBehavior(to) {
     if (to.hash) {
@@ -238,7 +249,13 @@ router.beforeEach(async (to) => {
   const isLockedDomain = lockedDomains.includes(hostname)
 
   // 🔒 GLOBAL LOCK: force coming soon page
-  if (isLockedDomain && to.name !== 'ComingSoon') {
+  const lockedDomainAllowedRoutes = ['ComingSoon', 'PrivacyPolicy', 'TermsOfService']
+
+  if (
+    isLockedDomain &&
+    typeof to.name === 'string' &&
+    !lockedDomainAllowedRoutes.includes(to.name)
+  ) {
     return { name: 'ComingSoon' }
   }
 

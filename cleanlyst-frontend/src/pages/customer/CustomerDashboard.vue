@@ -2,11 +2,6 @@
   <div class="dashboard-layout dashboard-container">
     <DashboardSideBar :links="customerDashboardLinks" />
     <section class="main-page">
-      <div class="greeting-header">
-        <h2 class="h4">Manage your bookings.</h2>
-        <router-link :to="{ name: 'BookCleaner' }" class="greenButton">Book a cleaner</router-link>
-      </div>
-
       <CustomerDashboardSection
         v-if="activeRouteName === 'CustomerDashboard'"
         :cleanersData="cleanersData"
@@ -17,7 +12,11 @@
 
       <CustomerBookingsSection
         v-if="activeRouteName === 'CustomerBookings'"
+        :bookings="bookings"
         :bookingTotals="bookingTotals"
+        :loading="loading"
+        :errorMessage="errorMessage"
+        :cancelBooking="cancelBooking"
       />
 
       <CustomerPreferencesSection v-if="activeRouteName === 'CustomerPreferences'" />
@@ -86,6 +85,21 @@ const bookingTotals = computed(() => ({
 onMounted(async () => {
   await loadBookings()
 })
+
+async function cancelBooking(id: string) {
+  try {
+    const supabase = requireSupabase()
+    const { error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', id)
+      .eq('customer_id', auth.userId)
+    if (error) throw error
+    await loadBookings()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : 'Failed to cancel booking.'
+  }
+}
 
 async function loadBookings() {
   loading.value = true

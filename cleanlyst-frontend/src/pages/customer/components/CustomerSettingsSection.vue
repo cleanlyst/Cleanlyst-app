@@ -1,6 +1,559 @@
 <template>
-  <div class="section-card">
-    <p class="boldFont">Settings</p>
-    <p class="small">Manage profile details, contact preferences, and account security.</p>
-  </div>
+  <main class="page-main">
+    <section class="page-header">
+      <div>
+        <h1 class="header-title">Settings</h1>
+        <p class="header-sub">Manage your account details and security.</p>
+      </div>
+    </section>
+
+    <!-- Personal Information -->
+    <div class="form-card">
+      <h2 class="card-heading">Personal Information</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="fullName">Full Name</label>
+          <input
+            id="fullName"
+            v-model="profileForm.fullName"
+            class="form-input"
+            type="text"
+            placeholder="Your full name"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="phone">Phone Number</label>
+          <input
+            id="phone"
+            v-model="profileForm.phone"
+            class="form-input"
+            type="tel"
+            placeholder="+44 7700 000000"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="city">City</label>
+          <input
+            id="city"
+            v-model="profileForm.city"
+            class="form-input"
+            type="text"
+            placeholder="Your city"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="country">Country</label>
+          <input
+            id="country"
+            v-model="profileForm.country"
+            class="form-input"
+            type="text"
+            placeholder="Your country"
+          />
+        </div>
+      </div>
+      <div class="card-footer">
+        <p v-if="profileStatus === 'success'" class="save-success">
+          <span class="material-symbols-outlined save-icon">check_circle</span>
+          Profile updated successfully.
+        </p>
+        <p v-else-if="profileStatus === 'error'" class="save-error">{{ profileError }}</p>
+        <button
+          class="btn-primary"
+          :disabled="profileSaving"
+          type="button"
+          @click="saveProfile"
+        >
+          {{ profileSaving ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Email Address -->
+    <div class="form-card">
+      <h2 class="card-heading">Email Address</h2>
+      <div class="form-group form-group--last">
+        <label class="form-label" for="email">Email</label>
+        <input
+          id="email"
+          :value="userEmail"
+          class="form-input form-input--readonly"
+          readonly
+          type="email"
+        />
+        <p class="field-hint">To change your email address, please contact support.</p>
+      </div>
+    </div>
+
+    <!-- Change Password -->
+    <div class="form-card">
+      <h2 class="card-heading">Change Password</h2>
+      <div class="form-group">
+        <label class="form-label" for="newPassword">New Password</label>
+        <input
+          id="newPassword"
+          v-model="passwordForm.newPassword"
+          class="form-input"
+          type="password"
+          placeholder="At least 8 characters"
+        />
+      </div>
+      <div class="form-group form-group--last">
+        <label class="form-label" for="confirmPassword">Confirm New Password</label>
+        <input
+          id="confirmPassword"
+          v-model="passwordForm.confirmPassword"
+          class="form-input"
+          type="password"
+          placeholder="Repeat your new password"
+        />
+        <p v-if="passwordMismatch" class="field-error">Passwords do not match.</p>
+      </div>
+      <div class="card-footer">
+        <p v-if="passwordStatus === 'success'" class="save-success">
+          <span class="material-symbols-outlined save-icon">check_circle</span>
+          Password updated successfully.
+        </p>
+        <p v-else-if="passwordStatus === 'error'" class="save-error">{{ passwordError }}</p>
+        <button
+          class="btn-primary"
+          :disabled="passwordSaving || !canChangePassword"
+          type="button"
+          @click="savePassword"
+        >
+          {{ passwordSaving ? 'Updating…' : 'Update Password' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="form-card">
+      <h2 class="card-heading">Notifications</h2>
+      <div class="toggle-list">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <p class="toggle-label">Email Notifications</p>
+            <p class="toggle-desc">Receive booking confirmations and updates via email</p>
+          </div>
+          <button
+            class="toggle-btn"
+            :class="{ 'toggle-btn--on': notifications.email }"
+            type="button"
+            :aria-pressed="notifications.email"
+            @click="notifications.email = !notifications.email"
+          >
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
+        <div class="toggle-row toggle-row--last">
+          <div class="toggle-info">
+            <p class="toggle-label">SMS Reminders</p>
+            <p class="toggle-desc">Receive a text reminder before each scheduled clean</p>
+          </div>
+          <button
+            class="toggle-btn"
+            :class="{ 'toggle-btn--on': notifications.sms }"
+            type="button"
+            :aria-pressed="notifications.sms"
+            @click="notifications.sms = !notifications.sms"
+          >
+            <span class="toggle-knob"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
 </template>
+
+<script setup lang="ts">
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { requireSupabase } from '@/lib/supabase'
+
+const auth = useAuthStore()
+
+const userEmail = ref('')
+const profileSaving = ref(false)
+const profileStatus = ref<'idle' | 'success' | 'error'>('idle')
+const profileError = ref('')
+
+const passwordSaving = ref(false)
+const passwordStatus = ref<'idle' | 'success' | 'error'>('idle')
+const passwordError = ref('')
+
+const profileForm = reactive({
+  fullName: auth.profile?.full_name ?? '',
+  phone: auth.profile?.phone ?? '',
+  city: auth.profile?.city ?? '',
+  country: auth.profile?.country ?? '',
+})
+
+const passwordForm = reactive({
+  newPassword: '',
+  confirmPassword: '',
+})
+
+const notifications = reactive({
+  email: true,
+  sms: false,
+})
+
+const passwordMismatch = computed(
+  () =>
+    passwordForm.confirmPassword.length > 0 &&
+    passwordForm.newPassword !== passwordForm.confirmPassword,
+)
+
+const canChangePassword = computed(
+  () =>
+    passwordForm.newPassword.length >= 8 &&
+    passwordForm.newPassword === passwordForm.confirmPassword,
+)
+
+onMounted(async () => {
+  const supabase = requireSupabase()
+  const { data } = await supabase.auth.getUser()
+  userEmail.value = data.user?.email ?? ''
+})
+
+async function saveProfile() {
+  if (!auth.userId) return
+  profileSaving.value = true
+  profileStatus.value = 'idle'
+  profileError.value = ''
+  try {
+    const supabase = requireSupabase()
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        full_name: profileForm.fullName,
+        phone: profileForm.phone || null,
+        city: profileForm.city || null,
+        country: profileForm.country || null,
+      })
+      .eq('id', auth.userId)
+    if (error) throw error
+    await auth.init()
+    profileStatus.value = 'success'
+    setTimeout(() => {
+      profileStatus.value = 'idle'
+    }, 3000)
+  } catch (err) {
+    profileStatus.value = 'error'
+    profileError.value = err instanceof Error ? err.message : 'Failed to update profile.'
+  } finally {
+    profileSaving.value = false
+  }
+}
+
+async function savePassword() {
+  if (!canChangePassword.value) return
+  passwordSaving.value = true
+  passwordStatus.value = 'idle'
+  passwordError.value = ''
+  try {
+    const supabase = requireSupabase()
+    const { error } = await supabase.auth.updateUser({ password: passwordForm.newPassword })
+    if (error) throw error
+    passwordForm.newPassword = ''
+    passwordForm.confirmPassword = ''
+    passwordStatus.value = 'success'
+    setTimeout(() => {
+      passwordStatus.value = 'idle'
+    }, 3000)
+  } catch (err) {
+    passwordStatus.value = 'error'
+    passwordError.value = err instanceof Error ? err.message : 'Failed to update password.'
+  } finally {
+    passwordSaving.value = false
+  }
+}
+</script>
+
+<style scoped>
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+}
+
+.page-main {
+  padding: 2rem 1.5rem 6rem;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.header-title {
+  font-family: var(--font-h2);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--on-surface, #1a1c1c);
+  margin: 0 0 0.25rem;
+}
+
+.header-sub {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
+
+/* ── Form card ── */
+.form-card {
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: #ffffff;
+  border-radius: 0.25rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-heading {
+  font-family: var(--font-label-md);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: var(--on-surface, #1a1c1c);
+  margin: 0 0 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--surface-container, #eeeeee);
+}
+
+/* ── Form grid ── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+/* ── Form groups ── */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group--last {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-family: var(--font-label-md);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: var(--on-surface, #1a1c1c);
+  margin-bottom: 0.5rem;
+}
+
+/* ── Inputs ── */
+.form-input {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  border-radius: 0.25rem;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--on-surface, #1a1c1c);
+  background: #ffffff;
+  transition: border-color 200ms ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: var(--primary, #000000);
+}
+
+.form-input--readonly {
+  background: var(--surface-container, #eeeeee);
+  color: var(--secondary, #5e5e5e);
+  cursor: not-allowed;
+}
+
+/* ── Field hints ── */
+.field-hint {
+  font-family: var(--font-caption);
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0.375rem 0 0;
+}
+
+.field-error {
+  font-family: var(--font-caption);
+  font-size: 12px;
+  color: var(--error, #ba1a1a);
+  margin: 0.375rem 0 0;
+}
+
+/* ── Card footer ── */
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--surface-container, #eeeeee);
+}
+
+/* ── Toggle list ── */
+.toggle-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--surface-container, #eeeeee);
+}
+
+.toggle-row--last {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.toggle-info {
+  flex: 1;
+}
+
+.toggle-label {
+  font-family: var(--font-label-md);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--on-surface, #1a1c1c);
+  margin: 0 0 0.125rem;
+}
+
+.toggle-desc {
+  font-family: var(--font-caption);
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
+
+.toggle-btn {
+  width: 3rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: var(--surface-container, #eeeeee);
+  position: relative;
+  cursor: pointer;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.toggle-btn--on {
+  background: var(--primary, #000000);
+  border-color: var(--primary, #000000);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  transform: translateY(-50%);
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: left 200ms ease;
+  pointer-events: none;
+}
+
+.toggle-btn--on .toggle-knob {
+  left: calc(100% - 19px);
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.5rem;
+  background: #000000;
+  color: #ffffff;
+  border: 1px solid #000000;
+  border-radius: var(--radius, 0.25rem);
+  font-family: var(--font-label-md);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 200ms ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.85;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Feedback ── */
+.save-success {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-caption);
+  font-size: 13px;
+  color: #2e7d32;
+  margin: 0;
+}
+
+.save-error {
+  font-family: var(--font-caption);
+  font-size: 13px;
+  color: var(--error, #ba1a1a);
+  margin: 0;
+}
+
+.save-icon {
+  font-size: 1rem;
+}
+
+@media (min-width: 640px) {
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-main {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+</style>

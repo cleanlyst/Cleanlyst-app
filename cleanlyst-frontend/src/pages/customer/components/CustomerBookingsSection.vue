@@ -1,26 +1,79 @@
 <template>
-  <div class="section-card">
-    <p class="boldFont">My bookings</p>
-    <p class="small">Track your pending, confirmed, and completed bookings in one place.</p>
+  <main class="page-main">
+    <section class="page-header">
+      <div>
+        <h1 class="header-title">My Bookings</h1>
+        <p class="header-sub">Track your pending, confirmed and completed bookings.</p>
+      </div>
+    </section>
+
     <div class="stats-row">
       <div class="stat-tile">
-        <p class="small no-margin">Pending approval</p>
-        <p class="boldFont no-margin">{{ bookingTotals.pending }}</p>
+        <p class="stat-label">Pending Approval</p>
+        <p class="stat-value">{{ bookingTotals.pending }}</p>
       </div>
       <div class="stat-tile">
-        <p class="small no-margin">Upcoming bookings</p>
-        <p class="boldFont no-margin">{{ bookingTotals.accepted }}</p>
+        <p class="stat-label">Upcoming</p>
+        <p class="stat-value">{{ bookingTotals.accepted }}</p>
       </div>
       <div class="stat-tile">
-        <p class="small no-margin">Completed</p>
-        <p class="boldFont no-margin">{{ bookingTotals.completed }}</p>
+        <p class="stat-label">Completed</p>
+        <p class="stat-value">{{ bookingTotals.completed }}</p>
       </div>
     </div>
-  </div>
+
+    <p v-if="errorMessage" class="error-msg">{{ errorMessage }}</p>
+
+    <div v-if="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Loading your bookings…</p>
+    </div>
+
+    <div v-else-if="bookings.length === 0" class="empty-state">
+      <span class="material-symbols-outlined empty-icon">event_busy</span>
+      <p class="empty-title">No bookings yet</p>
+      <p class="empty-copy">When you book a cleaner, it will appear here.</p>
+      <a class="btn-primary" href="/book">+ Book a Cleaner</a>
+    </div>
+
+    <div v-else class="booking-list">
+      <article v-for="b in bookings" :key="b.id" class="booking-card">
+        <div class="card-top">
+          <div class="card-info">
+            <h3 class="card-title">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h3>
+            <div class="card-meta">
+              <span class="meta-item">
+                <span class="material-symbols-outlined meta-icon">calendar_today</span>
+                {{ formatDate(b.scheduled_start) }}
+              </span>
+              <span class="meta-item">
+                <span class="material-symbols-outlined meta-icon">location_on</span>
+                {{ b.location_text }}
+              </span>
+            </div>
+          </div>
+          <span class="status-pill" :class="statusClass(b.status)">{{ formatStatus(b.status) }}</span>
+        </div>
+        <div v-if="canCancel(b.status)" class="card-actions">
+          <button class="btn-danger" type="button" @click="cancelBooking(b.id)">
+            Cancel Booking
+          </button>
+        </div>
+      </article>
+    </div>
+  </main>
 </template>
 
 <script setup lang="ts">
 import type { PropType } from 'vue'
+
+interface BookingSummary {
+  id: string
+  service_title_snapshot: string | null
+  location_text: string
+  scheduled_start: string
+  status: string
+}
 
 interface BookingTotals {
   pending: number
@@ -29,9 +82,355 @@ interface BookingTotals {
 }
 
 defineProps({
+  bookings: { type: Array as PropType<BookingSummary[]>, default: () => [] },
   bookingTotals: {
     type: Object as PropType<BookingTotals>,
-    required: true,
+    default: () => ({ pending: 0, accepted: 0, completed: 0 }),
+  },
+  loading: { type: Boolean, default: false },
+  errorMessage: { type: String, default: '' },
+  cancelBooking: {
+    type: Function as PropType<(id: string) => Promise<void>>,
+    default: () => {},
   },
 })
+
+function formatDate(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.valueOf())) return 'Invalid date'
+  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+}
+
+function formatStatus(value: string): string {
+  return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function statusClass(status: string): string {
+  const map: Record<string, string> = {
+    pending: 'status-pill--pending',
+    accepted: 'status-pill--active',
+    paid: 'status-pill--active',
+    in_progress: 'status-pill--active',
+    completed: 'status-pill--completed',
+    cancelled: 'status-pill--cancelled',
+    declined: 'status-pill--cancelled',
+  }
+  return map[status] ?? ''
+}
+
+function canCancel(status: string): boolean {
+  return ['pending', 'accepted'].includes(status)
+}
 </script>
+
+<style scoped>
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+}
+
+.page-main {
+  padding: 2rem 1.5rem 6rem;
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.header-title {
+  font-family: var(--font-h2);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--on-surface, #1a1c1c);
+  margin: 0 0 0.25rem;
+}
+
+.header-sub {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
+
+/* ── Stats ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-tile {
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: #ffffff;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.25rem;
+}
+
+.stat-label {
+  font-family: var(--font-caption);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--secondary, #5e5e5e);
+  margin: 0 0 0.5rem;
+}
+
+.stat-value {
+  font-family: var(--font-h2);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--on-surface, #1a1c1c);
+  margin: 0;
+}
+
+/* ── Error ── */
+.error-msg {
+  color: var(--error, #ba1a1a);
+  font-family: var(--font-body);
+  font-size: 14px;
+  margin-bottom: 1rem;
+}
+
+/* ── Loading ── */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 0;
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--outline-variant, #c4c7c7);
+  border-top-color: var(--primary, #000000);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
+
+/* ── Empty state ── */
+.empty-state {
+  border: 1px dashed var(--outline-variant, #c4c7c7);
+  border-radius: 0.25rem;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  color: var(--outline-variant, #c4c7c7);
+  display: block;
+  margin: 0 auto 1rem;
+}
+
+.empty-title {
+  font-family: var(--font-label-md);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--on-surface, #1a1c1c);
+  margin: 0 0 0.5rem;
+}
+
+.empty-copy {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0 0 1.5rem;
+}
+
+/* ── Booking list ── */
+.booking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.booking-card {
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: #ffffff;
+  border-radius: 0.25rem;
+  padding: 1.25rem 1.5rem;
+  transition: border-color 200ms ease;
+}
+
+.booking-card:hover {
+  border-color: var(--primary, #000000);
+}
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.card-info {
+  flex: 1;
+}
+
+.card-title {
+  font-family: var(--font-label-md);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--on-surface, #1a1c1c);
+  margin: 0 0 0.5rem;
+}
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-family: var(--font-caption);
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
+}
+
+.meta-icon {
+  font-size: 0.875rem;
+}
+
+/* ── Status pills ── */
+.status-pill {
+  border-radius: 999px;
+  padding: 0.25rem 0.625rem;
+  font-family: var(--font-caption);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-pill--pending {
+  background: #fff8e1;
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+
+.status-pill--active {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+
+.status-pill--completed {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+
+.status-pill--cancelled {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+/* ── Card actions ── */
+.card-actions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--surface-container, #eeeeee);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.5rem;
+  background: #000000;
+  color: #ffffff;
+  border: 1px solid #000000;
+  border-radius: var(--radius, 0.25rem);
+  font-family: var(--font-label-md);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 200ms ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.85;
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--error, #ba1a1a);
+  border: 1px solid var(--error, #ba1a1a);
+  border-radius: var(--radius, 0.25rem);
+  font-family: var(--font-caption);
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.btn-danger:hover {
+  background: #ffebee;
+}
+
+@media (max-width: 768px) {
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .card-top {
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-main {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+</style>

@@ -18,6 +18,7 @@
         :bookings="bookings"
         :acceptBooking="acceptBooking"
         :declineBooking="declineBooking"
+        :markCompleted="markCompleted"
         :formatDate="formatDate"
         :formatStatus="formatStatus"
       />
@@ -168,6 +169,15 @@ async function declineBooking(id: string) {
     await loadBookings()
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Failed to decline booking.'
+  }
+}
+
+async function markCompleted(id: string) {
+  try {
+    await transitionBookingState(id, 'completion_pending_customer')
+    await loadBookings()
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : 'Failed to mark booking as completed.'
   }
 }
 

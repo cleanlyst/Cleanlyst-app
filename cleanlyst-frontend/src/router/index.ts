@@ -76,6 +76,12 @@ const router = createRouter({
       component: () => import('../pages/SignupPage.vue'),
     },
     {
+      path: '/privacy-policy',
+      name: 'PrivacyPolicy',
+      meta: { title: 'Privacy Policy' },
+      component: () => import('../components/PrivacyPolicy.vue'),
+    },
+    {
       path: '/book',
       name: 'BookCleaner',
       meta: { title: 'Book a Cleaner', requiresAuth: true, requiresRole: 'customer' },

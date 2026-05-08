@@ -9,6 +9,7 @@
         </div>
         <nav class="app-nav" aria-label="Primary site navigation">
           <router-link
+            v-if="auth.isAuthenticated"
             :to="dashboardRoute"
             :class="['app-nav__link', { 'app-nav__link--active': isDashboardRoute }]"
           >
@@ -24,7 +25,11 @@
 
         <div class="app-actions">
           <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Login' }" class="app-action-link">
-            Log in
+            <button
+              class="flex-1 md:flex-none px-4 py-2 border border-outline-variant text-label-md font-label-md hover:bg-surface-container transition-colors"
+            >
+              Login
+            </button>
           </router-link>
           <router-link
             v-if="!auth.isAuthenticated"
@@ -37,7 +42,7 @@
           <button
             v-if="auth.isAuthenticated"
             type="button"
-            class="app-action-link"
+            class="flex-1 md:flex-none px-4 py-2 border border-outline-variant text-label-md font-label-md hover:bg-surface-container transition-colors"
             @click="handleSignOut"
           >
             Logout
@@ -54,6 +59,7 @@
       <div v-if="open" class="app-mobile-menu">
         <nav class="app-mobile-menu__nav" aria-label="Mobile navigation">
           <router-link
+            v-if="auth.isAuthenticated"
             :to="dashboardRoute"
             :class="['app-nav__link', { 'app-nav__link--active': isDashboardRoute }]"
           >
@@ -239,10 +245,6 @@ async function handleSignOut() {
   transition:
     background-color 200ms ease,
     transform 150ms ease;
-}
-
-.app-action-link:hover {
-  background: #fafafa;
 }
 
 .app-action-link:active {

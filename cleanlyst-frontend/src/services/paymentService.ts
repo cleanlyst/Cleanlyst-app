@@ -1,8 +1,38 @@
+import type { BookingStatus } from '@/types/domain'
 import { getSupabaseClient } from '@/services/supabaseClient'
+
+// ─── Direct Supabase query helpers ───────────────────────────
+
+export interface Transaction {
+  id: string
+  booking_id: string
+  payment_id: string | null
+  stripe_payment_intent_id: string | null
+  amount: number
+  currency: string
+  payment_status: BookingStatus
+  created_at: string
+}
+
+export async function getBookingTransaction(bookingId: string): Promise<Transaction | null> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('id, booking_id, payment_id, stripe_payment_intent_id, amount, currency, payment_status, created_at')
+    .eq('booking_id', bookingId)
+    .maybeSingle()
+  if (error) throw error
+  return data as Transaction | null
+}
+
+// ─── Edge Function call wrappers ─────────────────────────────
 
 const functionsBaseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
 
-async function callFunction<TPayload extends object>(functionName: string, payload: TPayload) {
+async function callFunction<TResponse = unknown, TPayload extends object = object>(
+  functionName: string,
+  payload: TPayload,
+): Promise<TResponse> {
   const supabase = getSupabaseClient()
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
   if (sessionError) throw sessionError
@@ -24,13 +54,126 @@ async function callFunction<TPayload extends object>(functionName: string, paylo
     throw new Error(data.error ?? 'Function call failed')
   }
 
-  return data
+  return data as TResponse
 }
 
-export async function createCheckoutSession(bookingId: string) {
-  return callFunction('create-checkout-session', { booking_id: bookingId })
+export interface CreatePaymentIntentResult {
+  client_secret: string
+  payment_intent_id: string
+  amount_cents: number
+  currency: string
 }
 
-export async function releasePayout(bookingId: string) {
-  return callFunction('release-payout', { booking_id: bookingId })
+export async function createPaymentIntent(bookingId: string): Promise<CreatePaymentIntentResult> {
+  return callFunction('create-payment-intent', { booking_id: bookingId })
+}
+
+export interface ProcessPayoutResult {
+  payout_id: string
+  stripe_transfer_id: string
+  amount_cents: number
+  status: string
+}
+
+export async function processPayout(bookingId: string): Promise<ProcessPayoutResult> {
+  return callFunction('process-payout', { booking_id: bookingId })
+}
+
+export interface RefundPaymentResult {
+  refund_id: string | null
+  amount_cents: number
+  status: string
+}
+
+export async function refundPayment(
+  bookingId: string,
+  amountCents?: number,
+  reason?: string,
+): Promise<RefundPaymentResult> {
+  return callFunction('refund-payment', {
+    booking_id: bookingId,
+    amount_cents: amountCents,
+    reason,
+  })
+}
+
+export interface StripeConnectResult {
+  onboarding_url?: string
+  stripe_account_id: string
+  expires_at?: string
+  already_onboarded?: boolean
+}
+
+export async function createStripeConnectAccount(): Promise<StripeConnectResult> {
+  return callFunction('create-stripe-connect-account', {})
+}
+
+export interface VerifyOnboardingResult {
+  application_id: string
+  status: string
+}
+
+export async function verifyCleanerOnboarding(
+  applicationId: string,
+): Promise<VerifyOnboardingResult> {
+  return callFunction('verify-cleaner-onboarding', { application_id: applicationId })
+}
+
+export interface ReviewApplicationResult {
+  application_id: string
+  status: string
+}
+
+export async function approveCleaner(applicationId: string): Promise<ReviewApplicationResult> {
+  return callFunction('approve-cleaner', { application_id: applicationId })
+}
+
+export async function rejectCleaner(
+  applicationId: string,
+  rejectionReason: string,
+): Promise<ReviewApplicationResult> {
+  return callFunction('reject-cleaner', { application_id: applicationId, rejection_reason: rejectionReason })
+}
+
+export interface AdminAnalyticsResult {
+  bookings: {
+    total: number
+    by_status: Record<string, number>
+    completed_mtd: number
+    avg_value_cents: number
+    recent: Array<{
+      id: string
+      status: string
+      total_price_cents: number
+      scheduled_start: string
+    }>
+  }
+  revenue: {
+    total_cents: number
+    mtd_cents: number
+    last_30d_cents: number
+  }
+  payouts: {
+    released_cents: number
+    pending_cents: number
+  }
+  cleaners: {
+    active: number
+    pending_applications: number
+    avg_rating: number
+    top_earners: Array<{
+      cleaner_id: string
+      business_name: string | null
+      total_earnings_cents: number
+    }>
+  }
+  customers: {
+    total: number
+    new_mtd: number
+  }
+  generated_at: string
+}
+
+export async function getAdminAnalytics(): Promise<AdminAnalyticsResult> {
+  return callFunction('admin-analytics', {})
 }

@@ -39,10 +39,10 @@
             </div>
             <form class="space-y-6" @submit.prevent="handleSignup">
               <!-- Role Selection -->
-              <div class="space-y-3">
-                <label class="font-label-md text-label-md text-on-surface-variant"
-                  >Choose your role</label
-                >
+              <fieldset class="space-y-3 border-0 p-0 m-0">
+                <legend class="font-label-md text-label-md text-on-surface-variant">
+                  Choose your role
+                </legend>
                 <div class="grid grid-cols-2 gap-4">
                   <label
                     class="relative flex flex-col items-center justify-center p-4 border border-outline-variant cursor-pointer hover:bg-surface-container transition-colors active:scale-[0.98]"
@@ -83,7 +83,7 @@
                     ></div>
                   </label>
                 </div>
-              </div>
+              </fieldset>
               <!-- Email Input -->
               <div class="space-y-2">
                 <label class="font-label-md text-label-md text-on-surface-variant" for="email"
@@ -277,8 +277,8 @@ async function handleSignup() {
       return
     }
 
-    successMessage.value =
-      'Account created. Check your inbox if email verification is enabled, then sign in.'
+    // Email confirmation required — Supabase did not create a session yet.
+    await router.replace({ name: 'VerifyEmail', query: { email: email.value } })
     password.value = ''
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'Something went wrong.'

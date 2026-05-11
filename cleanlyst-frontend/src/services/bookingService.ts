@@ -31,7 +31,7 @@ export async function transitionBookingState(
   const supabase = getSupabaseClient()
   const { data, error } = await supabase.rpc('transition_booking_state', {
     p_booking_id: bookingId,
-    p_target_status: targetStatus,
+    p_new_status: targetStatus,
     p_note: note ?? null,
   })
 

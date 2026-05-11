@@ -10,10 +10,75 @@
           portfolio are up to date to increase bookings.
         </p>
       </div>
-      <button class="edit-btn">
-        <span class="material-symbols-outlined" data-icon="edit">edit</span>
-        <span class="edit-btn-label">Edit Profile</span>
+      <button class="edit-btn" @click="editing = !editing">
+        <span class="material-symbols-outlined">{{ editing ? 'close' : 'edit' }}</span>
+        <span class="edit-btn-label">{{ editing ? 'Cancel' : 'Edit Profile' }}</span>
       </button>
+    </div>
+
+    <!-- Edit Form (inline) -->
+    <div v-if="editing" class="card edit-card">
+      <h2 class="card-heading">Edit Profile</h2>
+      <div class="edit-grid">
+        <div class="edit-group">
+          <label class="edit-label" for="ep-bio">Bio</label>
+          <textarea
+            id="ep-bio"
+            v-model="editForm.bio"
+            class="edit-textarea"
+            rows="4"
+            placeholder="Describe your experience and services…"
+          ></textarea>
+        </div>
+        <div class="edit-group">
+          <label class="edit-label" for="ep-hourly">Hourly Rate (£)</label>
+          <input
+            id="ep-hourly"
+            v-model.number="editForm.hourly_rate"
+            class="edit-input"
+            type="number"
+            min="0"
+            step="0.50"
+            placeholder="e.g. 25"
+          />
+        </div>
+        <div class="edit-group">
+          <label class="edit-label" for="ep-radius">Service Radius (km)</label>
+          <input
+            id="ep-radius"
+            v-model.number="editForm.service_radius_km"
+            class="edit-input"
+            type="number"
+            min="1"
+            step="1"
+            placeholder="e.g. 20"
+          />
+        </div>
+        <div class="edit-group">
+          <label class="edit-label">Profile Photo</label>
+          <label class="avatar-upload-btn" :class="{ 'avatar-upload-btn--loading': avatarUploading }">
+            <input
+              accept="image/jpeg,image/png,image/webp"
+              class="sr-only"
+              type="file"
+              :disabled="avatarUploading"
+              @change="handleAvatarChange"
+            />
+            {{ avatarUploading ? 'Uploading…' : 'Upload New Photo' }}
+          </label>
+          <p v-if="avatarError" class="edit-error">{{ avatarError }}</p>
+        </div>
+      </div>
+      <div class="edit-footer">
+        <p v-if="editError" class="edit-error">{{ editError }}</p>
+        <p v-if="editSuccess" class="edit-success">
+          <span class="material-symbols-outlined" style="font-size:1rem">check_circle</span>
+          Profile updated.
+        </p>
+        <button class="edit-save-btn" :disabled="editSaving" @click="handleSaveEdit">
+          {{ editSaving ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
     </div>
 
     <!-- Main Bento Layout -->
@@ -25,140 +90,76 @@
           <div class="profile-card-inner">
             <div class="avatar">
               <img
+                v-if="auth.profile?.avatar_url"
                 class="avatar-img"
-                alt="Elena Rodriguez – professional profile photo"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIIAwzpjNVGi8XxYjN7SGug4E-gSWoVAk8MbxvDU3W-aHA4RNQ-HpLoOlhwEHllatQY8ijKTSUT1TObxkhHDMqp91TK6Q9x_wkqJLu881Mjpu2kdO8paHmsfoBRcyia_Gifs_CiwyLqfyBb_ffWzYmTEctjWsTNwSFwDmmUo_u34xqGg7XOELj3VWi32cZUju3bEGbahHMdAiTqheIkjFJrqNRyRFsxYitNExlMRDvDZyMt6U5Y-djLeLbgQh47V9SB_UfhDlQCQ"
+                :alt="auth.profile.full_name"
+                :src="auth.profile.avatar_url"
               />
+              <span v-else class="material-symbols-outlined avatar-placeholder">person</span>
             </div>
-            <h2 class="cleaner-name">Elena Rodriguez</h2>
-            <p class="cleaner-title">Elite Residential Specialist</p>
-            <div class="rating-row">
+            <h2 class="cleaner-name">{{ auth.profile?.full_name ?? '—' }}</h2>
+            <p class="cleaner-title">{{ auth.cleanerProfile?.business_name ?? 'Cleaner' }}</p>
+            <div v-if="(auth.cleanerProfile?.review_count ?? 0) > 0" class="rating-row">
               <span
                 class="material-symbols-outlined"
-                data-icon="star"
-                data-weight="fill"
                 style="font-variation-settings: 'FILL' 1"
                 >star</span
               >
-              <span class="rating-label">4.9 (124 reviews)</span>
+              <span class="rating-label">
+                {{ auth.cleanerProfile?.average_rating?.toFixed(1) }}
+                ({{ auth.cleanerProfile?.review_count }} reviews)
+              </span>
             </div>
             <div class="stats-grid">
               <div class="stat-cell">
-                <span class="stat-value">$45</span>
+                <span class="stat-value">
+                  {{ hourlyRateFormatted }}
+                </span>
                 <span class="stat-caption">Hourly Rate</span>
               </div>
               <div class="stat-cell">
-                <span class="stat-value">850+</span>
-                <span class="stat-caption">Jobs Done</span>
+                <span class="stat-value">
+                  {{ auth.cleanerProfile?.service_radius_km ?? '—' }}km
+                </span>
+                <span class="stat-caption">Service Radius</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Status Tags -->
+        <!-- Status -->
         <div class="card card--spaced">
-          <h3 class="section-label">Verification Status</h3>
+          <h3 class="section-label">Account Status</h3>
           <div class="tags-row">
-            <span class="tag">ID VERIFIED</span>
-            <span class="tag">BACKGROUND CHECKED</span>
-            <span class="tag">INSURED</span>
-          </div>
-        </div>
-
-        <!-- Top Skills -->
-        <div class="card">
-          <h3 class="section-label section-label--mb">Top Skills</h3>
-          <div class="skills-list">
-            <div class="skill-row">
-              <span class="skill-name">Deep Cleaning</span>
-              <span class="material-symbols-outlined skill-icon" data-icon="verified"
-                >verified</span
-              >
-            </div>
-            <div class="skill-row">
-              <span class="skill-name">Post-Construction</span>
-              <span class="material-symbols-outlined skill-icon" data-icon="verified"
-                >verified</span
-              >
-            </div>
-            <div class="skill-row">
-              <span class="skill-name">Eco-Friendly Products</span>
-              <span class="material-symbols-outlined skill-icon" data-icon="verified"
-                >verified</span
-              >
-            </div>
+            <span
+              class="tag"
+              :class="statusTagClass"
+            >{{ statusTagLabel }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Right Column: Bio & Portfolio -->
+      <!-- Right Column: Bio -->
       <div class="profile-right">
         <!-- Bio Section -->
         <div class="card">
           <h2 class="card-heading">About Me</h2>
-          <div class="bio-body">
-            <p>
-              With over 8 years of experience in high-end residential cleaning across the
-              metropolitan area, I specialize in transforming living spaces into pristine
-              sanctuaries. My approach is systematic and detail-oriented, focusing on
-              often-overlooked areas to ensure a comprehensive clean every time.
-            </p>
-            <p>
-              I bring my own professional-grade, eco-friendly supplies and equipment. I am currently
-              offering services for weekly, bi-weekly, and one-time deep cleaning projects.
-            </p>
+          <div v-if="auth.cleanerProfile?.bio" class="bio-body">
+            <p>{{ auth.cleanerProfile.bio }}</p>
           </div>
+          <p v-else class="bio-empty">
+            No bio yet. Click <strong>Edit Profile</strong> to add one.
+          </p>
         </div>
 
-        <!-- Portfolio Bento Grid -->
-        <div class="portfolio-wrapper">
-          <div class="card card--full-span">
-            <h2 class="card-heading">Work Portfolio</h2>
-            <div class="portfolio-images">
-              <div class="portfolio-item">
-                <img
-                  class="portfolio-img"
-                  alt=""
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNYkacff3y2KQFIxqPgaHREavoXxq7JevrYKLOxY5JKm77MMOteeUSDskQ87ck1006X6bRuHgB77-aruwO_4FZ3BrzUnCI2ZDvFkAjkXj5f6Z9ri9PnqpHTQFgc1NIIQTct4aNndhOQw8T0a_M2JKAsXWjeA6zE7an7gKH7VnLHWuZGvTUWEkbUEvSTPDO5Kt52RmQ0GqeRBJBD_MW1iRhy9wqznyuVZ_c2tK26zM3MVFyH3FHMxuwXKhJ0kasvjVxTT0uX4zapQ"
-                />
-              </div>
-              <div class="portfolio-item">
-                <img
-                  class="portfolio-img"
-                  alt=""
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDckkIrIU-UGdsFov575MmG1HpuMh8Z2UEB7xs1its5Z8Y0g5o4gvtdUjP8HeuCmstzNEzK6Zjk-JUOpJFNGj0kqe4sWE1SpHFRJJfD8zZG7phbUs5mrpv3xT2io8X2DDxx1irOEo7hf2vDo6KgwVnTWqL78OGiQwGT7UOYOGtOpBMGTvzTGXajR1wCHeQgGzWUl3jm31CNQoWpbBRuf1rs_FbYXsst8kjEQJ23jCl9SFhNLkDMGXjWdQwUx09L8GzazIc7bf5_YQ"
-                />
-              </div>
-              <div class="portfolio-item portfolio-add">
-                <div class="add-photo-inner">
-                  <span class="material-symbols-outlined add-photo-icon" data-icon="add_a_photo"
-                    >add_a_photo</span
-                  >
-                  <span class="add-photo-label">Add Photo</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Service Coverage -->
-        <div class="card">
+        <!-- Service Area -->
+        <div v-if="auth.profile?.city" class="card">
           <h2 class="card-heading">Service Area</h2>
-          <div class="service-map">
-            <!-- Placeholder for Map -->
-            <div class="map-bg">
-              <img
-                class="map-img"
-                alt="Map of the New York metropolitan service area"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKlrCoRp0vJ5NXJ2btwrTeNhzKInneg7EeLV-IHPrrb1RVASd1Sota3L98cndSNfbVOQf-a2Wbmrh4gYQ8kp9qdJWrvWjgs1e5aW9zj9trmO6LvbLOxH_4M06lOkLUoJ6ADIHtb_fsR7_YmgArOmePn9D-CD28ayE7H7uJg0g0vVmcMCRhRRXgMimAXdZDb4R9z6BsLisX80lUVP-ntH8jLplbbjnW122z7WzSoakG_dVfZ7fLIFn-sSWaIcCRbJ6HIz5kGZ4n4Q"
-              />
-            </div>
-            <div class="map-pin">
-              <span class="material-symbols-outlined map-pin-icon" data-icon="location_on"
-                >location_on</span
-              >
-              <p class="map-pin-text">Operating within 15 miles of Wigan Manchester</p>
-            </div>
+          <div class="map-pin">
+            <span class="material-symbols-outlined map-pin-icon">location_on</span>
+            <p class="map-pin-text">
+              {{ auth.profile.city }}{{ auth.cleanerProfile?.service_radius_km ? ` — within ${auth.cleanerProfile.service_radius_km} km` : '' }}
+            </p>
           </div>
         </div>
       </div>
@@ -166,7 +167,117 @@
   </main>
 </template>
 
+<script setup lang="ts">
+import { computed, reactive, ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { requireSupabase } from '@/lib/supabase'
+import { uploadAvatar } from '@/services/storageService'
+
+const auth = useAuthStore()
+
+const editing = ref(false)
+const editSaving = ref(false)
+const editError = ref('')
+const editSuccess = ref(false)
+const avatarUploading = ref(false)
+const avatarError = ref('')
+
+const editForm = reactive({
+  bio: auth.cleanerProfile?.bio ?? '',
+  hourly_rate: auth.cleanerProfile?.hourly_rate_cents != null
+    ? auth.cleanerProfile.hourly_rate_cents / 100
+    : null as number | null,
+  service_radius_km: auth.cleanerProfile?.service_radius_km ?? null as number | null,
+})
+
+const hourlyRateFormatted = computed(() => {
+  const cents = auth.cleanerProfile?.hourly_rate_cents
+  if (cents == null) return '—'
+  return `£${(cents / 100).toFixed(2)}`
+})
+
+const statusTagLabel = computed(() => {
+  switch (auth.cleanerProfile?.status) {
+    case 'approved': return 'ACTIVE'
+    case 'pending': return 'PENDING APPROVAL'
+    case 'rejected': return 'REJECTED'
+    case 'suspended': return 'SUSPENDED'
+    default: return 'PENDING'
+  }
+})
+
+const statusTagClass = computed(() => {
+  switch (auth.cleanerProfile?.status) {
+    case 'approved': return 'tag--active'
+    case 'rejected':
+    case 'suspended': return 'tag--error'
+    default: return ''
+  }
+})
+
+async function handleSaveEdit() {
+  if (!auth.userId) return
+  editSaving.value = true
+  editError.value = ''
+  editSuccess.value = false
+  try {
+    const supabase = requireSupabase()
+    const { error } = await supabase
+      .from('cleaner_profiles')
+      .update({
+        bio: editForm.bio || null,
+        hourly_rate_cents: editForm.hourly_rate != null
+          ? Math.round(editForm.hourly_rate * 100)
+          : null,
+        service_radius_km: editForm.service_radius_km,
+      })
+      .eq('user_id', auth.userId)
+    if (error) throw error
+    await auth.init()
+    editSuccess.value = true
+    setTimeout(() => { editSuccess.value = false }, 3000)
+  } catch (err) {
+    editError.value = err instanceof Error ? err.message : 'Failed to save changes.'
+  } finally {
+    editSaving.value = false
+  }
+}
+
+async function handleAvatarChange(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !auth.userId) return
+  avatarUploading.value = true
+  avatarError.value = ''
+  try {
+    const publicUrl = await uploadAvatar(auth.userId, file)
+    const supabase = requireSupabase()
+    const { error } = await supabase
+      .from('profiles')
+      .update({ avatar_url: publicUrl })
+      .eq('id', auth.userId)
+    if (error) throw error
+    await auth.init()
+  } catch (err) {
+    avatarError.value = err instanceof Error ? err.message : 'Failed to upload photo.'
+  } finally {
+    avatarUploading.value = false
+  }
+}
+</script>
+
 <style scoped>
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ── Material Symbols ───────────────────────────────────────────── */
 .material-symbols-outlined {
   font-variation-settings:
@@ -452,6 +563,145 @@
   font-weight: 700;
   border: 1px solid var(--outline-variant);
   color: var(--on-surface);
+}
+
+.tag--active {
+  background-color: #e8f5e9;
+  border-color: #a5d6a7;
+  color: #2e7d32;
+}
+
+.tag--error {
+  background-color: #fce4ec;
+  border-color: #f48fb1;
+  color: #c62828;
+}
+
+/* ── Avatar placeholder ─────────────────────────────────────────── */
+.avatar-placeholder {
+  font-size: 3rem;
+  color: var(--on-surface-variant);
+}
+
+/* ── Bio empty state ────────────────────────────────────────────── */
+.bio-empty {
+  font-size: 14px;
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+/* ── Edit card ──────────────────────────────────────────────────── */
+.edit-card {
+  margin-bottom: 24px;
+}
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .edit-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.edit-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edit-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--on-surface);
+}
+
+.edit-input,
+.edit-textarea {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--outline-variant);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--on-surface);
+  background: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 200ms ease;
+}
+
+.edit-input:focus,
+.edit-textarea:focus {
+  border-color: var(--primary);
+}
+
+.edit-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.avatar-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--outline-variant);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 200ms ease;
+  color: var(--on-surface);
+}
+
+.avatar-upload-btn:hover {
+  border-color: var(--primary);
+}
+
+.avatar-upload-btn--loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.edit-footer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid var(--outline-variant);
+  flex-wrap: wrap;
+}
+
+.edit-save-btn {
+  padding: 0.625rem 1.5rem;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 200ms ease;
+}
+
+.edit-save-btn:hover { opacity: 0.9; }
+.edit-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.edit-error {
+  font-size: 13px;
+  color: var(--error, #ba1a1a);
+  margin: 0;
+}
+
+.edit-success {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 13px;
+  color: #2e7d32;
+  margin: 0;
 }
 
 /* ── Skills ─────────────────────────────────────────────────────── */

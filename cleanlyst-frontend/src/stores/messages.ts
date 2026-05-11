@@ -5,7 +5,7 @@ export const useMessagesStore = defineStore('messages', {
   state: () => ({
     byBooking: {} as Record<
       string,
-      Array<{ id: string; body: string; created_at: string; sender_id: string }>
+      Array<{ id: string; message: string; created_at: string; sender_id: string }>
     >,
   }),
   actions: {
@@ -13,19 +13,19 @@ export const useMessagesStore = defineStore('messages', {
       const supabase = getSupabaseClient()
       const { data, error } = await supabase
         .from('messages')
-        .select('id, body, created_at, sender_id')
+        .select('id, message, created_at, sender_id')
         .eq('booking_id', bookingId)
         .order('created_at', { ascending: true })
 
       if (error) throw error
       this.byBooking[bookingId] = data ?? []
     },
-    async sendMessage(bookingId: string, senderId: string, body: string) {
+    async sendMessage(bookingId: string, senderId: string, message: string) {
       const supabase = getSupabaseClient()
       const { error } = await supabase.from('messages').insert({
         booking_id: bookingId,
         sender_id: senderId,
-        body,
+        message,
       })
       if (error) throw error
       await this.loadBookingMessages(bookingId)

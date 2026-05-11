@@ -157,6 +157,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── transfer.paid: Stripe has settled funds into the cleaner's account ─
+    // Fires days after the transfer is created. No booking_id in metadata —
+    // look up the payout row via stripe_transfer_id instead.
+    if (event.type === 'transfer.paid') {
+      const transferId = String(object.id ?? '')
+      if (transferId) {
+        await adminClient
+          .from('payouts')
+          .update({ status: 'paid' })
+          .eq('stripe_transfer_id', transferId)
+      }
+    }
+
     await adminClient
       .from('payment_webhook_events')
       .update({

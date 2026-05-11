@@ -28,6 +28,7 @@ export interface CustomerPreferences {
   address_line_1: string | null
   address_line_2: string | null
   postcode: string | null
+  city: string | null
   has_pets: boolean | null
   preferred_cleaner_gender: string | null
   room_count: number | null

@@ -7,52 +7,73 @@
       </div>
     </section>
 
-    <form @submit.prevent="handleSave">
-      <!-- Cleaning Schedule -->
+    <div v-if="loadError" class="load-error" role="alert">
+      <span class="material-symbols-outlined">error</span>
+      {{ loadError }}
+    </div>
+
+    <form v-else @submit.prevent="handleSave">
+      <!-- Address -->
       <div class="form-card">
-        <h2 class="card-heading">Cleaning Schedule</h2>
+        <h2 class="card-heading">Service Address</h2>
 
         <div class="form-group">
-          <label class="form-label" for="frequency">Cleaning Frequency</label>
-          <select id="frequency" v-model="form.frequency" class="form-select">
-            <option value="">Select a frequency</option>
-            <option value="weekly">Weekly</option>
-            <option value="fortnightly">Fortnightly</option>
-            <option value="monthly">Monthly</option>
-            <option value="one_off">One-off</option>
-          </select>
+          <label class="form-label" for="address_line_1">Address Line 1</label>
+          <input
+            id="address_line_1"
+            v-model="form.address_line_1"
+            class="form-input"
+            placeholder="e.g. 12 Baker Street"
+            type="text"
+          />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Preferred Cleaning Time</label>
-          <div class="time-grid">
-            <label
-              v-for="opt in timeOptions"
-              :key="opt.value"
-              class="time-option"
-              :class="{ 'time-option--selected': form.preferredTime === opt.value }"
-            >
-              <input v-model="form.preferredTime" :value="opt.value" class="sr-only" type="radio" />
-              <span class="time-option-name">{{ opt.label }}</span>
-              <span class="time-option-desc">{{ opt.desc }}</span>
-            </label>
+          <label class="form-label" for="address_line_2">Address Line 2 <span class="form-label-optional">(optional)</span></label>
+          <input
+            id="address_line_2"
+            v-model="form.address_line_2"
+            class="form-input"
+            placeholder="Flat, suite, unit…"
+            type="text"
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="city">City</label>
+            <input
+              id="city"
+              v-model="form.city"
+              class="form-input"
+              placeholder="e.g. London"
+              type="text"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="postcode">Postcode</label>
+            <input
+              id="postcode"
+              v-model="form.postcode"
+              class="form-input"
+              placeholder="e.g. SW1A 1AA"
+              type="text"
+            />
           </div>
         </div>
       </div>
 
-      <!-- Property & Access -->
+      <!-- Property Details -->
       <div class="form-card">
         <h2 class="card-heading">Property & Access</h2>
 
         <div class="form-group">
-          <label class="form-label" for="access">Access Instructions</label>
-          <input
-            id="access"
-            v-model="form.accessInstructions"
-            class="form-input"
-            placeholder="e.g. Key under the mat, ring bell twice"
-            type="text"
-          />
+          <label class="form-label" for="room_count">Number of Rooms</label>
+          <select id="room_count" v-model="form.room_count" class="form-select">
+            <option :value="null">Select…</option>
+            <option v-for="n in 10" :key="n" :value="n">{{ n }} {{ n === 1 ? 'room' : 'rooms' }}</option>
+          </select>
         </div>
 
         <div class="form-group">
@@ -63,10 +84,10 @@
             </div>
             <button
               class="toggle-btn"
-              :class="{ 'toggle-btn--on': form.hasPets }"
+              :class="{ 'toggle-btn--on': form.has_pets }"
               type="button"
-              :aria-pressed="form.hasPets"
-              @click="form.hasPets = !form.hasPets"
+              :aria-pressed="form.has_pets ?? false"
+              @click="form.has_pets = !form.has_pets"
             >
               <span class="toggle-knob"></span>
             </button>
@@ -74,14 +95,34 @@
         </div>
 
         <div class="form-group form-group--last">
-          <label class="form-label" for="instructions">Special Instructions</label>
+          <label class="form-label" for="notes">Special Instructions</label>
           <textarea
-            id="instructions"
-            v-model="form.specialInstructions"
+            id="notes"
+            v-model="form.notes"
             class="form-textarea"
             placeholder="Any specific requirements for the cleaner, e.g. focus areas, products to avoid…"
             rows="4"
           ></textarea>
+        </div>
+      </div>
+
+      <!-- Cleaner Preference -->
+      <div class="form-card">
+        <h2 class="card-heading">Cleaner Preference</h2>
+
+        <div class="form-group form-group--last">
+          <label class="form-label">Preferred Cleaner Gender <span class="form-label-optional">(optional)</span></label>
+          <div class="time-grid">
+            <label
+              v-for="opt in genderOptions"
+              :key="opt.value"
+              class="time-option"
+              :class="{ 'time-option--selected': form.preferred_cleaner_gender === opt.value }"
+            >
+              <input v-model="form.preferred_cleaner_gender" :value="opt.value" class="sr-only" type="radio" />
+              <span class="time-option-name">{{ opt.label }}</span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -91,6 +132,7 @@
           <span class="material-symbols-outlined save-icon">check_circle</span>
           Preferences saved successfully.
         </p>
+        <p v-if="saveError" class="save-error" role="alert">{{ saveError }}</p>
         <button class="btn-primary" :disabled="saving" type="submit">
           {{ saving ? 'Saving…' : 'Save Preferences' }}
         </button>
@@ -100,34 +142,76 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
+import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 
-const timeOptions = [
-  { value: 'morning', label: 'Morning', desc: '8:00 AM – 12:00 PM' },
-  { value: 'afternoon', label: 'Afternoon', desc: '12:00 PM – 5:00 PM' },
-  { value: 'evening', label: 'Evening', desc: '5:00 PM – 8:00 PM' },
+const genderOptions = [
+  { value: 'no_preference', label: 'No preference' },
+  { value: 'female', label: 'Female' },
+  { value: 'male', label: 'Male' },
 ]
 
+const store = useCustomerPreferencesStore()
+
 const form = reactive({
-  frequency: '',
-  preferredTime: '',
-  accessInstructions: '',
-  hasPets: false,
-  specialInstructions: '',
+  address_line_1: '' as string | null,
+  address_line_2: '' as string | null,
+  city: '' as string | null,
+  postcode: '' as string | null,
+  room_count: null as number | null,
+  has_pets: false,
+  preferred_cleaner_gender: 'no_preference' as string | null,
+  notes: '' as string | null,
 })
 
 const saving = ref(false)
 const saveStatus = ref<'idle' | 'success'>('idle')
+const saveError = ref('')
+const loadError = ref('')
+
+function syncFromStore() {
+  const p = store.preferences
+  if (!p) return
+  form.address_line_1 = p.address_line_1 ?? ''
+  form.address_line_2 = p.address_line_2 ?? ''
+  form.city = p.city ?? ''
+  form.postcode = p.postcode ?? ''
+  form.room_count = p.room_count ?? null
+  form.has_pets = p.has_pets ?? false
+  form.preferred_cleaner_gender = p.preferred_cleaner_gender ?? 'no_preference'
+  form.notes = p.notes ?? ''
+}
+
+onMounted(async () => {
+  try {
+    await store.load()
+    syncFromStore()
+  } catch (e) {
+    loadError.value = e instanceof Error ? e.message : 'Failed to load preferences.'
+  }
+})
 
 async function handleSave() {
   saving.value = true
   saveStatus.value = 'idle'
+  saveError.value = ''
   try {
-    await new Promise<void>((resolve) => setTimeout(resolve, 500))
+    await store.save({
+      address_line_1: form.address_line_1 || null,
+      address_line_2: form.address_line_2 || null,
+      city: form.city || null,
+      postcode: form.postcode || null,
+      room_count: form.room_count,
+      has_pets: form.has_pets,
+      preferred_cleaner_gender: form.preferred_cleaner_gender,
+      notes: form.notes || null,
+    })
     saveStatus.value = 'success'
     setTimeout(() => {
       saveStatus.value = 'idle'
     }, 3000)
+  } catch (e) {
+    saveError.value = e instanceof Error ? e.message : 'Failed to save preferences.'
   } finally {
     saving.value = false
   }
@@ -191,6 +275,18 @@ async function handleSave() {
   margin: 0;
 }
 
+.load-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--error, #b00020);
+  color: var(--error, #b00020);
+  font-family: var(--font-body);
+  font-size: 14px;
+  margin-bottom: 1.5rem;
+}
+
 /* ── Form card ── */
 .form-card {
   border: 1px solid var(--outline-variant, #c4c7c7);
@@ -221,6 +317,12 @@ async function handleSave() {
   margin-bottom: 0;
 }
 
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
 .form-label {
   display: block;
   font-family: var(--font-label-md);
@@ -230,6 +332,11 @@ async function handleSave() {
   letter-spacing: 0.01em;
   color: var(--on-surface, #1a1c1c);
   margin-bottom: 0.5rem;
+}
+
+.form-label-optional {
+  font-weight: 400;
+  color: var(--secondary, #5e5e5e);
 }
 
 /* ── Inputs ── */
@@ -263,7 +370,7 @@ async function handleSave() {
   min-height: 100px;
 }
 
-/* ── Preferred time radio grid ── */
+/* ── Gender radio grid ── */
 .time-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -291,12 +398,6 @@ async function handleSave() {
   font-size: 14px;
   font-weight: 500;
   color: var(--on-surface, #1a1c1c);
-}
-
-.time-option-desc {
-  font-family: var(--font-caption);
-  font-size: 12px;
-  color: var(--secondary, #5e5e5e);
 }
 
 /* ── Toggle ── */
@@ -370,6 +471,7 @@ async function handleSave() {
   align-items: center;
   justify-content: flex-end;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 /* ── Buttons ── */
@@ -408,6 +510,13 @@ async function handleSave() {
   font-family: var(--font-caption);
   font-size: 13px;
   color: #2e7d32;
+  margin: 0;
+}
+
+.save-error {
+  font-family: var(--font-caption);
+  font-size: 13px;
+  color: var(--error, #b00020);
   margin: 0;
 }
 

@@ -10,6 +10,28 @@
     <!-- Personal Information -->
     <div class="form-card">
       <h2 class="card-heading">Personal Information</h2>
+
+      <!-- Avatar -->
+      <div class="avatar-row">
+        <div class="avatar-wrap">
+          <img v-if="avatarUrl" :src="avatarUrl" alt="Profile" class="avatar-img" />
+          <span v-else class="material-symbols-outlined avatar-placeholder">person</span>
+        </div>
+        <div class="avatar-actions">
+          <label class="btn-secondary" :class="{ 'btn-secondary--loading': avatarUploading }">
+            <input
+              accept="image/jpeg,image/png,image/webp"
+              class="sr-only"
+              type="file"
+              :disabled="avatarUploading"
+              @change="handleAvatarChange"
+            />
+            {{ avatarUploading ? 'Uploading…' : 'Change Photo' }}
+          </label>
+          <p v-if="avatarError" class="avatar-error">{{ avatarError }}</p>
+        </div>
+      </div>
+
       <div class="form-grid">
         <div class="form-group">
           <label class="form-label" for="fullName">Full Name</label>
@@ -164,10 +186,15 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
+import { uploadAvatar } from '@/services/storageService'
 
 const auth = useAuthStore()
 
 const userEmail = ref('')
+const avatarUrl = ref(auth.profile?.avatar_url ?? '')
+const avatarUploading = ref(false)
+const avatarError = ref('')
+
 const profileSaving = ref(false)
 const profileStatus = ref<'idle' | 'success' | 'error'>('idle')
 const profileError = ref('')
@@ -210,6 +237,28 @@ onMounted(async () => {
   const { data } = await supabase.auth.getUser()
   userEmail.value = data.user?.email ?? ''
 })
+
+async function handleAvatarChange(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file || !auth.userId) return
+  avatarUploading.value = true
+  avatarError.value = ''
+  try {
+    const publicUrl = await uploadAvatar(auth.userId, file)
+    const supabase = requireSupabase()
+    const { error } = await supabase
+      .from('profiles')
+      .update({ avatar_url: publicUrl })
+      .eq('id', auth.userId)
+    if (error) throw error
+    avatarUrl.value = publicUrl
+    await auth.init()
+  } catch (err) {
+    avatarError.value = err instanceof Error ? err.message : 'Failed to upload photo.'
+  } finally {
+    avatarUploading.value = false
+  }
+}
 
 async function saveProfile() {
   if (!auth.userId) return
@@ -307,6 +356,53 @@ async function savePassword() {
   font-weight: 400;
   line-height: 1.6;
   color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
+
+/* ── Avatar ── */
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--surface-container, #eeeeee);
+}
+
+.avatar-wrap {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: var(--surface-container, #eeeeee);
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  font-size: 2rem;
+  color: var(--secondary, #5e5e5e);
+}
+
+.avatar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.avatar-error {
+  font-family: var(--font-caption);
+  font-size: 12px;
+  color: var(--error, #ba1a1a);
   margin: 0;
 }
 
@@ -515,6 +611,33 @@ async function savePassword() {
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--on-surface, #1a1c1c);
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  border-radius: var(--radius, 0.25rem);
+  font-family: var(--font-label-md);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: border-color 200ms ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary, #000000);
+}
+
+.btn-secondary--loading {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ── Feedback ── */

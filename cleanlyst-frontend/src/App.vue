@@ -142,10 +142,12 @@ async function handleSignOut() {
   signingOut.value = true
   try {
     await auth.signOut()
+    await router.replace({ name: 'Login' })
   } catch {
-    // ignore sign out errors
+    // ignore — state is already cleared by signOut()
+  } finally {
+    signingOut.value = false
   }
-  await router.replace({ name: 'Login' })
 }
 </script>
 

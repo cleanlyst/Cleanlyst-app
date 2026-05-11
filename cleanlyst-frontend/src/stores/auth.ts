@@ -1,4 +1,4 @@
-import type { AuthChangeEvent, Subscription } from '@supabase/supabase-js'
+import type { AuthChangeEvent, Session, Subscription } from '@supabase/supabase-js'
 import { defineStore } from 'pinia'
 import { hasSupabaseConfig, requireSupabase, supabaseConfigError } from '@/lib/supabase'
 
@@ -134,14 +134,19 @@ export const useAuthStore = defineStore('auth', {
 
     async signIn(email: string, password: string) {
       const supabase = requireSupabase()
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
 
-      await this.init()
+      // Use the user returned by signInWithPassword directly — avoids a redundant
+      // getUser() round-trip that init() would make for a session we just established.
+      this.userId = data.user.id
+      this.loading = true
+      try {
+        await this._loadProfileData(data.user.id)
+      } finally {
+        this.loading = false
+        this.initialized = true
+      }
     },
 
     async signUp(
@@ -268,6 +273,32 @@ export const useAuthStore = defineStore('auth', {
       return this.profile?.role === role
     },
 
+    async _loadProfileData(userId: string) {
+      const supabase = requireSupabase()
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (profileError) throw profileError
+      this.profile = profile as Profile
+
+      if (this.profile.role === 'cleaner_pending' || this.profile.role === 'cleaner_active') {
+        const { data: cleanerProfile, error: cleanerError } = await supabase
+          .from('cleaner_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle()
+
+        if (cleanerError) throw cleanerError
+        this.cleanerProfile = cleanerProfile as CleanerProfile | null
+      } else {
+        this.cleanerProfile = null
+      }
+    },
+
     bindAuthListener() {
       if (this.authSubscription || !hasSupabaseConfig) return
 
@@ -275,8 +306,29 @@ export const useAuthStore = defineStore('auth', {
 
       const {
         data: { subscription },
-      } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent) => {
+      } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, _session: Session | null) => {
+        // Handled by main.ts before mount — skip to avoid double-init on page load.
         if (event === 'INITIAL_SESSION') return
+
+        // signIn() loads profile directly from the response it already has.
+        // AuthCallbackPage calls init() explicitly for OAuth sign-ins.
+        // Handling it here too would start a concurrent init() race.
+        if (event === 'SIGNED_IN') return
+
+        // Supabase silently refreshes the token in the background. The user
+        // identity hasn't changed — no profile reload needed.
+        if (event === 'TOKEN_REFRESHED') return
+
+        if (event === 'SIGNED_OUT') {
+          // Clear state directly — no network call needed. The session is already
+          // gone; this handles multi-tab sign-outs where another tab cleared it.
+          this.userId = null
+          this.profile = null
+          this.cleanerProfile = null
+          return
+        }
+
+        // USER_UPDATED, PASSWORD_RECOVERY, MFA_CHALLENGE_VERIFIED, etc.
         await this.init()
       })
 

@@ -75,10 +75,10 @@
                   <label class="block font-label-md text-label-md text-on-surface" for="password"
                     >Password</label
                   >
-                  <a
+                  <router-link
                     class="font-caption text-caption text-secondary hover:text-primary underline"
-                    href="mailto:support@cleanlyst.app?subject=Password%20reset"
-                    >Forgot password?</a
+                    :to="{ name: 'ForgotPassword' }"
+                    >Forgot password?</router-link
                   >
                 </div>
                 <input

@@ -58,6 +58,24 @@ const router = createRouter({
       component: () => import('../pages/LoginPage.vue'),
     },
     {
+      path: '/forgot-password',
+      name: 'ForgotPassword',
+      meta: { title: 'Forgot Password', redirectIfAuthenticated: false },
+      component: () => import('../pages/ForgotPasswordPage.vue'),
+    },
+    {
+      path: '/reset-password',
+      name: 'ResetPassword',
+      meta: { title: 'Reset Password' },
+      component: () => import('../pages/ResetPasswordPage.vue'),
+    },
+    {
+      path: '/verify-email',
+      name: 'VerifyEmail',
+      meta: { title: 'Verify Your Email' },
+      component: () => import('../pages/VerifyEmailPage.vue'),
+    },
+    {
       path: '/signup',
       name: 'Signup',
       meta: { title: 'Sign up', redirectIfAuthenticated: true },
@@ -86,6 +104,12 @@ const router = createRouter({
       name: 'TermsOfService',
       meta: { title: 'Terms of Service' },
       component: () => import('../components/TermsOfService.vue'),
+    },
+    {
+      path: '/customer/onboarding',
+      name: 'CustomerOnboarding',
+      meta: { title: 'Set Up Your Preferences', requiresAuth: true, requiresRole: 'customer' },
+      component: () => import('../pages/CustomerOnboarding.vue'),
     },
     {
       path: '/book',

@@ -2,44 +2,80 @@
   "cleanersData": [
     {
       "id": "cleaner-1",
-      "name": "Jane Doe",
-      "rating": 4.8,
-      "services": "Home Cleaning",
-      "price": "$25 / hr",
-      "available": "Available today"
+      "name": "Elena Sterling",
+      "rating": 4.9,
+      "reviewCount": 124,
+      "hourlyRate": 45,
+      "services": "Residential Cleaning",
+      "tags": ["Residential", "Eco-Friendly"],
+      "badge": "Verified",
+      "availability": "Available tomorrow",
+      "availabilityIcon": "calendar_today",
+      "price": "$45 / hr",
+      "available": "Available tomorrow",
+      "photo": "https://lh3.googleusercontent.com/aida-public/AB6AXuCdjMug5Li34M26097szzPj7xhqTcI2C12H0SaVP4oxjjcrETNacp40mcjEw47NWWO21UwJoN7gKdgN4hDuGxlLs3NabAduwm9txS2BwlzD34hfmnsUtbl_tOijbH6Wx4C94xP6kPnKVC6NwKuTLjHpgxh7zLKcAEqhg-SQM_eAd4GdRx90ImDzfUXPopWo1DQ5rHddqdeBFFGYddZMqCwS_4vmcVPsJHe9NdmmC1WZytZYKrCGT8oiFr9pIfHzRcTVi5DIHHkyMg"
     },
     {
       "id": "cleaner-2",
-      "name": "Mia Watson",
-      "rating": 4.9,
-      "services": "Commercial & Office Cleaning",
-      "price": "$30 / hr",
-      "available": "Available tomorrow"
+      "name": "Marcus Thorne",
+      "rating": 4.7,
+      "reviewCount": 89,
+      "hourlyRate": 52,
+      "services": "Deep Cleaning",
+      "tags": ["Deep Clean", "Commercial"],
+      "badge": "Premium",
+      "availability": "Available Today",
+      "availabilityIcon": "schedule",
+      "price": "$52 / hr",
+      "available": "Available today",
+      "photo": "https://lh3.googleusercontent.com/aida-public/AB6AXuCQbuNqbJ254w4QTGNSgFzn7TlA1GnhpWuEwGHR_Id3mbuVDWgT2n9XjY4QuhACDPNLK26YVZxojHFgvLoPgcOrBk7YaUkouhhBJFgdktm3_jNgJPvg1B5JZi8t2fz8vt2kRQCIOtKTtCury5gsMFW1EsRyc9FMIVaROp57X2R2v_H1exMuCxPrGbd5TXP9WYgbpViKy6xjeZ6qa9rv6oue88zPNMXbQt9OBQYMphGanjzF9HzJpbwjNlEfwuaDDxDPaPTQstzZ4w"
     },
     {
       "id": "cleaner-3",
-      "name": "Sam Lee",
-      "rating": 4.7,
-      "services": "Windows & Glass",
-      "price": "$28 / hr",
-      "available": "Available this week"
+      "name": "Sarah Chen",
+      "rating": 5.0,
+      "reviewCount": 42,
+      "hourlyRate": 38,
+      "services": "Residential Cleaning",
+      "tags": ["Residential", "Move In"],
+      "badge": "",
+      "availability": "Available Monday",
+      "availabilityIcon": "event_available",
+      "price": "$38 / hr",
+      "available": "Available Monday",
+      "photo": "https://lh3.googleusercontent.com/aida-public/AB6AXuA7qr-x6wIPp3Xmajv9oZimWLgkvAZ3Zzx8g8VO4q08ViXvDe4Ix3VpmMLKR3bOcxyIw1-AbaX6MfbUEeyKrXi6dqt2AAIoqPUV6Mtt8ehSbFVmAqD7r5I7_hgXlK6WJlQyWjvZ-EPRguNK69GJlWV_wrCb7xF1zpLIFW3USzkBqHxLXZmYmE5eDBR6Hmgi5O_dIUDQJyjZdpFff6cfD4jQSxSkZS6u6qZU10pkxspMGM1Db4WIhULX29UU9P13TyM70oaiSRlW8w"
+    },
+    {
+      "id": "cleaner-4",
+      "name": "Julian Vance",
+      "rating": 4.8,
+      "reviewCount": 215,
+      "hourlyRate": 40,
+      "services": "Residential Cleaning",
+      "tags": ["Residential", "Appliance Care"],
+      "badge": "",
+      "availability": "In high demand",
+      "availabilityIcon": "schedule",
+      "price": "$40 / hr",
+      "available": "In high demand",
+      "photo": "https://lh3.googleusercontent.com/aida-public/AB6AXuCQlkQJueek6_fYFgEpvVkdZGSUoHksLRVtGX7vtqeQv2FWGf0lohhXTd0ZnLllyH7wA1W9PBhhFSwInTiyglLouEvNIQRrO7aj4nS1TBxEdesYqRWlsHB0XidBVJ3EnKKPfrt4LsyxqC38m1am74AoTdljU67FHI4TCXl5qdZ2UQTNY8Wmm9gVxSxeqd2_sOEbG-FzCu9sjyQS6slxpIJV14pWaHiyDY5B53UubWq1RbD4R3qsCV2UTdSGrWLdbJ-ov9f1V_H98w"
     }
   ],
   "recentBookings": [
     {
       "id": "booking-1",
-      "name": "Jane Doe",
-      "detail": "12/Apr/26 - Home Cleaning"
+      "name": "Elena Sterling",
+      "detail": "12/Apr/26 - Residential Cleaning"
     },
     {
       "id": "booking-2",
-      "name": "Mia Watson",
-      "detail": "11/Apr/26 - Office Cleaning"
+      "name": "Marcus Thorne",
+      "detail": "11/Apr/26 - Deep Cleaning"
     },
     {
       "id": "booking-3",
-      "name": "Sam Lee",
-      "detail": "10/Apr/26 - Window Cleaning"
+      "name": "Sarah Chen",
+      "detail": "10/Apr/26 - Move In Clean"
     }
   ]
 }

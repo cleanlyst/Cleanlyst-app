@@ -11,10 +11,11 @@
         />
       </div>
       <div class="hero-content">
-        <h1 class="hero-title">Connecting your city to professional hygiene.</h1>
+        <h1 class="hero-title">Book trusted cleaning professionals with confidence.</h1>
+
         <p class="hero-copy">
-          A systematic approach to urban cleanliness, built on the foundations of trust and
-          professional excellence.
+          Cleanlyst connects customers with vetted cleaners through a seamless booking experience
+          built around trust, convenience, and professional service.
         </p>
       </div>
     </section>
@@ -25,19 +26,23 @@
           <div>
             <span class="mission-label">Our Mission</span>
             <h2 class="mission-title">
-              A reliable, transparent bridge between professionals and residents.
+              Building a trusted marketplace for modern cleaning services.
             </h2>
           </div>
+
           <div class="mission-copy">
             <p class="body-text">
-              Cleanlyst was built to solve a fundamental urban challenge: the lack of structural
-              reliability in domestic and professional hygiene services. We believe that a pristine
-              environment is the foundation of productivity and well-being.
+              Cleanlyst was created to make finding reliable cleaning services simple, transparent,
+              and stress-free. We believe customers should be able to book trusted professionals
+              with confidence, while cleaners should have access to fair opportunities to grow their
+              business and manage their work more efficiently.
             </p>
+
             <p class="body-text">
-              By leveraging a systematic marketplace model, we provide a transparent platform where
-              residents who value quality can connect with vetted professionals who take pride in
-              their craft. No noise, no friction—just clean spaces.
+              Through a streamlined marketplace experience, Cleanlyst connects customers with vetted
+              cleaning professionals based on location, services, and availability. From secure
+              onboarding and booking management to transparent pricing and reviews, our goal is to
+              create a platform built on trust, quality, and convenience.
             </p>
           </div>
         </div>
@@ -98,20 +103,20 @@
         <h2 class="story-title">Our Story</h2>
         <div class="story-content">
           <p>
-            Founded with a vision to professionalize the cleaning industry, CleanMarket began as a
-            small initiative to support local cleaners in gaining the recognition and stability they
-            deserve. We saw the disconnect between high demand for quality and the fragmented supply
-            of services.
+            Cleanlyst was founded with a mission to simplify how people find trusted cleaning
+            professionals while creating better opportunities for independent cleaners and cleaning
+            businesses. We saw how difficult it was for customers to find reliable, verified
+            cleaners, and equally how challenging it was for cleaners to consistently secure quality
+            jobs and grow their business.
           </p>
+
           <p>
-            Today, we are more than just a marketplace; we are a community-driven platform committed
-            to quality and local support. Our journey is defined by the thousands of pristine spaces
-            we've helped create and the professional lives we've helped empower through fair,
-            transparent opportunities.
+            Today, Cleanlyst is building a modern, community-driven marketplace that connects
+            customers with vetted cleaning professionals through a seamless booking experience. From
+            secure onboarding and verified cleaner profiles to transparent pricing, scheduling, and
+            payments, our platform is designed to make cleaning services more accessible,
+            professional, and trustworthy for everyone.
           </p>
-        </div>
-        <div class="story-footer">
-          <button class="cta-button">Join Our Community</button>
         </div>
       </div>
     </section>

@@ -91,7 +91,19 @@ const router = createRouter({
       path: '/book',
       name: 'BookCleaner',
       meta: { title: 'Book a Cleaner', requiresAuth: true, requiresRole: 'customer' },
-      component: () => import('../pages/LandingPage.vue'),
+      component: () => import('../pages/customer/booking/SearchCleaner.vue'),
+    },
+    {
+      path: '/book/request',
+      name: 'RequestBooking',
+      meta: { title: 'Request Booking', requiresAuth: true, requiresRole: 'customer' },
+      component: () => import('../pages/customer/booking/RequestBooking.vue'),
+    },
+    {
+      path: '/book/confirm',
+      name: 'ConfirmBooking',
+      meta: { title: 'Booking Confirmed', requiresAuth: true, requiresRole: 'customer' },
+      component: () => import('../pages/customer/booking/ConfirmBooking.vue'),
     },
     {
       path: '/customer/dashboard',

@@ -42,7 +42,7 @@
           <button
             v-if="auth.isAuthenticated"
             type="button"
-            class="flex-1 md:flex-none px-4 py-2 border border-outline-variant text-label-md font-label-md hover:bg-surface-container transition-colors"
+            class="flex-1 md:flex-none px-4 py-2 border border-outline-variant text-label-md font-label-md hover:bg-surface-container transition-colors hide-mobile"
             @click="handleSignOut"
           >
             Logout

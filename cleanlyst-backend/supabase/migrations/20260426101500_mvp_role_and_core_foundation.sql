@@ -86,11 +86,11 @@ alter table public.bookings
 alter table public.bookings
   alter column status set default 'pending_request';
 
-drop type if exists public.booking_status_old;
-
 -- =========================
 -- BOOKING EVENT COMPATIBILITY
 -- =========================
+-- Convert booking_status_events columns BEFORE dropping booking_status_old,
+-- because from_status and to_status still depend on the old type at this point.
 
 alter table public.booking_status_events
   alter column from_status type public.booking_status
@@ -123,6 +123,9 @@ alter table public.booking_status_events
       else 'pending_request'
     end
   )::public.booking_status;
+
+-- All dependents converted; safe to drop the old type now.
+drop type if exists public.booking_status_old;
 
 -- =========================
 -- ROLE HELPERS

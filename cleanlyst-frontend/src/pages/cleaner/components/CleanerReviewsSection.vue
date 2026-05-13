@@ -63,7 +63,7 @@
                 <span class="material-symbols-outlined avatar-icon">person</span>
               </div>
               <div>
-                <p class="reviewer-name">{{ r.reviewer_name ?? 'Anonymous' }}</p>
+                <p class="reviewer-name">{{ r.reviewer?.full_name ?? 'Anonymous' }}</p>
                 <p class="review-date">{{ formatDate(r.created_at) }}</p>
               </div>
             </div>
@@ -88,14 +88,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { requireSupabase } from '@/lib/supabase'
+import { getCleanerReviews } from '@/services/reviewService'
 
 interface Review {
   id: string
   rating: number
   comment: string | null
   created_at: string
-  reviewer_name: string | null
+  reviewer: {
+    full_name: string
+    avatar_url: string | null
+  } | null
 }
 
 const auth = useAuthStore()
@@ -134,14 +137,11 @@ onMounted(async () => {
     return
   }
 
-  const supabase = requireSupabase()
-  const { data } = await supabase
-    .from('reviews')
-    .select('id, rating, comment, created_at, reviewer_name')
-    .eq('cleaner_id', auth.userId)
-    .order('created_at', { ascending: false })
-
-  reviews.value = (data ?? []) as Review[]
+  try {
+    reviews.value = await getCleanerReviews(auth.userId)
+  } catch {
+    reviews.value = []
+  }
   loading.value = false
 })
 </script>

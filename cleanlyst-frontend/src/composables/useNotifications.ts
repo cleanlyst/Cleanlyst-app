@@ -47,6 +47,7 @@ export function useNotifications() {
 
   function subscribe() {
     if (!auth.userId) return
+    unsubscribe()
     channel = subscribeToNotifications(auth.userId, (notification) => {
       notifications.value.unshift(notification)
     })

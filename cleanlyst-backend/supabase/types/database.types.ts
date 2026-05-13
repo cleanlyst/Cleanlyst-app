@@ -17,11 +17,14 @@ export type DocumentType = 'id_document' | 'dbs_document' | 'insurance_document'
 export type DocumentStatus = 'pending' | 'approved' | 'rejected'
 export type BookingStatus =
   | 'pending_request'
+  | 'estimate_proposed'
   | 'awaiting_customer_payment'
   | 'payment_authorized'
   | 'in_progress'
+  | 'completion_pending_customer'
   | 'completed'
   | 'cancelled'
+  | 'cleaner_declined'
   | 'refunded'
   | 'disputed'
 export type PaymentStatus = 'unpaid' | 'authorized' | 'captured' | 'refunded' | 'failed'
@@ -101,26 +104,29 @@ export interface Booking {
   id: string
   customer_id: string
   cleaner_id: string
-  service_id: string | null
+  service_id: string
   service_title_snapshot: string | null
-  address: string
-  city: string
-  postcode: string
+  category_snapshot: string | null
+  description_snapshot: string | null
+  location_text: string
   latitude: number | null
   longitude: number | null
   notes: string | null
-  start_at: string
-  end_at: string | null
-  duration_hours: number | null
-  hourly_rate: number | null
+  scheduled_start: string
+  scheduled_end: string
   quote_cents: number
   cleaner_payout_cents: number
   currency: string
   stripe_payment_intent_id: string | null
   status: BookingStatus
-  payment_status: PaymentStatus | null
-  cleaner_confirmed_at: string | null
+  payment_status: PaymentStatus
+  booking_request_id: string | null
+  estimated_hours: number | null
+  accepted_at: string | null
   completed_at: string | null
+  customer_confirmed_completed_at: string | null
+  dispute_opened_at: string | null
+  dispute_resolved_at: string | null
   cancelled_at: string | null
   cancellation_reason: string | null
   created_at: string
@@ -294,8 +300,8 @@ export interface Database {
       transition_booking_state: {
         Args: {
           p_booking_id: string
-          p_new_status: BookingStatus
-          p_reason?: string | null
+          p_target_status: BookingStatus
+          p_note?: string | null
         }
         Returns: Booking
       }

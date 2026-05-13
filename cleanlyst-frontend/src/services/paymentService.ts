@@ -68,6 +68,17 @@ export async function createPaymentIntent(bookingId: string): Promise<CreatePaym
   return callFunction('create-payment-intent', { booking_id: bookingId })
 }
 
+export interface CreateCheckoutSessionResult {
+  checkout_url: string
+  checkout_session_id: string
+}
+
+export async function createCheckoutSession(
+  bookingId: string,
+): Promise<CreateCheckoutSessionResult> {
+  return callFunction('create-checkout-session', { booking_id: bookingId })
+}
+
 export interface ProcessPayoutResult {
   payout_id: string
   stripe_transfer_id: string
@@ -78,6 +89,8 @@ export interface ProcessPayoutResult {
 export async function processPayout(bookingId: string): Promise<ProcessPayoutResult> {
   return callFunction('process-payout', { booking_id: bookingId })
 }
+
+export const releasePayout = processPayout
 
 export interface RefundPaymentResult {
   refund_id: string | null

@@ -24,6 +24,40 @@
         </nav>
 
         <div class="app-actions">
+          <div v-if="auth.isAuthenticated" class="notification-menu">
+            <button
+              type="button"
+              class="notification-button"
+              aria-label="Notifications"
+              @click="notificationsOpen = !notificationsOpen"
+            >
+              <span class="material-symbols-outlined">notifications</span>
+              <span v-if="unreadCount" class="notification-count">{{ unreadCount }}</span>
+            </button>
+            <div v-if="notificationsOpen" class="notification-popover">
+              <div class="notification-popover__header">
+                <span>Notifications</span>
+                <button v-if="unreadCount" type="button" @click="markAllRead">Mark all read</button>
+              </div>
+              <p v-if="notificationsLoading" class="notification-empty">Loading…</p>
+              <p v-else-if="notificationsError" class="notification-empty">{{ notificationsError }}</p>
+              <p v-else-if="notifications.length === 0" class="notification-empty">No notifications yet.</p>
+              <template v-else>
+                <button
+                  v-for="notification in notifications.slice(0, 6)"
+                  :key="notification.id"
+                  type="button"
+                  class="notification-item"
+                  :class="{ 'notification-item--unread': !notification.read_at }"
+                  @click="markRead(notification.id)"
+                >
+                  <span>{{ notification.title }}</span>
+                  <small v-if="notification.body">{{ notification.body }}</small>
+                </button>
+              </template>
+            </div>
+          </div>
+
           <router-link v-if="!auth.isAuthenticated" :to="{ name: 'Login' }" class="app-action-link">
             <button
               class="flex-1 md:flex-none px-4 py-2 border border-outline-variant text-label-md font-label-md hover:bg-surface-container transition-colors"
@@ -103,10 +137,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import FooterPage from '@/components/FooterPage.vue'
 import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useNotifications } from '@/composables/useNotifications'
 import companyLogo from '/logo.svg'
 
 const route = useRoute()
@@ -114,12 +149,44 @@ const router = useRouter()
 const auth = useAuthStore()
 const open = ref(false)
 const signingOut = ref(false)
+const notificationsOpen = ref(false)
+const {
+  notifications,
+  loading: notificationsLoading,
+  error: notificationsError,
+  unreadCount,
+  load: loadNotifications,
+  subscribe: subscribeToNotificationUpdates,
+  unsubscribe: unsubscribeFromNotificationUpdates,
+  markRead,
+  markAllRead,
+} = useNotifications()
 const isComingSoonRoute = computed(() => route.name === 'ComingSoon')
 const dashboardRoute = computed<RouteLocationRaw>(() =>
   auth.isAuthenticated ? { name: auth.dashboardRouteName } : { name: 'Login' },
 )
 const isDashboardRoute = computed(
   () => typeof route.name === 'string' && route.name.includes('Dashboard'),
+)
+
+onMounted(async () => {
+  if (!auth.initialized) await auth.init()
+  if (auth.isAuthenticated) {
+    await loadNotifications()
+    subscribeToNotificationUpdates()
+  }
+})
+
+watch(
+  () => auth.userId,
+  async (userId) => {
+    notificationsOpen.value = false
+    unsubscribeFromNotificationUpdates()
+    if (userId) {
+      await loadNotifications()
+      subscribeToNotificationUpdates()
+    }
+  },
 )
 
 function navLinkClass(routeName?: string) {
@@ -142,6 +209,8 @@ async function handleSignOut() {
   signingOut.value = true
   try {
     await auth.signOut()
+    notificationsOpen.value = false
+    unsubscribeFromNotificationUpdates()
     await router.replace({ name: 'Login' })
   } catch {
     // ignore — state is already cleared by signOut()
@@ -219,6 +288,104 @@ async function handleSignOut() {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.notification-menu {
+  position: relative;
+}
+
+.notification-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  color: #18181b;
+  border: 1px solid #e4e4e7;
+  border-radius: 0.25rem;
+  background: #ffffff;
+}
+
+.notification-button .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+.notification-count {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #ba1a1a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.1rem;
+}
+
+.notification-popover {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 60;
+  width: min(22rem, calc(100vw - 2rem));
+  max-height: 28rem;
+  overflow-y: auto;
+  border: 1px solid #e4e4e7;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
+}
+
+.notification-popover__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e4e4e7;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.notification-popover__header button {
+  color: #52525b;
+  font-size: 0.75rem;
+}
+
+.notification-empty {
+  padding: 1rem;
+  color: #71717a;
+  font-size: 0.875rem;
+}
+
+.notification-item {
+  display: block;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #f4f4f5;
+}
+
+.notification-item span {
+  display: block;
+  color: #18181b;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.notification-item small {
+  display: block;
+  margin-top: 0.25rem;
+  color: #71717a;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.notification-item--unread {
+  background: #f8fafc;
 }
 
 .app-account-button {

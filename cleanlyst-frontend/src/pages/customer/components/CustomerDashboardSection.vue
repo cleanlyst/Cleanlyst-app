@@ -66,6 +66,14 @@
               </div>
               <div class="booking-actions">
                 <button
+                  v-if="b.status === 'completion_pending_customer'"
+                  class="btn-icon btn-icon--success"
+                  title="Confirm job complete"
+                  @click="props.confirmComplete(b.id)"
+                >
+                  <span class="material-symbols-outlined">check_circle</span>
+                </button>
+                <button
                   v-if="canCancel(b.status)"
                   class="btn-icon btn-icon--danger"
                   title="Cancel booking"
@@ -178,6 +186,10 @@ const props = defineProps({
   bookings: { type: Array as PropType<BookingWithCleaner[]>, default: () => [] },
   loading: { type: Boolean, default: false },
   cancelBooking: {
+    type: Function as PropType<(id: string) => Promise<void>>,
+    default: () => Promise.resolve(),
+  },
+  confirmComplete: {
     type: Function as PropType<(id: string) => Promise<void>>,
     default: () => Promise.resolve(),
   },
@@ -495,6 +507,7 @@ function rebook(booking: BookingWithCleaner) {
 .btn-icon:hover { background: var(--surface-container, #eeeeee); }
 
 .btn-icon--danger { color: var(--error, #ba1a1a); }
+.btn-icon--success { color: #2e7d32; }
 
 /* ── Sidebar ── */
 .sidebar {

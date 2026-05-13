@@ -175,13 +175,13 @@ export const acceptBooking = (supabase: SupabaseClient, bookingId: string) =>
 export const transitionBooking = (
   supabase: SupabaseClient,
   bookingId: string,
-  newStatus: string,
-  reason?: string,
+  targetStatus: string,
+  note?: string,
 ) =>
   supabase.rpc('transition_booking_state', {
     p_booking_id: bookingId,
-    p_new_status: newStatus,
-    p_reason: reason ?? null,
+    p_target_status: targetStatus,
+    p_note: note ?? null,
   })
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -15,7 +15,7 @@
           <input
             v-model="searchQuery"
             class="w-full pl-10 pr-4 h-12 bg-surface-container-lowest border border-outline-variant rounded font-body text-body focus:border-primary focus:ring-0 outline-none"
-            placeholder="Search by name, email, or city..."
+            placeholder="Search by name or city..."
             type="text"
             @input="onSearchInput"
           />
@@ -182,20 +182,23 @@
         <div class="modal-body">
           <div class="mb-4">
             <p class="font-label-md text-label-md">{{ reviewModal.full_name }}</p>
-            <p class="text-caption text-on-surface-variant">{{ reviewModal.email }} • {{ reviewModal.city }}</p>
+            <p class="text-caption text-on-surface-variant">{{ reviewModal.city ?? '—' }}</p>
             <p class="text-caption text-on-surface-variant mt-1">
               Applied: {{ formatDate(reviewModal.submitted_at ?? reviewModal.updated_at) }}
             </p>
           </div>
 
           <div class="mb-4">
-            <label for="review-notes" class="block font-label-md text-label-md mb-1">Notes</label>
+            <label for="review-notes" class="block font-label-md text-label-md mb-1">
+              Notes
+              <span class="font-caption text-on-surface-variant ml-1">(required for rejection — min 10 chars)</span>
+            </label>
             <textarea
               id="review-notes"
               v-model="reviewNotes"
               rows="3"
               class="w-full p-3 border border-outline-variant rounded font-body text-body focus:border-primary focus:ring-0 outline-none"
-              placeholder="Optional notes for this decision..."
+              placeholder="Optional for approve/needs-info. Required reason for rejection..."
             ></textarea>
           </div>
 

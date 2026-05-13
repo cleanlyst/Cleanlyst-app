@@ -47,3 +47,13 @@ export interface CleanerApplication {
   requested_info: string | null
   personal_details: Record<string, unknown>
 }
+
+export interface Review {
+  id: string
+  booking_id: string
+  reviewer_id: string
+  reviewee_id: string
+  rating: number
+  comment: string | null
+  created_at: string
+}

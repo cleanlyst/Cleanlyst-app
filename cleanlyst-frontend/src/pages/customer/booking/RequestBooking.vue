@@ -42,6 +42,37 @@
           </div>
         </section>
 
+        <!-- Service Selection -->
+        <section class="space-y-6">
+          <h2 class="font-h2 text-h2 text-primary">Service</h2>
+          <div v-if="servicesLoading" class="p-6 bg-surface-container-low border border-outline-variant rounded-lg">
+            <p class="font-body text-body text-secondary">Loading services…</p>
+          </div>
+          <div v-else-if="availableServices.length === 0" class="p-6 bg-surface-container-low border border-outline-variant rounded-lg">
+            <p class="font-body text-body text-secondary">
+              This cleaner does not have any active services available for booking.
+            </p>
+          </div>
+          <div v-else>
+            <label for="service-id" class="block font-label-md text-label-md text-primary mb-2">
+              Choose a service
+            </label>
+            <select
+              id="service-id"
+              v-model="selectedServiceId"
+              class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none rounded-lg"
+            >
+              <option value="" disabled>Select a service</option>
+              <option v-for="service in availableServices" :key="service.id" :value="service.id">
+                {{ service.title }} · {{ formatPence(service.base_price_cents) }}
+              </option>
+            </select>
+            <p v-if="selectedService?.description" class="text-caption font-caption text-secondary mt-2">
+              {{ selectedService.description }}
+            </p>
+          </div>
+        </section>
+
         <!-- Date & Time -->
         <section class="space-y-6">
           <h2 class="font-h2 text-h2 text-primary">Date &amp; Time</h2>
@@ -70,7 +101,7 @@
               />
             </div>
           </div>
-          <div>
+          <div v-if="!selectedService?.duration_minutes">
             <label for="booking-duration" class="block font-label-md text-label-md text-primary mb-2">
               Duration
             </label>
@@ -161,14 +192,18 @@
                   <span class="material-symbols-outlined text-secondary">schedule</span>
                   <span class="font-body text-body text-secondary">Duration</span>
                 </div>
-                <span class="font-label-md text-label-md text-primary">{{ durationHours }} hour{{ durationHours !== 1 ? 's' : '' }}</span>
+                <span class="font-label-md text-label-md text-primary">{{ durationLabel }}</span>
               </div>
-              <div v-if="cleaner?.hourly_rate_cents" class="flex justify-between items-center">
+              <div v-if="selectedService || cleaner?.hourly_rate_cents" class="flex justify-between items-center">
                 <div class="flex items-center gap-3">
                   <span class="material-symbols-outlined text-secondary">cleaning_services</span>
-                  <span class="font-body text-body text-secondary">Rate</span>
+                  <span class="font-body text-body text-secondary">
+                    {{ selectedService ? 'Service' : 'Rate' }}
+                  </span>
                 </div>
-                <span class="font-label-md text-label-md text-primary">{{ formatPence(cleaner.hourly_rate_cents) }}/hr</span>
+                <span class="font-label-md text-label-md text-primary">
+                  {{ selectedService ? selectedService.title : hourlyRateLabel }}
+                </span>
               </div>
             </div>
             <div class="pt-6 space-y-4 border-t border-surface-variant">
@@ -215,10 +250,21 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCleanerPublicProfile, type CleanerSearchResult } from '@/services/cleanerService'
+import { createBookingRequest } from '@/services/bookingService'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { formatPence } from '@/utils/format'
+
+interface BookableService {
+  id: string
+  cleaner_id: string
+  title: string
+  category: string | null
+  description: string | null
+  duration_minutes: number | null
+  base_price_cents: number
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -229,8 +275,11 @@ const pageLoading = ref(true)
 const loadError = ref('')
 const submitting = ref(false)
 const submitError = ref('')
+const servicesLoading = ref(false)
 
 const cleaner = ref<CleanerSearchResult | null>(null)
+const availableServices = ref<BookableService[]>([])
+const selectedServiceId = ref('')
 const bookingDate = ref('')
 const bookingTime = ref('09:00')
 const durationHours = ref(3)
@@ -242,6 +291,10 @@ const cleanerName = computed(() =>
   cleaner.value?.business_name ?? cleaner.value?.profiles?.full_name ?? 'Cleaner',
 )
 
+const selectedService = computed(
+  () => availableServices.value.find((service) => service.id === selectedServiceId.value) ?? null,
+)
+
 const addressLine = computed(() => {
   const p = prefsStore.preferences
   if (!p) return ''
@@ -250,15 +303,35 @@ const addressLine = computed(() => {
 })
 
 const subtotalPence = computed(() =>
-  (cleaner.value?.hourly_rate_cents ?? 0) * durationHours.value,
+  selectedService.value?.base_price_cents
+    ?? (cleaner.value?.hourly_rate_cents ?? 0) * durationHours.value,
 )
 
 const serviceFeePence = computed(() => Math.round(subtotalPence.value * 0.07))
 
 const totalPence = computed(() => subtotalPence.value + serviceFeePence.value)
 
+const hourlyRateLabel = computed(() =>
+  cleaner.value?.hourly_rate_cents ? `${formatPence(cleaner.value.hourly_rate_cents)}/hr` : 'Not set',
+)
+
+const durationLabel = computed(() => {
+  const minutes = selectedService.value?.duration_minutes
+  if (!minutes) return `${durationHours.value} hour${durationHours.value !== 1 ? 's' : ''}`
+  if (minutes % 60 === 0) {
+    const hours = minutes / 60
+    return `${hours} hour${hours !== 1 ? 's' : ''}`
+  }
+  return `${minutes} minutes`
+})
+
 const canSubmit = computed(
-  () => !!bookingDate.value && !!bookingTime.value && !!cleaner.value,
+  () =>
+    !!bookingDate.value
+    && !!bookingTime.value
+    && !!cleaner.value
+    && !!selectedService.value
+    && !servicesLoading.value,
 )
 
 onMounted(async () => {
@@ -278,6 +351,7 @@ onMounted(async () => {
       loadError.value = 'Cleaner not found.'
     } else {
       cleaner.value = cleanerData
+      await loadCleanerServices(cleanerData.user_id)
     }
   } catch (e) {
     loadError.value = e instanceof Error ? e.message : 'Failed to load cleaner.'
@@ -286,38 +360,54 @@ onMounted(async () => {
   }
 })
 
+async function loadCleanerServices(cleanerId: string) {
+  servicesLoading.value = true
+  try {
+    const supabase = requireSupabase()
+    const { data, error } = await supabase
+      .from('services')
+      .select('id, cleaner_id, title, category, description, duration_minutes, base_price_cents')
+      .eq('cleaner_id', cleanerId)
+      .eq('active', true)
+      .order('category')
+      .order('title')
+    if (error) throw error
+    availableServices.value = (data ?? []) as BookableService[]
+    selectedServiceId.value = availableServices.value[0]?.id ?? ''
+  } finally {
+    servicesLoading.value = false
+  }
+}
+
 async function submitBooking() {
-  if (!canSubmit.value || !auth.userId || !cleaner.value) return
+  if (!canSubmit.value || !auth.userId || !cleaner.value || !selectedService.value) return
   submitting.value = true
   submitError.value = ''
 
   try {
     const scheduledStart = new Date(`${bookingDate.value}T${bookingTime.value}:00`)
-    const scheduledEnd = new Date(scheduledStart.getTime() + durationHours.value * 60 * 60 * 1000)
+    const durationMinutes = selectedService.value.duration_minutes ?? durationHours.value * 60
+    const scheduledEnd = new Date(scheduledStart.getTime() + durationMinutes * 60 * 1000)
     const prefs = prefsStore.preferences
     const location = [prefs?.address_line_1, prefs?.city, prefs?.postcode]
       .filter(Boolean)
       .join(', ') || 'Address not provided'
 
-    const supabase = requireSupabase()
-    const { data, error } = await supabase
-      .from('bookings')
-      .insert({
-        customer_id: auth.userId,
-        cleaner_id: cleaner.value.user_id,
-        service_title_snapshot: 'Cleaning Booking',
-        location_text: location,
-        scheduled_start: scheduledStart.toISOString(),
-        scheduled_end: scheduledEnd.toISOString(),
-        quote_cents: totalPence.value,
-        cleaner_payout_cents: subtotalPence.value,
-        status: 'pending_request',
-        notes_to_cleaner: notes.value || null,
-      })
-      .select('id')
-      .single()
-
-    if (error) throw error
+    await createBookingRequest({
+      customerId: auth.userId,
+      cleanerId: cleaner.value.user_id,
+      serviceId: selectedService.value.id,
+      serviceTitleSnapshot: selectedService.value.title,
+      categorySnapshot: selectedService.value.category,
+      descriptionSnapshot: selectedService.value.description,
+      locationText: location,
+      scheduledStart: scheduledStart.toISOString(),
+      scheduledEnd: scheduledEnd.toISOString(),
+      quoteCents: totalPence.value,
+      cleanerPayoutCents: subtotalPence.value,
+      currency: cleaner.value.currency,
+      notes: notes.value || null,
+    })
     router.push({ name: 'CustomerBookings' })
   } catch (e) {
     submitError.value = e instanceof Error ? e.message : 'Failed to submit booking.'

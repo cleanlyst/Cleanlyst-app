@@ -56,18 +56,77 @@
             formatStatus(b.status)
           }}</span>
         </div>
-        <div v-if="canCancel(b.status)" class="card-actions">
-          <button class="btn-danger" type="button" @click="cancelBooking(b.id)">
+        <div
+          v-if="canCancel(b.status) || canConfirmComplete(b.status) || (b.status === 'completed' && !reviewedIds.has(b.id))"
+          class="card-actions"
+        >
+          <button v-if="canCancel(b.status)" class="btn-danger" type="button" @click="props.cancelBooking(b.id)">
             Cancel Booking
+          </button>
+          <button v-if="canConfirmComplete(b.status)" class="btn-success" type="button" @click="props.confirmComplete(b.id)">
+            Confirm Complete
+          </button>
+          <button
+            v-if="b.status === 'completed' && !reviewedIds.has(b.id)"
+            class="btn-outline"
+            type="button"
+            @click="openReview(b.id)"
+          >
+            Leave a Review
           </button>
         </div>
       </article>
+    </div>
+
+    <!-- Review modal -->
+    <div v-if="reviewingBookingId" class="modal-backdrop" @click.self="closeReview">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2 class="modal-title">Leave a Review</h2>
+          <button class="modal-close" type="button" @click="closeReview">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="star-row">
+            <button
+              v-for="n in 5"
+              :key="n"
+              class="star-btn"
+              type="button"
+              @click="reviewRating = n"
+            >
+              <span class="material-symbols-outlined">{{ n <= reviewRating ? 'star' : 'star_border' }}</span>
+            </button>
+          </div>
+          <textarea
+            v-model="reviewComment"
+            class="review-textarea"
+            rows="3"
+            placeholder="Share your experience (optional)..."
+          ></textarea>
+          <p v-if="reviewError" class="review-error">{{ reviewError }}</p>
+          <div class="modal-actions">
+            <button
+              class="btn-primary modal-btn"
+              type="button"
+              :disabled="reviewSubmitting"
+              @click="submitReview"
+            >
+              {{ reviewSubmitting ? 'Submitting…' : 'Submit Review' }}
+            </button>
+            <button class="btn-cancel" type="button" @click="closeReview">Cancel</button>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { PropType } from 'vue'
+import { createReview } from '@/services/reviewService'
 
 interface BookingSummary {
   id: string
@@ -83,7 +142,7 @@ interface BookingTotals {
   completed: number
 }
 
-defineProps({
+const props = defineProps({
   bookings: { type: Array as PropType<BookingSummary[]>, default: () => [] },
   bookingTotals: {
     type: Object as PropType<BookingTotals>,
@@ -95,7 +154,52 @@ defineProps({
     type: Function as PropType<(id: string) => Promise<void>>,
     default: () => {},
   },
+  confirmComplete: {
+    type: Function as PropType<(id: string) => Promise<void>>,
+    default: () => {},
+  },
 })
+
+const reviewingBookingId = ref<string | null>(null)
+const reviewRating = ref(5)
+const reviewComment = ref('')
+const reviewSubmitting = ref(false)
+const reviewError = ref('')
+const reviewedIds = ref<Set<string>>(new Set())
+
+function openReview(bookingId: string) {
+  reviewingBookingId.value = bookingId
+  reviewRating.value = 5
+  reviewComment.value = ''
+  reviewError.value = ''
+}
+
+function closeReview() {
+  reviewingBookingId.value = null
+}
+
+async function submitReview() {
+  if (!reviewingBookingId.value) return
+  reviewSubmitting.value = true
+  reviewError.value = ''
+  try {
+    await createReview(reviewingBookingId.value, reviewRating.value, reviewComment.value || undefined)
+    reviewedIds.value = new Set([...reviewedIds.value, reviewingBookingId.value])
+    closeReview()
+  } catch (e) {
+    reviewError.value = e instanceof Error ? e.message : 'Failed to submit review.'
+  } finally {
+    reviewSubmitting.value = false
+  }
+}
+
+function canCancel(status: string): boolean {
+  return ['pending_request', 'estimate_proposed'].includes(status)
+}
+
+function canConfirmComplete(status: string): boolean {
+  return status === 'completion_pending_customer'
+}
 
 function formatDate(value: string): string {
   const date = new Date(value)
@@ -113,10 +217,6 @@ function statusClass(status: string): string {
   if (status === 'completed') return 'status-pill--completed'
   if (['cancelled', 'cleaner_declined', 'disputed', 'refunded'].includes(status)) return 'status-pill--cancelled'
   return ''
-}
-
-function canCancel(status: string): boolean {
-  return ['pending_request', 'estimate_proposed'].includes(status)
 }
 </script>
 
@@ -369,6 +469,7 @@ function canCancel(status: string): boolean {
   border-top: 1px solid var(--surface-container, #eeeeee);
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
 }
 
 /* ── Buttons ── */
@@ -413,6 +514,148 @@ function canCancel(status: string): boolean {
 .btn-danger:hover {
   background: #ffebee;
 }
+
+.btn-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: #2e7d32;
+  border: 1px solid #2e7d32;
+  border-radius: var(--radius, 0.25rem);
+  font-family: var(--font-caption);
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.btn-success:hover { background: #e8f5e9; }
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--on-surface, #1a1c1c);
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  border-radius: var(--radius, 0.25rem);
+  font-family: var(--font-caption);
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.btn-outline:hover { background: var(--surface-container, #eeeeee); }
+
+/* ── Review modal ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.modal-box {
+  background: #ffffff;
+  border-radius: 0.5rem;
+  width: 100%;
+  max-width: 28rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--outline-variant, #c4c7c7);
+}
+
+.modal-title {
+  font-family: var(--font-h2);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--secondary, #5e5e5e);
+  display: flex;
+  padding: 0;
+}
+
+.modal-body { padding: 1.5rem; }
+
+.star-row {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.star-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.125rem;
+  color: #f59e0b;
+  display: flex;
+}
+
+.star-btn .material-symbols-outlined { font-size: 2rem; }
+
+.review-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  border-radius: 0.25rem;
+  font-family: var(--font-body);
+  font-size: 14px;
+  resize: vertical;
+  outline: none;
+  box-sizing: border-box;
+  margin-bottom: 0.5rem;
+}
+
+.review-textarea:focus { border-color: var(--primary, #000000); }
+
+.review-error {
+  color: var(--error, #ba1a1a);
+  font-size: 13px;
+  margin: 0 0 0.75rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.modal-btn { flex: 1; }
+
+.btn-cancel {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  background: transparent;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  border-radius: var(--radius, 0.25rem);
+  font-family: var(--font-label-md);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.btn-cancel:hover { background: var(--surface-container, #eeeeee); }
 
 @media (max-width: 768px) {
   .stats-row {

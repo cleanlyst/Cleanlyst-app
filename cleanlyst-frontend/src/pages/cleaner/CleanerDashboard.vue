@@ -48,7 +48,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
-import { transitionBookingState } from '@/services/bookingService'
+import { useCleanerBookings } from '@/composables/useCleanerBookings'
 import { formatDateTime, formatStatus } from '@/utils/format'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { cleanerDashboardLinks } from '@/pages/dasboardLinks'
@@ -59,23 +59,17 @@ import CleanerServicesPricingSection from './components/CleanerServicesPricingSe
 import CleanerFinancialsSection from './components/CleanerFinancialsSection.vue'
 import CleanerReviewsSection from './components/CleanerReviewsSection.vue'
 import CleanerProfile from './components/CleanerProfile.vue'
-import type { BookingStatus } from '@/types/domain'
-
-interface Booking {
-  id: string
-  service_title_snapshot: string | null
-  scheduled_start: string
-  location_text: string
-  status: BookingStatus
-  created_at: string
-  quote_cents?: number | null
-}
 
 const auth = useAuthStore()
 const route = useRoute()
-const bookings = ref<Booking[]>([])
-const loading = ref(true)
-const errorMessage = ref('')
+const {
+  bookings,
+  loading,
+  errorMessage,
+  bookingTotals,
+  load: loadCleanerBookingRows,
+  transition,
+} = useCleanerBookings()
 const isAvailable = ref(true)
 const toggleLoading = ref(false)
 const calendarDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -84,34 +78,13 @@ const activeRouteName = computed(() =>
   typeof route.name === 'string' ? route.name : 'CleanerDashboard',
 )
 
-const hourlyRateLabel = computed(() => {
-  const amount = auth.cleanerProfile?.hourly_rate_cents
-  const currency = auth.cleanerProfile?.currency ?? 'GBP'
-  if (amount == null || amount <= 0) return 'Not set yet'
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(amount / 100)
-})
-
 const ratingLabel = computed(() => {
   if (!auth.cleanerProfile) return 'No rating yet'
   const { average_rating, review_count } = auth.cleanerProfile
   return `${average_rating.toFixed(1)} (${review_count} reviews)`
 })
 
-const earningsToDate = computed(() => {
-  const completed = bookingTotals.value.completed
-  const rate = auth.cleanerProfile?.hourly_rate_cents ?? 0
-  const currency = auth.cleanerProfile?.currency ?? 'GBP'
-  const amount = (completed * 2 * rate) / 100
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(amount)
-})
-
-const bookingTotals = computed(() => ({
-  pending: bookings.value.filter((b) => b.status === 'pending_request').length,
-  accepted: bookings.value.filter((b) =>
-    ['awaiting_customer_payment', 'payment_authorized', 'in_progress'].includes(b.status),
-  ).length,
-  completed: bookings.value.filter((b) => b.status === 'completed').length,
-}))
+const earningsToDate = ref('—')
 
 onMounted(loadBookings)
 
@@ -119,30 +92,38 @@ async function loadBookings() {
   loading.value = true
   errorMessage.value = ''
   try {
-    await auth.init()
+    if (!auth.initialized) await auth.init()
     if (!auth.userId) { bookings.value = []; return }
 
     const supabase = requireSupabase()
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-    const [bookingsResult, profileResult] = await Promise.all([
-      supabase
-        .from('bookings')
-        .select('id, service_title_snapshot, scheduled_start, location_text, status, created_at, quote_cents')
-        .eq('cleaner_id', auth.userId)
-        .order('scheduled_start', { ascending: true }),
+    const [, profileResult, earningsResult] = await Promise.all([
+      loadCleanerBookingRows(auth.userId),
       supabase
         .from('cleaner_profiles')
         .select('is_available')
         .eq('user_id', auth.userId)
         .maybeSingle(),
+      supabase
+        .from('bookings')
+        .select('cleaner_payout_cents')
+        .eq('cleaner_id', auth.userId)
+        .eq('status', 'completed')
+        .gte('updated_at', monthStart),
     ])
-
-    if (bookingsResult.error) throw bookingsResult.error
-    bookings.value = (bookingsResult.data ?? []) as Booking[]
 
     if (!profileResult.error && profileResult.data) {
       isAvailable.value = (profileResult.data as any).is_available ?? true
     }
+
+    const totalPence = (earningsResult.data ?? []).reduce(
+      (sum: number, row: any) => sum + (row.cleaner_payout_cents ?? 0),
+      0,
+    )
+    const currency = auth.cleanerProfile?.currency ?? 'GBP'
+    earningsToDate.value = new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(totalPence / 100)
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load bookings.'
     bookings.value = []
@@ -172,7 +153,9 @@ async function toggleAvailability() {
 
 async function acceptBooking(id: string) {
   try {
-    await transitionBookingState(id, 'awaiting_customer_payment')
+    const supabase = requireSupabase()
+    const { error } = await supabase.rpc('accept_booking', { p_booking_id: id })
+    if (error) throw error
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to accept booking.'
@@ -181,7 +164,7 @@ async function acceptBooking(id: string) {
 
 async function declineBooking(id: string) {
   try {
-    await transitionBookingState(id, 'cancelled')
+    await transition(id, 'cleaner_declined')
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to decline booking.'
@@ -190,7 +173,7 @@ async function declineBooking(id: string) {
 
 async function startBooking(id: string) {
   try {
-    await transitionBookingState(id, 'in_progress')
+    await transition(id, 'in_progress')
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to start booking.'
@@ -199,7 +182,7 @@ async function startBooking(id: string) {
 
 async function markCompleted(id: string) {
   try {
-    await transitionBookingState(id, 'completed')
+    await transition(id, 'completion_pending_customer')
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to mark booking completed.'

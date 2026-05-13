@@ -62,7 +62,7 @@ export async function searchCleaners(params: CleanerSearchParams = {}): Promise<
 
   const { data, error } = await query
   if (error) throw error
-  return (data ?? []) as CleanerSearchResult[]
+  return (data ?? []) as unknown as CleanerSearchResult[]
 }
 
 export async function getCleanerPublicProfile(userId: string): Promise<CleanerSearchResult | null> {
@@ -87,7 +87,7 @@ export async function getCleanerPublicProfile(userId: string): Promise<CleanerSe
     .eq('user_id', userId)
     .maybeSingle()
   if (error) throw error
-  return data as CleanerSearchResult | null
+  return data as unknown as CleanerSearchResult | null
 }
 
 export async function updateCleanerProfile(
@@ -108,45 +108,4 @@ export async function updateCleanerProfile(
     .single()
   if (error) throw error
   return data
-}
-
-// ─── cleaner_services junction ────────────────────────────────
-
-export interface CleanerServiceOffering {
-  id: string
-  cleaner_id: string
-  service_id: string
-  created_at: string
-}
-
-export async function getCleanerServiceOfferings(
-  cleanerId: string,
-): Promise<CleanerServiceOffering[]> {
-  const supabase = getSupabaseClient()
-  const { data, error } = await supabase
-    .from('cleaner_services')
-    .select('id, cleaner_id, service_id, created_at')
-    .eq('cleaner_id', cleanerId)
-  if (error) throw error
-  return (data ?? []) as CleanerServiceOffering[]
-}
-
-export async function addCleanerServiceOffering(
-  cleanerId: string,
-  serviceId: string,
-): Promise<CleanerServiceOffering> {
-  const supabase = getSupabaseClient()
-  const { data, error } = await supabase
-    .from('cleaner_services')
-    .insert({ cleaner_id: cleanerId, service_id: serviceId })
-    .select('id, cleaner_id, service_id, created_at')
-    .single()
-  if (error) throw error
-  return data as CleanerServiceOffering
-}
-
-export async function removeCleanerServiceOffering(id: string): Promise<void> {
-  const supabase = getSupabaseClient()
-  const { error } = await supabase.from('cleaner_services').delete().eq('id', id)
-  if (error) throw error
 }

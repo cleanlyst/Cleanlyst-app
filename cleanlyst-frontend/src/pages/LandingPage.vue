@@ -43,6 +43,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { createBookingRequest } from '@/services/bookingService'
 
 interface Service {
   id: string
@@ -145,26 +146,22 @@ async function createBooking() {
 
   const end = new Date(start.getTime() + (service.duration_minutes || 60) * 60000)
 
-  const { error } = await supabase.from('bookings').insert({
-    customer_id: auth.userId,
-    cleaner_id: service.cleaner_id,
-    service_id: service.id,
-
-    service_title_snapshot: service.title,
-    category_snapshot: service.category,
-    description_snapshot: service.description,
-
-    location_text: location.value,
-    notes: notes.value,
-
-    scheduled_start: start.toISOString(),
-    scheduled_end: end.toISOString(),
-
-    quote_cents: service.base_price_cents,
-    cleaner_payout_cents: service.base_price_cents,
-  })
-
-  if (error) {
+  try {
+    await createBookingRequest({
+      customerId: auth.userId,
+      cleanerId: service.cleaner_id,
+      serviceId: service.id,
+      serviceTitleSnapshot: service.title,
+      categorySnapshot: service.category,
+      descriptionSnapshot: service.description,
+      locationText: location.value,
+      notes: notes.value || null,
+      scheduledStart: start.toISOString(),
+      scheduledEnd: end.toISOString(),
+      quoteCents: service.base_price_cents,
+      cleanerPayoutCents: service.base_price_cents,
+    })
+  } catch (error) {
     console.error(error)
     alert('Error creating booking')
     return

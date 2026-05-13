@@ -54,11 +54,11 @@
 
         <!-- Booking notes -->
         <section
-          v-if="booking.notes_to_cleaner"
+          v-if="booking.notes"
           class="bg-surface-container-lowest border border-outline-variant p-padding-card"
         >
           <h2 class="font-label-md text-label-md mb-3">Notes to Cleaner</h2>
-          <p class="font-body text-body text-on-surface-variant">{{ booking.notes_to_cleaner }}</p>
+          <p class="font-body text-body text-on-surface-variant">{{ booking.notes }}</p>
         </section>
       </div>
 
@@ -76,6 +76,15 @@
               <span>{{ formatPence(booking.quote_cents) }}</span>
             </div>
           </div>
+
+          <button
+            v-if="canPay"
+            class="w-full bg-primary text-white py-4 font-label-md text-label-md hover:opacity-90 transition-opacity disabled:opacity-50 mb-3"
+            :disabled="paying"
+            @click="continueToPayment"
+          >
+            {{ paying ? 'Preparing payment…' : paymentButtonLabel }}
+          </button>
 
           <button
             v-if="canCancel"
@@ -112,6 +121,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import {
+  cancelBooking as cancelBookingRequest,
+  transitionBookingState,
+} from '@/services/bookingService'
+import { createCheckoutSession } from '@/services/paymentService'
 import { formatDate, formatPence, formatStatus } from '@/utils/format'
 
 interface BookingDetail {
@@ -121,7 +135,7 @@ interface BookingDetail {
   scheduled_start: string
   status: string
   quote_cents: number | null
-  notes_to_cleaner: string | null
+  notes: string | null
 }
 
 const route = useRoute()
@@ -131,10 +145,19 @@ const auth = useAuthStore()
 const loading = ref(true)
 const booking = ref<BookingDetail | null>(null)
 const cancelling = ref(false)
+const paying = ref(false)
 const cancelError = ref('')
 
 const canCancel = computed(() =>
   booking.value ? ['pending_request', 'estimate_proposed'].includes(booking.value.status) : false,
+)
+
+const canPay = computed(() =>
+  booking.value ? ['estimate_proposed', 'awaiting_customer_payment'].includes(booking.value.status) : false,
+)
+
+const paymentButtonLabel = computed(() =>
+  booking.value?.status === 'estimate_proposed' ? 'Accept estimate and pay' : 'Continue to payment',
 )
 
 onMounted(async () => {
@@ -145,7 +168,7 @@ onMounted(async () => {
   const supabase = requireSupabase()
   const { data, error } = await supabase
     .from('bookings')
-    .select('id, service_title_snapshot, location_text, scheduled_start, status, quote_cents, notes_to_cleaner')
+    .select('id, service_title_snapshot, location_text, scheduled_start, status, quote_cents, notes')
     .eq('id', bookingId)
     .eq('customer_id', auth.userId)
     .maybeSingle()
@@ -159,18 +182,32 @@ async function cancelBooking() {
   cancelling.value = true
   cancelError.value = ''
   try {
-    const supabase = requireSupabase()
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'cancelled' })
-      .eq('id', booking.value.id)
-      .eq('customer_id', auth.userId)
-    if (error) throw error
+    await cancelBookingRequest(booking.value.id)
     booking.value = { ...booking.value, status: 'cancelled' }
   } catch (e) {
     cancelError.value = e instanceof Error ? e.message : 'Failed to cancel.'
   } finally {
     cancelling.value = false
+  }
+}
+
+async function continueToPayment() {
+  if (!booking.value) return
+  paying.value = true
+  cancelError.value = ''
+  try {
+    let payableBookingId = booking.value.id
+    if (booking.value.status === 'estimate_proposed') {
+      const updated = await transitionBookingState(booking.value.id, 'awaiting_customer_payment')
+      payableBookingId = updated.id
+      booking.value = { ...booking.value, status: 'awaiting_customer_payment' }
+    }
+    const checkout = await createCheckoutSession(payableBookingId)
+    window.location.assign(checkout.checkout_url)
+  } catch (e) {
+    cancelError.value = e instanceof Error ? e.message : 'Failed to prepare payment.'
+  } finally {
+    paying.value = false
   }
 }
 

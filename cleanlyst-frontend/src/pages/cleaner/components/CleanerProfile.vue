@@ -9,7 +9,7 @@
           portfolio are up to date to increase bookings.
         </p>
       </div>
-      <button class="edit-btn" @click="editing = !editing">
+      <button class="edit-btn" @click="editing ? closeEdit() : openEdit()">
         <span class="material-symbols-outlined">{{ editing ? 'close' : 'edit' }}</span>
         <span class="edit-btn-label">{{ editing ? 'Cancel' : 'Edit Profile' }}</span>
       </button>
@@ -20,6 +20,23 @@
       <h2 class="card-heading">Edit Profile</h2>
       <div class="edit-grid">
         <div class="edit-group">
+          <label class="edit-label" for="ep-name">Full Name</label>
+          <input
+            id="ep-name"
+            v-model="editForm.full_name"
+            class="edit-input"
+            type="text"
+            placeholder="Your full name"
+          />
+        </div>
+        <div class="edit-group">
+          <label class="edit-label" for="ep-city">City</label>
+          <select id="ep-city" v-model="editForm.city" class="edit-input">
+            <option value="">Select a city</option>
+            <option v-for="c in UK_CITIES" :key="c" :value="c">{{ c }}</option>
+          </select>
+        </div>
+        <div class="edit-group edit-group--full">
           <label class="edit-label" for="ep-bio">Bio</label>
           <textarea
             id="ep-bio"
@@ -42,13 +59,6 @@
           />
         </div>
         <div class="edit-group">
-          <label class="edit-label" for="ep-city">City</label>
-          <select id="ep-city" v-model="editForm.city" class="edit-input">
-            <option value="">Select a city</option>
-            <option v-for="city in UK_CITIES" :key="city" :value="city">{{ city }}</option>
-          </select>
-        </div>
-        <div class="edit-group">
           <label class="edit-label" for="ep-radius">Service Radius (km)</label>
           <input
             id="ep-radius"
@@ -61,8 +71,9 @@
           />
         </div>
         <div class="edit-group">
-          <label class="edit-label">Profile Photo</label>
+          <label class="edit-label" for="ep-avatar">Profile Photo</label>
           <label
+            id="ep-avatar"
             class="avatar-upload-btn"
             :class="{ 'avatar-upload-btn--loading': avatarUploading }"
           >
@@ -193,14 +204,36 @@ const avatarUploading = ref(false)
 const avatarError = ref('')
 
 const editForm = reactive({
-  bio: auth.cleanerProfile?.bio ?? '',
-  hourly_rate:
+  full_name: '',
+  bio: '',
+  hourly_rate: null as number | null,
+  service_radius_km: null as number | null,
+  city: '',
+})
+
+function syncFormFromStore() {
+  editForm.full_name = auth.profile?.full_name ?? ''
+  editForm.bio = auth.cleanerProfile?.bio ?? ''
+  editForm.hourly_rate =
     auth.cleanerProfile?.hourly_rate_cents != null
       ? auth.cleanerProfile.hourly_rate_cents / 100
-      : (null as number | null),
-  service_radius_km: auth.cleanerProfile?.service_radius_km ?? (null as number | null),
-  city: auth.profile?.city ?? '',
-})
+      : null
+  editForm.service_radius_km = auth.cleanerProfile?.service_radius_km ?? null
+  editForm.city = auth.profile?.city ?? ''
+}
+
+function openEdit() {
+  syncFormFromStore()
+  editError.value = ''
+  editSuccess.value = false
+  editing.value = true
+}
+
+function closeEdit() {
+  editing.value = false
+  editError.value = ''
+  editSuccess.value = false
+}
 
 const hourlyRateFormatted = computed(() => {
   const cents = auth.cleanerProfile?.hourly_rate_cents
@@ -241,18 +274,21 @@ async function handleSaveEdit() {
   try {
     const supabase = requireSupabase()
 
-    // City lives on profiles; bio/rate/radius live on cleaner_profiles — run in parallel.
+    // full_name + city live on profiles; bio/rate/radius live on cleaner_profiles.
     const [profileResult, cleanerResult] = await Promise.all([
       supabase
         .from('profiles')
-        .update({ city: editForm.city || null })
+        .update({
+          full_name: editForm.full_name.trim() || null,
+          city: editForm.city || null,
+        })
         .eq('id', auth.userId),
-      // Upsert — if the cleaner_profiles row was never created (e.g. admin promoted
-      // the user directly via the DB), UPDATE would silently affect 0 rows.
+      // Upsert — handles the case where admin promoted the user directly and no
+      // cleaner_profiles row exists yet.
       supabase.from('cleaner_profiles').upsert(
         {
           user_id: auth.userId,
-          bio: editForm.bio || null,
+          bio: editForm.bio.trim() || null,
           hourly_rate_cents:
             editForm.hourly_rate != null ? Math.round(editForm.hourly_rate * 100) : null,
           service_radius_km: editForm.service_radius_km,
@@ -264,11 +300,14 @@ async function handleSaveEdit() {
     if (profileResult.error) throw profileResult.error
     if (cleanerResult.error) throw cleanerResult.error
 
-    await auth.init()
+    // Reload only profile data — avoids full re-init that resets auth state temporarily.
+    await auth._loadProfileData(auth.userId)
+    syncFormFromStore()
     editSuccess.value = true
     setTimeout(() => {
       editSuccess.value = false
-    }, 3000)
+      editing.value = false
+    }, 1500)
   } catch (err) {
     editError.value = err instanceof Error ? err.message : 'Failed to save changes.'
   } finally {
@@ -289,7 +328,7 @@ async function handleAvatarChange(event: Event) {
       .update({ avatar_url: publicUrl })
       .eq('id', auth.userId)
     if (error) throw error
-    await auth.init()
+    await auth._loadProfileData(auth.userId)
   } catch (err) {
     avatarError.value = err instanceof Error ? err.message : 'Failed to upload photo.'
   } finally {
@@ -645,6 +684,12 @@ async function handleAvatarChange(event: Event) {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .edit-group--full {
+    grid-column: span 2;
+  }
 }
 
 .edit-label {

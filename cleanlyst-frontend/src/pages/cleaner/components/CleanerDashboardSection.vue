@@ -6,7 +6,8 @@
       <div>
         <h1 class="header-title">Welcome back, {{ auth.profile?.full_name ?? 'Cleaner' }}</h1>
         <p class="header-copy">
-          You have {{ props.bookingTotals.pending + props.bookingTotals.accepted }} upcoming bookings.
+          You have {{ props.bookingTotals.pending + props.bookingTotals.accepted }} upcoming
+          bookings.
         </p>
       </div>
       <div class="availability-card">
@@ -20,10 +21,18 @@
         >
           <span
             aria-hidden="true"
-            :class="['availability-toggle__thumb', props.isAvailable ? 'availability-toggle__thumb--on' : '']"
+            :class="[
+              'availability-toggle__thumb',
+              props.isAvailable ? 'availability-toggle__thumb--on' : '',
+            ]"
           ></span>
         </button>
-        <span :class="['availability-badge', props.isAvailable ? 'availability-badge--active' : 'availability-badge--inactive']">
+        <span
+          :class="[
+            'availability-badge',
+            props.isAvailable ? 'availability-badge--active' : 'availability-badge--inactive',
+          ]"
+        >
           {{ props.isAvailable ? 'Active' : 'Inactive' }}
         </span>
       </div>
@@ -67,8 +76,8 @@
       <div class="bookings-col">
         <div class="section-header">
           <h2 class="section-title">Upcoming Bookings</h2>
-          <router-link :to="{ name: 'CleanerAvailability' }" class="section-link">
-            View Calendar
+          <router-link :to="{ name: 'CleanerBookings' }" class="section-link">
+            View all
           </router-link>
         </div>
 
@@ -93,7 +102,9 @@
             <div class="booking-body">
               <div class="booking-title-row">
                 <div>
-                  <h3 class="booking-title">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h3>
+                  <h3 class="booking-title">
+                    {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
+                  </h3>
                   <p class="booking-address">{{ b.location_text }}</p>
                 </div>
                 <span class="booking-time-badge">{{ relativeTime(b.scheduled_start) }}</span>
@@ -126,50 +137,66 @@
               >
                 Complete
               </button>
-              <router-link
-                :to="{ name: 'CleanerBookings' }"
-                class="btn-action"
-              >
+              <router-link :to="{ name: 'CleanerBookings' }" class="btn-action">
                 Details
               </router-link>
             </div>
           </div>
         </div>
-
-        <div v-if="pendingBookings.length > 0" class="pending-requests-banner">
-          <span class="material-symbols-outlined">notifications</span>
-          <span>{{ pendingBookings.length }} incoming request{{ pendingBookings.length !== 1 ? 's' : '' }} awaiting review</span>
-          <router-link :to="{ name: 'CleanerBookings' }" class="pending-link">Review →</router-link>
-        </div>
       </div>
 
       <div class="route-col">
-        <h2 class="section-title">Daily Summary</h2>
-        <div class="summary-card">
-          <div class="summary-row">
-            <span class="material-symbols-outlined summary-icon">inbox</span>
-            <div>
-              <p class="summary-label">Incoming Requests</p>
-              <p class="summary-value">{{ props.bookingTotals.pending }}</p>
-            </div>
-          </div>
-          <div class="summary-row">
-            <span class="material-symbols-outlined summary-icon">event</span>
-            <div>
-              <p class="summary-label">Confirmed Jobs</p>
-              <p class="summary-value">{{ props.bookingTotals.accepted }}</p>
-            </div>
-          </div>
-          <div class="summary-row">
-            <span class="material-symbols-outlined summary-icon">check_circle</span>
-            <div>
-              <p class="summary-label">Completed</p>
-              <p class="summary-value">{{ props.bookingTotals.completed }}</p>
-            </div>
-          </div>
-          <router-link :to="{ name: 'CleanerBookings' }" class="btn-full-outline">
-            Manage All Bookings
+        <div class="section-header">
+          <h2 class="section-title">Incoming Bookings</h2>
+          <router-link :to="{ name: 'CleanerBookings' }" class="section-link">
+            View all
           </router-link>
+        </div>
+
+        <div v-if="props.loading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <p class="loading-text">Loading…</p>
+        </div>
+
+        <div v-else-if="pendingBookings.length === 0" class="empty-state">
+          <span class="material-symbols-outlined empty-icon">inbox</span>
+          <p class="empty-label">No incoming requests</p>
+          <p class="empty-desc">New booking requests will appear here.</p>
+        </div>
+
+        <div v-else class="bookings-list">
+          <div v-for="b in pendingBookings.slice(0, 3)" :key="b.id" class="booking-card">
+            <div class="booking-media">
+              <div class="booking-img-placeholder">
+                <span class="material-symbols-outlined placeholder-icon">home</span>
+              </div>
+            </div>
+            <div class="booking-body">
+              <div class="booking-title-row">
+                <div>
+                  <h3 class="booking-title">
+                    {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
+                  </h3>
+                  <p class="booking-address">{{ b.location_text }}</p>
+                </div>
+                <span class="booking-time-badge">{{ relativeTime(b.scheduled_start) }}</span>
+              </div>
+              <div class="booking-meta">
+                <div class="booking-meta-item">
+                  <span class="material-symbols-outlined">schedule</span>
+                  {{ formatDate(b.scheduled_start) }}
+                </div>
+              </div>
+            </div>
+            <div class="booking-ctas">
+              <button class="btn-start" type="button" @click="props.acceptBooking(b.id)">
+                Accept
+              </button>
+              <button class="btn-action" type="button" @click="props.declineBooking(b.id)">
+                Decline
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -225,15 +252,21 @@ const props = defineProps({
     type: Function as PropType<(id: string) => Promise<void>>,
     default: () => Promise.resolve(),
   },
+  acceptBooking: {
+    type: Function as PropType<(id: string) => Promise<void>>,
+    default: () => Promise.resolve(),
+  },
+  declineBooking: {
+    type: Function as PropType<(id: string) => Promise<void>>,
+    default: () => Promise.resolve(),
+  },
 })
 
 const upcomingBookings = computed(() =>
   props.bookings.filter((b) => UPCOMING_STATUSES.includes(b.status)),
 )
 
-const pendingBookings = computed(() =>
-  props.bookings.filter((b) => b.status === 'pending_request'),
-)
+const pendingBookings = computed(() => props.bookings.filter((b) => b.status === 'pending_request'))
 
 function formatDate(value: string): string {
   const date = new Date(value)
@@ -257,7 +290,11 @@ function relativeTime(value: string): string {
 
 <style scoped>
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -279,7 +316,10 @@ function relativeTime(value: string): string {
 }
 
 @media (min-width: 1024px) {
-  .page-main { padding-left: 3rem; padding-right: 3rem; }
+  .page-main {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
 }
 
 .error-msg {
@@ -302,7 +342,10 @@ function relativeTime(value: string): string {
 }
 
 @media (min-width: 768px) {
-  .page-header { flex-direction: row; align-items: flex-end; }
+  .page-header {
+    flex-direction: row;
+    align-items: flex-end;
+  }
 }
 
 .header-title {
@@ -349,8 +392,13 @@ function relativeTime(value: string): string {
   outline: none;
 }
 
-.availability-toggle--on { background-color: var(--primary, #000000); }
-.availability-toggle:disabled { opacity: 0.5; cursor: not-allowed; }
+.availability-toggle--on {
+  background-color: var(--primary, #000000);
+}
+.availability-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .availability-toggle__thumb {
   pointer-events: none;
@@ -360,11 +408,13 @@ function relativeTime(value: string): string {
   transform: translateX(0);
   border-radius: 9999px;
   background-color: #ffffff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease-in-out;
 }
 
-.availability-toggle__thumb--on { transform: translateX(1.25rem); }
+.availability-toggle__thumb--on {
+  transform: translateX(1.25rem);
+}
 
 .availability-badge {
   font-size: 10px;
@@ -393,7 +443,9 @@ function relativeTime(value: string): string {
 }
 
 @media (min-width: 768px) {
-  .earnings-grid { grid-template-columns: repeat(4, 1fr); }
+  .earnings-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .earnings-card {
@@ -406,7 +458,9 @@ function relativeTime(value: string): string {
 }
 
 @media (min-width: 768px) {
-  .earnings-card { grid-column: span 2; }
+  .earnings-card {
+    grid-column: span 2;
+  }
 }
 
 .metric-label {
@@ -435,7 +489,10 @@ function relativeTime(value: string): string {
   align-items: center;
 }
 
-.metric-footer-text { font-size: 12px; color: var(--secondary, #5e5e5e); }
+.metric-footer-text {
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
+}
 
 .report-btn {
   font-size: 14px;
@@ -451,7 +508,9 @@ function relativeTime(value: string): string {
   text-decoration: none;
 }
 
-.report-btn:hover { text-decoration: underline; }
+.report-btn:hover {
+  text-decoration: underline;
+}
 
 .metric-card {
   padding: 2rem;
@@ -478,10 +537,17 @@ function relativeTime(value: string): string {
 
 .star-icon {
   color: var(--primary, #000000);
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 
-.metric-sub { font-size: 12px; color: var(--secondary, #5e5e5e); }
+.metric-sub {
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
+}
 
 .content-grid {
   display: grid;
@@ -491,17 +557,15 @@ function relativeTime(value: string): string {
 }
 
 @media (min-width: 1024px) {
-  .content-grid { grid-template-columns: repeat(3, 1fr); }
+  .content-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .bookings-col {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-}
-
-@media (min-width: 1024px) {
-  .bookings-col { grid-column: span 2; }
 }
 
 .section-header {
@@ -529,7 +593,9 @@ function relativeTime(value: string): string {
   text-decoration: none;
 }
 
-.section-link:hover { color: var(--primary, #000000); }
+.section-link:hover {
+  color: var(--primary, #000000);
+}
 
 /* ── Loading / Empty ── */
 .loading-state {
@@ -549,9 +615,16 @@ function relativeTime(value: string): string {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
-.loading-text { font-size: 16px; color: var(--secondary, #5e5e5e); }
+.loading-text {
+  font-size: 16px;
+  color: var(--secondary, #5e5e5e);
+}
 
 .empty-state {
   border: 1px dashed var(--outline-variant, #c4c7c7);
@@ -574,7 +647,11 @@ function relativeTime(value: string): string {
   margin: 0 0 0.5rem;
 }
 
-.empty-desc { font-size: 14px; color: var(--secondary, #5e5e5e); margin: 0; }
+.empty-desc {
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
 
 /* ── Booking cards ── */
 .bookings-list {
@@ -593,10 +670,14 @@ function relativeTime(value: string): string {
   transition: border-color 0.15s;
 }
 
-.booking-card:hover { border-color: var(--primary, #000000); }
+.booking-card:hover {
+  border-color: var(--primary, #000000);
+}
 
 @media (min-width: 768px) {
-  .booking-card { flex-direction: row; }
+  .booking-card {
+    flex-direction: row;
+  }
 }
 
 .booking-media {
@@ -607,7 +688,11 @@ function relativeTime(value: string): string {
   overflow: hidden;
 }
 
-@media (min-width: 768px) { .booking-media { width: 8rem; } }
+@media (min-width: 768px) {
+  .booking-media {
+    width: 8rem;
+  }
+}
 
 .booking-img-placeholder {
   width: 100%;
@@ -617,9 +702,14 @@ function relativeTime(value: string): string {
   justify-content: center;
 }
 
-.placeholder-icon { font-size: 2rem; color: var(--secondary, #5e5e5e); }
+.placeholder-icon {
+  font-size: 2rem;
+  color: var(--secondary, #5e5e5e);
+}
 
-.booking-body { flex-grow: 1; }
+.booking-body {
+  flex-grow: 1;
+}
 
 .booking-title-row {
   display: flex;
@@ -665,7 +755,9 @@ function relativeTime(value: string): string {
   color: var(--secondary, #5e5e5e);
 }
 
-.booking-meta-item .material-symbols-outlined { font-size: 1rem; }
+.booking-meta-item .material-symbols-outlined {
+  font-size: 1rem;
+}
 
 .booking-ctas {
   display: flex;
@@ -673,7 +765,11 @@ function relativeTime(value: string): string {
   justify-content: flex-end;
 }
 
-@media (min-width: 768px) { .booking-ctas { flex-direction: column; } }
+@media (min-width: 768px) {
+  .booking-ctas {
+    flex-direction: column;
+  }
+}
 
 .btn-start {
   padding: 0.5rem 1rem;
@@ -701,86 +797,14 @@ function relativeTime(value: string): string {
   justify-content: center;
 }
 
-.btn-action:hover { background-color: var(--surface-variant, #e2e2e2); }
-
-/* ── Pending banner ── */
-.pending-requests-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background-color: #fff8e1;
-  border: 1px solid #ffcc80;
-  border-radius: 0.25rem;
-  font-size: 14px;
-  color: #e65100;
+.btn-action:hover {
+  background-color: var(--surface-variant, #e2e2e2);
 }
 
-.pending-link {
-  margin-left: auto;
-  font-weight: 600;
-  color: #e65100;
-  text-decoration: underline;
-}
-
-/* ── Summary card (right column) ── */
+/* ── Incoming bookings column ── */
 .route-col {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
-
-.summary-card {
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  background-color: #ffffff;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.summary-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
-}
-
-.summary-icon {
-  font-size: 1.25rem;
-  color: var(--secondary, #5e5e5e);
-  flex-shrink: 0;
-  margin-top: 0.1rem;
-}
-
-.summary-label {
-  font-size: 12px;
-  color: var(--secondary, #5e5e5e);
-  margin: 0;
-}
-
-.summary-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--primary, #000000);
-  margin: 0;
-  line-height: 1.2;
-}
-
-.btn-full-outline {
-  display: block;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  text-align: center;
-  background-color: transparent;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--primary, #000000);
-  cursor: pointer;
-  text-decoration: none;
-  transition: background-color 0.15s;
-  margin-top: 0.5rem;
-}
-
-.btn-full-outline:hover { background-color: var(--surface-container, #eeeeee); }
 </style>

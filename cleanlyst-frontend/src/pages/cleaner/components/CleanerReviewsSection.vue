@@ -127,7 +127,7 @@ function formatDate(value: string): string {
 }
 
 onMounted(async () => {
-  await auth.init()
+  if (!auth.initialized) await auth.init()
 
   if (!auth.userId) {
     loading.value = false

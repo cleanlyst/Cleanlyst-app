@@ -16,7 +16,7 @@
         </div>
         <div class="metric-footer">
           <span class="metric-footer-text">Based on completed jobs</span>
-          <span class="metric-footer-sub">est. {{ estHoursPerJob }}h per job</span>
+          <span class="metric-footer-sub">based on actual payouts</span>
         </div>
       </div>
 
@@ -35,7 +35,7 @@
       <div class="metric-card">
         <span class="metric-label">Avg per Job</span>
         <h2 class="metric-value">{{ avgPerJob }}</h2>
-        <p class="metric-sub">At current hourly rate</p>
+        <p class="metric-sub">Across completed jobs</p>
       </div>
     </section>
 
@@ -67,7 +67,7 @@
             {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
           </div>
           <div class="tx-date">{{ formatDate(b.scheduled_start) }}</div>
-          <div class="tx-amount">{{ estimateJobAmount() }}</div>
+          <div class="tx-amount">{{ jobAmount(b) }}</div>
           <div class="tx-status">
             <span class="status-pill" :class="txStatusClass(b.status)">
               {{ txStatusLabel(b.status) }}
@@ -113,21 +113,16 @@ interface BookingRecord {
   service_title_snapshot: string | null
   scheduled_start: string
   status: string
+  cleaner_payout_cents: number | null
 }
-
-const props = defineProps({
-  earningsToDate: { type: String, default: '—' },
-})
 
 const auth = useAuthStore()
 const loading = ref(true)
-const thisMonthCompleted = ref(0)
-const upcomingCount = ref(0)
+const totalEarningsCents = ref(0)
+const thisMonthEarningsCents = ref(0)
+const pendingPayoutCents = ref(0)
 const recentBookings = ref<BookingRecord[]>([])
 
-const estHoursPerJob = 2
-
-const hourlyRate = computed(() => auth.cleanerProfile?.hourly_rate_cents ?? 0)
 const currency = computed(() => auth.cleanerProfile?.currency ?? 'GBP')
 
 function formatCurrency(cents: number): string {
@@ -137,18 +132,32 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100)
 }
 
-const thisMonthEarnings = computed(() =>
-  formatCurrency(thisMonthCompleted.value * estHoursPerJob * hourlyRate.value),
+const earningsToDate = computed(() => formatCurrency(totalEarningsCents.value))
+const thisMonthEarnings = computed(() => formatCurrency(thisMonthEarningsCents.value))
+const pendingEarnings = computed(() => formatCurrency(pendingPayoutCents.value))
+
+const thisMonthCompleted = computed(
+  () => recentBookings.value.filter((b) => b.status === 'completed').length,
 )
 
-const pendingEarnings = computed(() =>
-  formatCurrency(upcomingCount.value * estHoursPerJob * hourlyRate.value),
+const upcomingCount = computed(
+  () =>
+    recentBookings.value.filter((b) =>
+      ['awaiting_customer_payment', 'payment_authorized', 'in_progress'].includes(b.status),
+    ).length,
 )
 
-const avgPerJob = computed(() => formatCurrency(estHoursPerJob * hourlyRate.value))
+const avgPerJob = computed(() => {
+  const paid = recentBookings.value.filter(
+    (b) => b.status === 'completed' && b.cleaner_payout_cents,
+  )
+  if (paid.length === 0) return formatCurrency(0)
+  const total = paid.reduce((sum, b) => sum + (b.cleaner_payout_cents ?? 0), 0)
+  return formatCurrency(Math.round(total / paid.length))
+})
 
-function estimateJobAmount(): string {
-  return formatCurrency(estHoursPerJob * hourlyRate.value)
+function jobAmount(b: BookingRecord): string {
+  return b.cleaner_payout_cents != null ? formatCurrency(b.cleaner_payout_cents) : '—'
 }
 
 function formatDate(value: string): string {
@@ -179,7 +188,7 @@ function txStatusLabel(status: string): string {
 }
 
 onMounted(async () => {
-  await auth.init()
+  if (!auth.initialized) await auth.init()
 
   if (!auth.userId) {
     loading.value = false
@@ -190,37 +199,59 @@ onMounted(async () => {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-  const [monthResult, upcomingResult, recentResult] = await Promise.all([
-    supabase
-      .from('bookings')
-      .select('id')
-      .eq('cleaner_id', auth.userId)
-      .eq('status', 'completed')
-      .gte('scheduled_start', startOfMonth),
+  const [allCompletedResult, monthCompletedResult, pendingResult, recentResult] =
+    await Promise.all([
+      supabase
+        .from('bookings')
+        .select('cleaner_payout_cents')
+        .eq('cleaner_id', auth.userId)
+        .eq('status', 'completed'),
 
-    supabase
-      .from('bookings')
-      .select('id')
-      .eq('cleaner_id', auth.userId)
-      .in('status', [
-        'estimate_proposed',
-        'awaiting_customer_payment',
-        'payment_authorized',
-        'in_progress',
-        'completion_pending_customer',
-      ]),
+      supabase
+        .from('bookings')
+        .select('cleaner_payout_cents')
+        .eq('cleaner_id', auth.userId)
+        .eq('status', 'completed')
+        .gte('scheduled_start', startOfMonth),
 
-    supabase
-      .from('bookings')
-      .select('id, service_title_snapshot, scheduled_start, status')
-      .eq('cleaner_id', auth.userId)
-      .in('status', ['completed', 'payment_authorized', 'in_progress'])
-      .order('scheduled_start', { ascending: false })
-      .limit(10),
-  ])
+      supabase
+        .from('bookings')
+        .select('cleaner_payout_cents')
+        .eq('cleaner_id', auth.userId)
+        .in('status', [
+          'estimate_proposed',
+          'awaiting_customer_payment',
+          'payment_authorized',
+          'in_progress',
+          'completion_pending_customer',
+        ]),
 
-  thisMonthCompleted.value = monthResult.data?.length ?? 0
-  upcomingCount.value = upcomingResult.data?.length ?? 0
+      supabase
+        .from('bookings')
+        .select('id, service_title_snapshot, scheduled_start, status, cleaner_payout_cents')
+        .eq('cleaner_id', auth.userId)
+        .in('status', [
+          'completed',
+          'payment_authorized',
+          'in_progress',
+          'awaiting_customer_payment',
+        ])
+        .order('scheduled_start', { ascending: false })
+        .limit(10),
+    ])
+
+  totalEarningsCents.value = (allCompletedResult.data ?? []).reduce(
+    (sum, b) => sum + (b.cleaner_payout_cents ?? 0),
+    0,
+  )
+  thisMonthEarningsCents.value = (monthCompletedResult.data ?? []).reduce(
+    (sum, b) => sum + (b.cleaner_payout_cents ?? 0),
+    0,
+  )
+  pendingPayoutCents.value = (pendingResult.data ?? []).reduce(
+    (sum, b) => sum + (b.cleaner_payout_cents ?? 0),
+    0,
+  )
   recentBookings.value = (recentResult.data ?? []) as BookingRecord[]
 
   loading.value = false

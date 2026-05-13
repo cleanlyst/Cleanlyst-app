@@ -13,6 +13,8 @@
       :toggleAvailability="toggleAvailability"
       :startBooking="startBooking"
       :markCompleted="markCompleted"
+      :acceptBooking="acceptBooking"
+      :declineBooking="declineBooking"
     />
     <CleanerBookingsSection
       v-if="activeRouteName === 'CleanerBookings'"
@@ -32,11 +34,9 @@
     />
     <CleanerServicesPricingSection
       v-if="activeRouteName === 'CleanerServicesPricing'"
-      :hourlyRateLabel="hourlyRateLabel"
     />
     <CleanerFinancialsSection
       v-if="activeRouteName === 'CleanerFinancials'"
-      :earningsToDate="earningsToDate"
     />
     <CleanerReviewsSection v-if="activeRouteName === 'CleanerReviews'" />
     <CleanerProfile v-if="activeRouteName === 'CleanerProfile'" />
@@ -172,7 +172,7 @@ async function toggleAvailability() {
 
 async function acceptBooking(id: string) {
   try {
-    await transitionBookingState(id, 'payment_authorized')
+    await transitionBookingState(id, 'awaiting_customer_payment')
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to accept booking.'

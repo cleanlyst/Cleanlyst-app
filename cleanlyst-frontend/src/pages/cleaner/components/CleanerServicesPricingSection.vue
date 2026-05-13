@@ -1,290 +1,286 @@
-<template>
-  <main class="page-main">
-    <section class="page-header">
-      <div>
-        <h1 class="header-title">Services &amp; Pricing</h1>
-        <p class="header-copy">Manage the services you offer and set your pricing.</p>
-      </div>
-    </section>
-
-    <!-- Hourly Rate Banner -->
-    <div class="rate-card">
-      <div class="rate-card-left">
-        <span class="material-symbols-outlined rate-icon">payments</span>
-        <div>
-          <p class="rate-label">Current Hourly Rate</p>
-          <p class="rate-value">{{ hourlyRateLabel }}</p>
-        </div>
-      </div>
-      <router-link class="rate-link" :to="{ name: 'CleanerAvailability' }">
-        Update rate
-        <span class="material-symbols-outlined">arrow_forward</span>
-      </router-link>
-    </div>
-
-    <!-- Services Section -->
-    <section class="services-section">
-      <div class="section-header">
-        <h2 class="section-title">My Services</h2>
-        <button v-if="!showAddForm" class="btn-add" type="button" @click="openAddForm">
-          <span class="material-symbols-outlined">add</span>
-          Add Service
-        </button>
-      </div>
-
-      <!-- Add Service Form -->
-      <div v-if="showAddForm" class="service-form-card">
-        <h3 class="form-card-title">New Service</h3>
-        <div class="form-grid">
-          <div class="form-group">
-            <label class="form-label" for="new-name">Service Name</label>
-            <input
-              id="new-name"
-              v-model="newForm.name"
-              class="form-input"
-              placeholder="e.g. Deep Clean"
-              type="text"
-            />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="new-price">Price</label>
-            <div class="price-wrap">
-              <span class="price-prefix">£</span>
-              <input
-                id="new-price"
-                v-model="newForm.price"
-                class="form-input price-input"
-                placeholder="0.00"
-                type="number"
-                min="0"
-                step="0.01"
-              />
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="new-duration">Duration</label>
-            <input
-              id="new-duration"
-              v-model="newForm.duration"
-              class="form-input"
-              placeholder="e.g. 2–3 hours"
-              type="text"
-            />
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="new-description">Description</label>
-          <textarea
-            id="new-description"
-            v-model="newForm.description"
-            class="form-textarea"
-            placeholder="Describe what this service includes…"
-            rows="3"
-          ></textarea>
-        </div>
-        <div class="form-actions">
-          <button class="btn-action" type="button" @click="cancelAdd">Cancel</button>
-          <button
-            class="btn-start"
-            type="button"
-            :disabled="!newForm.name.trim()"
-            @click="addService"
-          >
-            Add Service
-          </button>
-        </div>
-      </div>
-
-      <!-- Empty state -->
-      <div v-if="!services.length && !showAddForm" class="empty-state">
-        <span class="material-symbols-outlined empty-icon">cleaning_services</span>
-        <p class="empty-label">No services added yet</p>
-        <p class="empty-desc">Add the cleaning services you offer to help customers book you.</p>
-        <button class="btn-start" type="button" @click="openAddForm">Add your first service</button>
-      </div>
-
-      <!-- Service Cards -->
-      <div v-if="services.length" class="services-list">
-        <article v-for="s in services" :key="s.id" class="service-card">
-          <!-- View mode -->
-          <template v-if="editingId !== s.id">
-            <div class="service-card-body">
-              <div class="service-card-top">
-                <div>
-                  <h3 class="service-name">{{ s.name }}</h3>
-                  <p class="service-description">{{ s.description }}</p>
-                </div>
-                <div class="service-meta">
-                  <div class="service-meta-item">
-                    <span class="material-symbols-outlined">schedule</span>
-                    {{ s.duration }}
-                  </div>
-                  <div class="service-price">£{{ s.price }}</div>
-                </div>
-              </div>
-            </div>
-            <div class="service-card-footer">
-              <button class="btn-action" type="button" @click="startEdit(s)">
-                <span class="material-symbols-outlined">edit</span>
-                Edit
-              </button>
-              <button class="btn-remove" type="button" @click="removeService(s.id)">
-                <span class="material-symbols-outlined">delete</span>
-                Remove
-              </button>
-            </div>
-          </template>
-
-          <!-- Edit mode -->
-          <template v-else>
-            <h3 class="form-card-title">Edit Service</h3>
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label">Service Name</label>
-                <input v-model="editForm.name" class="form-input" type="text" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Price</label>
-                <div class="price-wrap">
-                  <span class="price-prefix">£</span>
-                  <input
-                    v-model="editForm.price"
-                    class="form-input price-input"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                  />
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Duration</label>
-                <input v-model="editForm.duration" class="form-input" type="text" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Description</label>
-              <textarea v-model="editForm.description" class="form-textarea" rows="3"></textarea>
-            </div>
-            <div class="form-actions">
-              <button class="btn-action" type="button" @click="cancelEdit">Cancel</button>
-              <button class="btn-start" type="button" @click="saveEdit(s.id)">Save Changes</button>
-            </div>
-          </template>
-        </article>
-      </div>
-    </section>
-  </main>
-</template>
-
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useCleanerServicesStore } from '@/stores/cleanerServices'
+import type { ServiceDraft } from '@/stores/cleanerServices'
+import { requireSupabase } from '@/lib/supabase'
+import ServiceSelector from './services/ServiceSelector.vue'
+import MyServicesPanel from './services/MyServicesPanel.vue'
 
-interface Service {
-  id: string
-  name: string
-  description: string
-  duration: string
-  price: string
-}
+// No props — reads directly from auth store so it can also write back
+type View = 'services' | 'wizard'
 
-defineProps({
-  hourlyRateLabel: { type: String, default: 'Not set yet' },
+const auth = useAuthStore()
+const store = useCleanerServicesStore()
+
+// ── View state ────────────────────────────────────────────────────────────────
+const view = ref<View>('services')
+const mutating = ref(false)
+
+// ── Derived auth data ─────────────────────────────────────────────────────────
+const isApproved = computed(
+  () =>
+    auth.cleanerProfile?.status === 'approved' || auth.profile?.role === 'cleaner_active',
+)
+
+const existingTitles = computed(() => new Set(store.services.map((s) => s.title)))
+
+const hourlyRateLabel = computed(() => {
+  const amount = auth.cleanerProfile?.hourly_rate_cents
+  const currency = auth.cleanerProfile?.currency ?? 'GBP'
+  if (amount == null || amount <= 0) return 'Not set'
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(amount / 100)
 })
 
-const services = ref<Service[]>([
-  {
-    id: '1',
-    name: 'Regular Clean',
-    description: 'Standard home cleaning covering all rooms, vacuuming, and surface wiping.',
-    duration: '2–3 hours',
-    price: '60',
-  },
-  {
-    id: '2',
-    name: 'Deep Clean',
-    description: 'Thorough cleaning of all surfaces, kitchen appliances, and bathrooms.',
-    duration: '4–5 hours',
-    price: '120',
-  },
-  {
-    id: '3',
-    name: 'End of Tenancy',
-    description: 'Full property clean to meet tenancy checkout requirements.',
-    duration: '6–8 hours',
-    price: '180',
-  },
-])
+// ── Rate editor state ─────────────────────────────────────────────────────────
+const rateEditorOpen = ref(false)
+const rateInput = ref('')
+const rateSaving = ref(false)
+const rateError = ref<string | null>(null)
+const rateSaved = ref(false)
 
-const showAddForm = ref(false)
-const editingId = ref<string | null>(null)
-
-const newForm = reactive({ name: '', description: '', duration: '', price: '' })
-const editForm = reactive({ name: '', description: '', duration: '', price: '' })
-
-function openAddForm() {
-  editingId.value = null
-  newForm.name = ''
-  newForm.description = ''
-  newForm.duration = ''
-  newForm.price = ''
-  showAddForm.value = true
+function openRateEditor() {
+  const current = auth.cleanerProfile?.hourly_rate_cents
+  rateInput.value = current && current > 0 ? (current / 100).toFixed(2) : ''
+  rateError.value = null
+  rateSaved.value = false
+  rateEditorOpen.value = true
 }
 
-function cancelAdd() {
-  showAddForm.value = false
+function cancelRateEdit() {
+  rateEditorOpen.value = false
+  rateError.value = null
 }
 
-function addService() {
-  if (!newForm.name.trim()) return
-  services.value.push({
-    id: String(Date.now()),
-    name: newForm.name.trim(),
-    description: newForm.description.trim(),
-    duration: newForm.duration.trim(),
-    price: newForm.price,
-  })
-  showAddForm.value = false
-}
+async function saveRate() {
+  rateError.value = null
+  rateSaved.value = false
 
-function startEdit(s: Service) {
-  showAddForm.value = false
-  editingId.value = s.id
-  editForm.name = s.name
-  editForm.description = s.description
-  editForm.duration = s.duration
-  editForm.price = s.price
-}
-
-function cancelEdit() {
-  editingId.value = null
-}
-
-function saveEdit(id: string) {
-  const idx = services.value.findIndex((s) => s.id === id)
-  if (idx === -1) return
-  services.value[idx] = {
-    id,
-    name: editForm.name,
-    description: editForm.description,
-    duration: editForm.duration,
-    price: editForm.price,
+  const value = parseFloat(rateInput.value)
+  if (!rateInput.value.trim() || isNaN(value) || value <= 0) {
+    rateError.value = 'Enter a valid hourly rate greater than £0'
+    return
   }
-  editingId.value = null
+
+  const cents = Math.round(value * 100)
+  rateSaving.value = true
+  try {
+    const supabase = requireSupabase()
+    const { error } = await supabase
+      .from('cleaner_profiles')
+      .update({ hourly_rate_cents: cents })
+      .eq('user_id', auth.userId!)
+    if (error) throw error
+
+    // Update the store in-place so the UI reacts immediately
+    if (auth.cleanerProfile) auth.cleanerProfile.hourly_rate_cents = cents
+
+    rateSaved.value = true
+    setTimeout(() => {
+      rateEditorOpen.value = false
+      rateSaved.value = false
+    }, 1200)
+  } catch (e) {
+    rateError.value = e instanceof Error ? e.message : 'Failed to save rate.'
+  } finally {
+    rateSaving.value = false
+  }
 }
 
-function removeService(id: string) {
-  services.value = services.value.filter((s) => s.id !== id)
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
+onMounted(async () => {
+  // Guard: do NOT call init() if auth is already initialized — it resets
+  // cleanerProfile to null mid-render causing isApproved to flicker false.
+  if (!auth.initialized) await auth.init()
+  if (auth.userId) await store.load(auth.userId)
+})
+
+// ── Services handlers ─────────────────────────────────────────────────────────
+function openWizard() {
+  view.value = 'wizard'
+}
+
+function closeWizard() {
+  view.value = 'services'
+}
+
+async function handleSubmit(drafts: ServiceDraft[]) {
+  if (!auth.userId) return
+  try {
+    await store.addMany(auth.userId, drafts)
+    view.value = 'services'
+  } catch {
+    // error surfaces via store.error banner
+  }
+}
+
+async function handleUpdate(
+  id: string,
+  patch: { base_price_cents: number; duration_minutes: number },
+) {
+  mutating.value = true
+  try {
+    await store.update(id, patch)
+  } finally {
+    mutating.value = false
+  }
+}
+
+async function handleRemove(id: string) {
+  mutating.value = true
+  try {
+    await store.remove(id)
+  } finally {
+    mutating.value = false
+  }
 }
 </script>
 
+<template>
+  <main class="page-main">
+    <!-- ── Page header ───────────────────────────────────────────────────── -->
+    <section class="page-header">
+      <h1 class="header-title">Services &amp; Pricing</h1>
+      <p class="header-copy">Define every service you offer and set your pricing per service.</p>
+    </section>
+
+    <!-- ── Hourly Rate card with inline editor ───────────────────────────── -->
+    <div class="rate-card">
+      <!-- Always-visible header row -->
+      <div class="rate-card-header">
+        <div class="rate-card-left">
+          <span class="material-symbols-outlined rate-icon">payments</span>
+          <div>
+            <p class="rate-label">Hourly Rate</p>
+            <p class="rate-value">{{ hourlyRateLabel }}</p>
+          </div>
+        </div>
+        <button
+          class="btn-edit-rate"
+          type="button"
+          @click="rateEditorOpen ? cancelRateEdit() : openRateEditor()"
+        >
+          <span class="material-symbols-outlined">{{ rateEditorOpen ? 'close' : 'edit' }}</span>
+          {{ rateEditorOpen ? 'Cancel' : 'Edit Rate' }}
+        </button>
+      </div>
+
+      <!-- Inline expand: rate editor -->
+      <Transition name="rate-expand">
+        <div v-if="rateEditorOpen" class="rate-editor">
+          <div class="rate-editor-row">
+            <div class="rate-field">
+              <label class="rate-field-label" for="hourly-rate">New rate</label>
+              <div class="rate-input-wrap">
+                <span class="rate-prefix">£</span>
+                <input
+                  id="hourly-rate"
+                  v-model="rateInput"
+                  class="rate-input"
+                  :class="{ 'rate-input--error': !!rateError }"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  @keydown.enter="saveRate"
+                />
+                <span class="rate-suffix">/ hr</span>
+              </div>
+            </div>
+            <div class="rate-editor-actions">
+              <button
+                class="btn-start"
+                type="button"
+                :disabled="rateSaving"
+                @click="saveRate"
+              >
+                <span
+                  v-if="rateSaving"
+                  class="material-symbols-outlined btn-spin"
+                >progress_activity</span>
+                <span v-else-if="rateSaved" class="material-symbols-outlined">check</span>
+                {{ rateSaving ? 'Saving…' : rateSaved ? 'Saved!' : 'Save Rate' }}
+              </button>
+            </div>
+          </div>
+          <p v-if="rateError" class="rate-editor-error">{{ rateError }}</p>
+        </div>
+      </Transition>
+    </div>
+
+    <!-- ── Pending notice ────────────────────────────────────────────────── -->
+    <div v-if="!isApproved && !store.loading" class="notice-card">
+      <span class="material-symbols-outlined notice-icon">info</span>
+      <p class="notice-text">
+        Your account is still under review. You can browse and plan services now — they will go
+        live once your account is approved.
+      </p>
+    </div>
+
+    <!-- ── Global store error ────────────────────────────────────────────── -->
+    <div v-if="store.error" class="error-card">
+      <span class="material-symbols-outlined error-icon">error</span>
+      <p class="error-text">{{ store.error }}</p>
+    </div>
+
+    <!-- ── Loading spinner ───────────────────────────────────────────────── -->
+    <div v-if="store.loading" class="loading-state">
+      <span class="material-symbols-outlined loading-spin">progress_activity</span>
+      <span class="loading-text">Loading your services…</span>
+    </div>
+
+    <!-- ── Main content (hidden while loading) ───────────────────────────── -->
+    <template v-else>
+
+      <!-- My Services view -->
+      <section v-if="view === 'services'" class="services-section">
+        <div class="section-header">
+          <div class="section-header-left">
+            <h2 class="section-title">My Services</h2>
+            <span v-if="store.services.length" class="service-count">
+              {{ store.services.length }}
+            </span>
+          </div>
+          <!-- Always show — pending cleaners see it and get an RLS error on save -->
+          <button class="btn-add" type="button" @click="openWizard">
+            <span class="material-symbols-outlined">add</span>
+            Add Services
+          </button>
+        </div>
+
+        <MyServicesPanel
+          :services="store.services"
+          :mutating="mutating"
+          @update="handleUpdate"
+          @remove="handleRemove"
+        />
+
+        <div v-if="!store.services.length" class="empty-cta">
+          <button class="btn-start" type="button" @click="openWizard">
+            <span class="material-symbols-outlined">add</span>
+            Add your first service
+          </button>
+        </div>
+      </section>
+
+      <!-- Add Services wizard -->
+      <section v-else-if="view === 'wizard'" class="wizard-section">
+        <ServiceSelector
+          :existing-titles="existingTitles"
+          :saving="store.saving"
+          @submit="handleSubmit"
+          @cancel="closeWizard"
+        />
+      </section>
+
+    </template>
+  </main>
+</template>
+
 <style scoped>
-/* ── Material Symbols ─────────────────────────────────────────── */
+/* ── Material Symbols ─────────────────────────────────────────────────── */
 .material-symbols-outlined {
-  font-variation-settings:
-    'FILL' 0,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -294,7 +290,7 @@ function removeService(id: string) {
   direction: ltr;
 }
 
-/* ── Page shell ───────────────────────────────────────────────── */
+/* ── Page shell ───────────────────────────────────────────────────────── */
 .page-main {
   padding-top: 2rem;
   padding-bottom: 5rem;
@@ -303,6 +299,9 @@ function removeService(id: string) {
   max-width: 80rem;
   margin-left: auto;
   margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 @media (min-width: 1024px) {
@@ -312,18 +311,14 @@ function removeService(id: string) {
   }
 }
 
-/* ── Page header ──────────────────────────────────────────────── */
-.page-header {
-  margin-bottom: 3rem;
-}
-
+/* ── Page header ──────────────────────────────────────────────────────── */
 .header-title {
   font-size: 32px;
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.02em;
   color: var(--primary, #000000);
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.5rem;
 }
 
 .header-copy {
@@ -331,18 +326,21 @@ function removeService(id: string) {
   font-weight: 400;
   line-height: 1.6;
   color: var(--secondary, #5e5e5e);
+  margin: 0;
 }
 
-/* ── Hourly rate card ─────────────────────────────────────────── */
+/* ── Rate card ────────────────────────────────────────────────────────── */
 .rate-card {
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background-color: var(--surface-container-lowest, #ffffff);
+}
+
+.rate-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.5rem;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  background-color: var(--surface-container-lowest, #ffffff);
-  margin-bottom: 3rem;
+  padding: 1.25rem 1.5rem;
   flex-wrap: wrap;
 }
 
@@ -353,7 +351,7 @@ function removeService(id: string) {
 }
 
 .rate-icon {
-  font-size: 2rem;
+  font-size: 1.75rem;
   color: var(--secondary, #5e5e5e);
 }
 
@@ -367,32 +365,196 @@ function removeService(id: string) {
 }
 
 .rate-value {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--primary, #000000);
   margin: 0;
 }
 
-.rate-link {
-  display: flex;
+/* ── Edit Rate button ─────────────────────────────────────────────────── */
+.btn-edit-rate {
+  display: inline-flex;
   align-items: center;
   gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--outline-variant, #c4c7c7);
   font-size: 14px;
   font-weight: 500;
+  letter-spacing: 0.01em;
   color: var(--primary, #000000);
-  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 150ms;
+  flex-shrink: 0;
 }
 
-.rate-link:hover {
-  text-decoration: underline;
+.btn-edit-rate:hover {
+  background: var(--surface-variant, #f4f4f5);
 }
 
-/* ── Services section ─────────────────────────────────────────── */
+.btn-edit-rate .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+/* ── Rate editor (inline expand) ──────────────────────────────────────── */
+.rate-editor {
+  border-top: 1px solid var(--outline-variant, #c4c7c7);
+  padding: 1.25rem 1.5rem;
+  background: var(--surface-variant, #f9f9f9);
+}
+
+.rate-editor-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.rate-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.rate-field-label {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--secondary, #5e5e5e);
+}
+
+.rate-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.rate-prefix {
+  position: absolute;
+  left: 0.75rem;
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+  pointer-events: none;
+}
+
+.rate-suffix {
+  position: absolute;
+  right: 0.75rem;
+  font-size: 13px;
+  color: var(--secondary, #5e5e5e);
+  pointer-events: none;
+}
+
+.rate-input {
+  width: 10rem;
+  padding: 0.625rem 3.5rem 0.625rem 1.75rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary, #000000);
+  background: #ffffff;
+  outline: none;
+  transition: border-color 150ms;
+  box-sizing: border-box;
+}
+
+.rate-input:focus {
+  border-color: var(--primary, #000000);
+}
+
+.rate-input--error {
+  border-color: #ba1a1a;
+}
+
+.rate-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rate-editor-error {
+  font-size: 12px;
+  color: #ba1a1a;
+  margin: 0.625rem 0 0;
+}
+
+/* ── Rate expand transition ───────────────────────────────────────────── */
+.rate-expand-enter-active,
+.rate-expand-leave-active {
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.rate-expand-enter-from,
+.rate-expand-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* ── Notice / Error banners ───────────────────────────────────────────── */
+.notice-card,
+.error-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid;
+}
+
+.notice-card {
+  border-color: var(--outline-variant, #c4c7c7);
+  background: var(--surface-variant, #f4f4f5);
+}
+
+.notice-icon,
+.error-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.notice-icon { color: var(--secondary, #5e5e5e); }
+
+.notice-text,
+.error-text {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.error-card {
+  border-color: #ba1a1a;
+  background: #ffebee;
+}
+
+.error-icon { color: #ba1a1a; }
+.error-text { color: #ba1a1a; }
+
+/* ── Loading ──────────────────────────────────────────────────────────── */
+.loading-state {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 0;
+}
+
+.loading-spin {
+  font-size: 1.5rem;
+  color: var(--secondary, #5e5e5e);
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+}
+
+/* ── Services section ─────────────────────────────────────────────────── */
 .services-section {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .section-header {
@@ -402,228 +564,47 @@ function removeService(id: string) {
   gap: 1rem;
 }
 
+.section-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
 .section-title {
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  color: var(--primary, #000000);
-}
-
-/* ── Empty state ──────────────────────────────────────────────── */
-.empty-state {
-  border: 1px dashed var(--outline-variant, #c4c7c7);
-  border-radius: 0.25rem;
-  padding: 3rem 2rem;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.empty-icon {
-  font-size: 3rem;
-  color: var(--outline-variant, #c4c7c7);
-  margin-bottom: 0.5rem;
-}
-
-.empty-label {
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--primary, #000000);
-  margin: 0;
-}
-
-.empty-desc {
-  font-size: 14px;
-  color: var(--secondary, #5e5e5e);
-  margin: 0 0 1rem;
-}
-
-/* ── Add/edit form card ───────────────────────────────────────── */
-.service-form-card {
-  padding: 1.5rem;
-  border: 1px solid var(--primary, #000000);
-  background-color: var(--surface-container-lowest, #ffffff);
-}
-
-.form-card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--primary, #000000);
-  margin: 0 0 1.25rem;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-@media (min-width: 640px) {
-  .form-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.form-label {
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  color: var(--primary, #000000);
-}
-
-.form-input,
-.form-textarea {
-  padding: 0.625rem 0.75rem;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  border-radius: 0.125rem;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.6;
-  color: var(--primary, #000000);
-  background: #ffffff;
-  outline: none;
-  transition: border-color 150ms;
-  box-sizing: border-box;
-  width: 100%;
-}
-
-.form-input:focus,
-.form-textarea:focus {
-  border-color: var(--primary, #000000);
-}
-
-.form-textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.price-wrap {
-  position: relative;
-}
-
-.price-prefix {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
-  color: var(--secondary, #5e5e5e);
-  pointer-events: none;
-}
-
-.price-input {
-  padding-left: 1.75rem;
-}
-
-.form-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-/* ── Service cards list ───────────────────────────────────────── */
-.services-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.service-card {
-  padding: 1.5rem;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  background-color: var(--surface-container-lowest, #ffffff);
-  transition: border-color 0.15s;
-}
-
-.service-card:hover {
-  border-color: var(--primary, #000000);
-}
-
-.service-card-body {
-  margin-bottom: 1rem;
-}
-
-.service-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.service-name {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--primary, #000000);
-  margin: 0 0 0.5rem;
-  line-height: 1.3;
-}
-
-.service-description {
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.6;
-  color: var(--secondary, #5e5e5e);
-  margin: 0;
-}
-
-.service-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
-
-.service-meta-item {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 12px;
-  color: var(--secondary, #5e5e5e);
-}
-
-.service-meta-item .material-symbols-outlined {
-  font-size: 1rem;
-}
-
-.service-price {
   font-size: 22px;
-  font-weight: 700;
-  color: var(--primary, #000000);
+  font-weight: 600;
+  line-height: 1.3;
   letter-spacing: -0.01em;
+  color: var(--primary, #000000);
+  margin: 0;
 }
 
-.service-card-footer {
-  display: flex;
+.service-count {
+  display: inline-flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--surface-variant, #e2e2e2);
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.375rem;
+  background: var(--surface-variant, #e2e2e2);
+  color: var(--secondary, #5e5e5e);
+  font-size: 12px;
+  font-weight: 600;
 }
 
-/* ── Buttons ──────────────────────────────────────────────────── */
+.empty-cta {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.5rem;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
 .btn-start {
-  padding: 0.5rem 1.25rem;
+  padding: 0.625rem 1.25rem;
   background-color: var(--primary, #000000);
   color: var(--on-primary, #ffffff);
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
   letter-spacing: 0.01em;
   border: none;
   cursor: pointer;
@@ -633,14 +614,14 @@ function removeService(id: string) {
   transition: opacity 0.15s;
 }
 
-.btn-start:hover {
-  opacity: 0.85;
-}
+.btn-start:hover:not(:disabled) { opacity: 0.85; }
 
 .btn-start:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+.btn-start .material-symbols-outlined { font-size: 1rem; }
 
 .btn-add {
   padding: 0.5rem 1rem;
@@ -657,50 +638,16 @@ function removeService(id: string) {
   transition: background-color 0.15s;
 }
 
-.btn-add:hover {
-  background-color: var(--surface-variant, #e2e2e2);
+.btn-add:hover { background-color: var(--surface-variant, #e2e2e2); }
+
+.btn-add .material-symbols-outlined { font-size: 1rem; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
-.btn-action {
-  padding: 0.5rem 1rem;
-  background-color: transparent;
-  color: var(--primary, #000000);
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  transition: background-color 0.15s;
-}
-
-.btn-action:hover {
-  background-color: var(--surface-variant, #e2e2e2);
-}
-
-.btn-remove {
-  padding: 0.5rem 1rem;
-  background-color: transparent;
-  color: #ba1a1a;
-  font-size: 14px;
-  font-weight: 500;
-  border: 1px solid #ba1a1a;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  transition: background-color 0.15s;
-}
-
-.btn-remove:hover {
-  background-color: #ffebee;
-}
-
-.btn-action .material-symbols-outlined,
-.btn-remove .material-symbols-outlined,
-.btn-add .material-symbols-outlined {
-  font-size: 1rem;
+.btn-spin {
+  animation: spin 1s linear infinite;
 }
 </style>

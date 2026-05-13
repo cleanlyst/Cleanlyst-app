@@ -14,9 +14,13 @@ export async function getMyBookings() {
 
 export async function getBookingRequestsForCleaner() {
   const supabase = getSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
   const { data, error } = await supabase
-    .from('booking_requests')
+    .from('bookings')
     .select('*')
+    .eq('cleaner_id', user.id)
     .order('created_at', { ascending: false })
 
   if (error) throw error

@@ -24,6 +24,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { transitionBookingState } from '@/services/bookingService'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { customerDashboardLinks } from '@/pages/dasboardLinks'
 import CustomerDashboardSection from './components/CustomerDashboardSection.vue'
@@ -63,13 +64,7 @@ onMounted(loadBookings)
 
 async function cancelBooking(id: string) {
   try {
-    const supabase = requireSupabase()
-    const { error } = await supabase
-      .from('bookings')
-      .update({ status: 'cancelled' })
-      .eq('id', id)
-      .eq('customer_id', auth.userId)
-    if (error) throw error
+    await transitionBookingState(id, 'cancelled')
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to cancel booking.'

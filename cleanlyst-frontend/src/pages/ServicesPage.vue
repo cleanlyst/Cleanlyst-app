@@ -1,206 +1,36 @@
+<script setup lang="ts">
+import { SERVICES, SERVICES_HERO_TITLE, SERVICES_HERO_COPY } from '@/utils/services'
+</script>
+
 <template>
   <main class="page-main">
     <!-- Hero Section -->
     <section class="hero-section">
       <div class="hero-wrapper">
-        <h1 class="hero-title">Our Cleaning Services</h1>
-        <p class="hero-copy">
-          Professional, reliable cleaning solutions tailored to your needs. From routine home upkeep
-          to specialized industrial deep cleans, our marketplace connects you with vetted
-          professionals for every surface.
-        </p>
+        <h1 class="hero-title">{{ SERVICES_HERO_TITLE }}</h1>
+        <p class="hero-copy">{{ SERVICES_HERO_COPY }}</p>
         <div class="hero-divider"></div>
       </div>
     </section>
     <!-- Bento Grid Services -->
     <section class="services-section">
       <div class="services-grid">
-        <!-- Home Cleaning -->
-        <div class="service-card">
+        <div
+          v-for="service in SERVICES"
+          :key="service.slug"
+          :class="['service-card', service.span && `service-card--${service.span}`]"
+        >
           <div>
-            <span class="material-symbols-outlined service-icon" data-icon="home">home</span>
-            <h2 class="service-title">Home Cleaning</h2>
-            <p class="service-description">
-              Routine cleaning for apartments, houses, and everyday household upkeep. Includes
-              dusting, vacuuming, and kitchen sanitation.
-            </p>
+            <span class="material-symbols-outlined service-icon">{{ service.icon }}</span>
+            <h2 class="service-title">{{ service.title }}</h2>
+            <p class="service-description">{{ service.description }}</p>
           </div>
           <router-link
             class="service-link"
-            :to="{ name: 'BookCleaner', query: { service: 'home-cleaning' } }"
+            :to="{ name: 'BookCleaner', query: { service: service.slug } }"
           >
             Book This Service
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
-              >arrow_forward</span
-            >
-          </router-link>
-        </div>
-        <!-- Commercial & Office Cleaning -->
-        <div class="service-card">
-          <div>
-            <span class="material-symbols-outlined service-icon" data-icon="corporate_fare"
-              >corporate_fare</span
-            >
-            <h2 class="service-title">Commercial &amp; Office Cleaning</h2>
-            <p class="service-description">
-              Reliable cleaning for offices, shops, studios, and shared workspaces. Custom schedules
-              to fit your business hours.
-            </p>
-          </div>
-          <router-link
-            class="service-link"
-            :to="{ name: 'BookCleaner', query: { service: 'commercial-office-cleaning' } }"
-          >
-            Book This Service
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
-              >arrow_forward</span
-            >
-          </router-link>
-        </div>
-        <!-- Windows & Glass -->
-        <div class="service-card">
-          <div>
-            <span class="material-symbols-outlined service-icon" data-icon="window">window</span>
-            <h2 class="service-title">Windows &amp; Glass</h2>
-            <p class="service-description">
-              Cleaning for windows, mirrors, partitions, and glass surfaces inside and out.
-              Streak-free finishes for maximum clarity.
-            </p>
-          </div>
-          <router-link
-            class="service-link"
-            :to="{ name: 'BookCleaner', query: { service: 'windows-glass' } }"
-          >
-            Book This Service
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
-              >arrow_forward</span
-            >
-          </router-link>
-        </div>
-        <!-- Vehicle & Mobility Cleaning -->
-        <div class="service-card">
-          <div>
-            <span class="material-symbols-outlined service-icon" data-icon="directions_car"
-              >directions_car</span
-            >
-            <h2 class="service-title">Vehicle &amp; Mobility Cleaning</h2>
-            <p class="service-description">
-              Interior and surface cleaning for cars, vans, and mobility equipment. Specialized care
-              for leather and hard surfaces.
-            </p>
-          </div>
-          <router-link
-            class="service-link"
-            :to="{ name: 'BookCleaner', query: { service: 'vehicle-mobility-cleaning' } }"
-          >
-            Book This Service
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
-              >arrow_forward</span
-            >
-          </router-link>
-        </div>
-        <!-- Specialist Interior Cleaning -->
-        <div class="service-card service-card--wide">
-          <div>
-            <span class="material-symbols-outlined service-icon" data-icon="texture">texture</span>
-            <h2 class="service-title">Specialist Interior Cleaning</h2>
-            <p class="service-description">
-              Focused cleaning for carpets, upholstery, mattresses, and delicate interior finishes.
-              Advanced stain removal techniques.
-            </p>
-          </div>
-          <router-link
-            class="service-link"
-            :to="{ name: 'BookCleaner', query: { service: 'specialist-interior-cleaning' } }"
-          >
-            Book This Service
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
-              >arrow_forward</span
-            >
-          </router-link>
-        </div>
-        <!-- Exterior & Outdoor Cleaning -->
-        <div class="service-card">
-          <div>
-            <span class="material-symbols-outlined service-icon" data-icon="deck">deck</span>
-            <h2 class="service-title">Exterior &amp; Outdoor Cleaning</h2>
-            <p class="service-description">
-              Practical cleaning for patios, driveways, garden areas, and outdoor surfaces. Power
-              washing and seasonal maintenance.
-            </p>
-          </div>
-          <router-link
-            class="service-link"
-            :to="{ name: 'BookCleaner', query: { service: 'exterior-outdoor-cleaning' } }"
-          >
-            Book This Service
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
-              >arrow_forward</span
-            >
-          </router-link>
-        </div>
-        <!-- Bin & Waste Cleaning -->
-        <div class="service-card">
-          <div>
-            <span class="material-symbols-outlined service-icon" data-icon="delete_outline"
-              >delete_outline</span
-            >
-            <h2 class="service-title">Bin &amp; Waste Cleaning</h2>
-            <p class="service-description">
-              Sanitising and refreshing bins, waste storage areas, and high-use disposal spaces.
-              Odor elimination and hygiene focus.
-            </p>
-          </div>
-          <router-link
-            class="service-link"
-            :to="{ name: 'BookCleaner', query: { service: 'bin-waste-cleaning' } }"
-          >
-            Book This Service
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
-              >arrow_forward</span
-            >
-          </router-link>
-        </div>
-        <!-- Specialist & High-Level Services -->
-        <div class="service-card">
-          <div>
-            <span class="material-symbols-outlined service-icon" data-icon="architecture"
-              >architecture</span
-            >
-            <h2 class="service-title">Specialist &amp; High-Level Services</h2>
-            <p class="service-description">
-              Support for deep cleans, post-build work, and harder-to-reach areas. Professional
-              equipment for industrial standards.
-            </p>
-          </div>
-          <router-link
-            class="service-link"
-            :to="{ name: 'BookCleaner', query: { service: 'specialist-high-level-services' } }"
-          >
-            Book This Service
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
-              >arrow_forward</span
-            >
-          </router-link>
-        </div>
-        <!-- Personal Item Cleaning -->
-        <div class="service-card service-card--full">
-          <div>
-            <span class="material-symbols-outlined service-icon" data-icon="apparel">apparel</span>
-            <h2 class="service-title">Personal Item Cleaning</h2>
-            <p class="service-description">
-              Care for selected personal items such as trainers, bags, curtains, and more. Detailed
-              restoration for items that require a professional touch.
-            </p>
-          </div>
-          <router-link
-            class="service-link"
-            :to="{ name: 'BookCleaner', query: { service: 'personal-item-cleaning' } }"
-          >
-            Book This Service
-            <span class="material-symbols-outlined link-arrow" data-icon="arrow_forward"
-              >arrow_forward</span
-            >
+            <span class="material-symbols-outlined link-arrow">arrow_forward</span>
           </router-link>
         </div>
       </div>

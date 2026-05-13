@@ -14,22 +14,44 @@
             <label
               for="city-filter"
               class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-            >City</label>
-            <input
+              >City</label
+            >
+            <select
               id="city-filter"
               v-model="filters.city"
-              type="text"
               class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
-              placeholder="e.g. Manchester"
-            />
+            >
+              <option value="">All Cities</option>
+              <option v-for="city in UK_CITIES" :key="city" :value="city">{{ city }}</option>
+            </select>
           </div>
 
-          <!-- Price Range -->
+          <!-- Service filter -->
           <div class="space-y-4">
-            <span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
-              Max Price per Hour (£)
-            </span>
+            <label
+              for="service-filter"
+              class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
+              >Service</label
+            >
+            <select
+              id="service-filter"
+              v-model="filters.service"
+              class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
+            >
+              <option value="">All Services</option>
+              <option v-for="s in SERVICES" :key="s.slug" :value="s.slug">{{ s.title }}</option>
+            </select>
+          </div>
+
+          <!-- Max Rate filter -->
+          <div class="space-y-4">
+            <label
+              for="max-rate"
+              class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
+              >Max Rate (£/hr)</label
+            >
             <input
+              id="max-rate"
               v-model.number="filters.maxRateGbp"
               type="number"
               min="0"
@@ -43,7 +65,8 @@
             <label
               for="min-rating"
               class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-            >Min Rating</label>
+              >Min Rating</label
+            >
             <select
               id="min-rating"
               v-model.number="filters.minRating"
@@ -79,7 +102,11 @@
             <p class="text-secondary font-body mt-2">
               <span v-if="loading">Searching…</span>
               <span v-else-if="errorMessage" class="text-red-600">{{ errorMessage }}</span>
-              <span v-else>Showing {{ cleaners.length }} professional{{ cleaners.length !== 1 ? 's' : '' }}</span>
+              <span v-else
+                >Showing {{ cleaners.length }} professional{{
+                  cleaners.length !== 1 ? 's' : ''
+                }}</span
+              >
             </p>
           </div>
           <div class="flex items-center gap-4 border-b border-outline-variant pb-2">
@@ -116,7 +143,9 @@
           v-else-if="cleaners.length === 0 && !errorMessage"
           class="border border-dashed border-outline-variant p-16 text-center"
         >
-          <span class="material-symbols-outlined text-outline-variant text-5xl block mb-4">search_off</span>
+          <span class="material-symbols-outlined text-outline-variant text-5xl block mb-4"
+            >search_off</span
+          >
           <p class="font-label-md text-label-md text-on-surface">No cleaners found</p>
           <p class="text-caption text-on-surface-variant mt-1">Try adjusting your filters.</p>
         </div>
@@ -139,7 +168,9 @@
                 v-else
                 class="w-full h-full flex items-center justify-center bg-surface-container"
               >
-                <span class="material-symbols-outlined text-5xl text-on-surface-variant">person</span>
+                <span class="material-symbols-outlined text-5xl text-on-surface-variant"
+                  >person</span
+                >
               </div>
               <div
                 v-if="c.average_rating >= 4.9"
@@ -153,9 +184,15 @@
                 <div>
                   <h2 class="font-h2 text-h2 text-primary">{{ displayName(c) }}</h2>
                   <div class="flex items-center gap-1 mt-1">
-                    <span class="material-symbols-outlined text-[18px] text-zinc-900 star-filled">star</span>
-                    <span class="font-label-md text-label-md">{{ c.average_rating.toFixed(1) }}</span>
-                    <span class="text-secondary font-caption text-caption">({{ c.review_count }} reviews)</span>
+                    <span class="material-symbols-outlined text-[18px] text-zinc-900 star-filled"
+                      >star</span
+                    >
+                    <span class="font-label-md text-label-md">{{
+                      c.average_rating.toFixed(1)
+                    }}</span>
+                    <span class="text-secondary font-caption text-caption"
+                      >({{ c.review_count }} reviews)</span
+                    >
                   </div>
                 </div>
                 <div class="text-right">
@@ -165,7 +202,12 @@
                   <div class="text-secondary font-caption text-caption">per hour</div>
                 </div>
               </div>
-              <p v-if="c.bio" class="font-body text-body text-on-surface-variant text-sm line-clamp-2">{{ c.bio }}</p>
+              <p
+                v-if="c.bio"
+                class="font-body text-body text-on-surface-variant text-sm line-clamp-2"
+              >
+                {{ c.bio }}
+              </p>
               <div v-if="c.profiles?.city" class="flex items-center gap-1 text-secondary text-sm">
                 <span class="material-symbols-outlined text-[16px]">location_on</span>
                 {{ c.profiles.city }}
@@ -214,6 +256,8 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import { formatPence } from '@/utils/format'
+import { UK_CITIES } from '@/utils/ukCities'
+import { SERVICES } from '@/utils/services'
 
 const router = useRouter()
 
@@ -226,6 +270,7 @@ const sortBy = ref<'rating' | 'price_asc'>('rating')
 
 const filters = reactive({
   city: '',
+  service: '',
   maxRateGbp: null as number | null,
   minRating: 0,
 })
@@ -266,6 +311,7 @@ function applyFilters() {
 
 function clearFilters() {
   filters.city = ''
+  filters.service = ''
   filters.maxRateGbp = null
   filters.minRating = 0
   sortBy.value = 'rating'
@@ -289,12 +335,20 @@ function bookCleaner(userId: string) {
 
 <style scoped>
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
   vertical-align: middle;
 }
 
 .star-filled {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 
 .line-clamp-2 {
@@ -304,10 +358,22 @@ function bookCleaner(userId: string) {
   overflow: hidden;
 }
 
-.animate-pulse { animation: pulse 1.5s ease-in-out infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
 
 @media (min-width: 1024px) {
-  .lg\:w-72 { width: 18rem; }
+  .lg\:w-72 {
+    width: 18rem;
+  }
 }
 </style>

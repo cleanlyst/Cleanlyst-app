@@ -57,7 +57,7 @@ export async function searchCleaners(params: CleanerSearchParams = {}): Promise<
     query = query.gte('average_rating', minRating)
   }
   if (params.city) {
-    query = query.ilike('profiles.city', `%${params.city}%`)
+    query = query.eq('profiles.city', params.city)
   }
 
   const { data, error } = await query

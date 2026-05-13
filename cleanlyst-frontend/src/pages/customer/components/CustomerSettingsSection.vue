@@ -9,77 +9,126 @@
 
     <!-- Personal Information -->
     <div class="form-card">
-      <h2 class="card-heading">Personal Information</h2>
-
-      <!-- Avatar -->
-      <div class="avatar-row">
-        <div class="avatar-wrap">
-          <img v-if="avatarUrl" :src="avatarUrl" alt="Profile" class="avatar-img" />
-          <span v-else class="material-symbols-outlined avatar-placeholder">person</span>
-        </div>
-        <div class="avatar-actions">
-          <label class="btn-secondary" :class="{ 'btn-secondary--loading': avatarUploading }">
-            <input
-              accept="image/jpeg,image/png,image/webp"
-              class="sr-only"
-              type="file"
-              :disabled="avatarUploading"
-              @change="handleAvatarChange"
-            />
-            {{ avatarUploading ? 'Uploading…' : 'Change Photo' }}
-          </label>
-          <p v-if="avatarError" class="avatar-error">{{ avatarError }}</p>
-        </div>
-      </div>
-
-      <div class="form-grid">
-        <div class="form-group">
-          <label class="form-label" for="fullName">Full Name</label>
-          <input
-            id="fullName"
-            v-model="profileForm.fullName"
-            class="form-input"
-            type="text"
-            placeholder="Your full name"
-          />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="phone">Phone Number</label>
-          <input
-            id="phone"
-            v-model="profileForm.phone"
-            class="form-input"
-            type="tel"
-            placeholder="+44 7700 000000"
-          />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="city">City</label>
-          <select id="city" v-model="profileForm.city" class="form-input">
-            <option value="">Select a city</option>
-            <option v-for="city in UK_CITIES" :key="city" :value="city">{{ city }}</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="country">Country</label>
-          <input
-            id="country"
-            v-model="profileForm.country"
-            class="form-input"
-            type="text"
-            placeholder="Your country"
-          />
-        </div>
-      </div>
-      <div class="card-footer">
-        <p v-if="profileStatus === 'success'" class="save-success">
-          <span class="material-symbols-outlined save-icon">check_circle</span>
-          Profile updated successfully.
-        </p>
-        <p v-else-if="profileStatus === 'error'" class="save-error">{{ profileError }}</p>
-        <button class="btn-primary" :disabled="profileSaving" type="button" @click="saveProfile">
-          {{ profileSaving ? 'Saving…' : 'Save Changes' }}
+      <div class="card-heading-row">
+        <h2 class="card-heading">Personal Information</h2>
+        <button class="btn-ghost" type="button" @click="editingProfile ? cancelEditProfile() : openEditProfile()">
+          <span class="material-symbols-outlined btn-ghost-icon">{{ editingProfile ? 'close' : 'edit' }}</span>
+          {{ editingProfile ? 'Cancel' : 'Edit' }}
         </button>
+      </div>
+
+      <!-- Read-only view -->
+      <div v-if="!editingProfile" class="profile-view">
+        <div class="avatar-row">
+          <div class="avatar-wrap">
+            <img v-if="avatarUrl" :src="avatarUrl" alt="Profile" class="avatar-img" />
+            <span v-else class="material-symbols-outlined avatar-placeholder">person</span>
+          </div>
+          <div class="avatar-actions">
+            <label class="btn-secondary" :class="{ 'btn-secondary--loading': avatarUploading }">
+              <input
+                accept="image/jpeg,image/png,image/webp"
+                class="sr-only"
+                type="file"
+                :disabled="avatarUploading"
+                @change="handleAvatarChange"
+              />
+              {{ avatarUploading ? 'Uploading…' : 'Change Photo' }}
+            </label>
+            <p v-if="avatarError" class="avatar-error">{{ avatarError }}</p>
+          </div>
+        </div>
+        <dl class="profile-dl">
+          <div class="profile-dl-row">
+            <dt class="profile-dt">Full Name</dt>
+            <dd class="profile-dd">{{ auth.profile?.full_name || '—' }}</dd>
+          </div>
+          <div class="profile-dl-row">
+            <dt class="profile-dt">Phone</dt>
+            <dd class="profile-dd">{{ auth.profile?.phone || '—' }}</dd>
+          </div>
+          <div class="profile-dl-row">
+            <dt class="profile-dt">City</dt>
+            <dd class="profile-dd">{{ auth.profile?.city || '—' }}</dd>
+          </div>
+          <div class="profile-dl-row">
+            <dt class="profile-dt">Country</dt>
+            <dd class="profile-dd">{{ auth.profile?.country || '—' }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <!-- Edit form -->
+      <div v-else>
+        <div class="avatar-row">
+          <div class="avatar-wrap">
+            <img v-if="avatarUrl" :src="avatarUrl" alt="Profile" class="avatar-img" />
+            <span v-else class="material-symbols-outlined avatar-placeholder">person</span>
+          </div>
+          <div class="avatar-actions">
+            <label class="btn-secondary" :class="{ 'btn-secondary--loading': avatarUploading }">
+              <input
+                accept="image/jpeg,image/png,image/webp"
+                class="sr-only"
+                type="file"
+                :disabled="avatarUploading"
+                @change="handleAvatarChange"
+              />
+              {{ avatarUploading ? 'Uploading…' : 'Change Photo' }}
+            </label>
+            <p v-if="avatarError" class="avatar-error">{{ avatarError }}</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="fullName">Full Name</label>
+            <input
+              id="fullName"
+              v-model="profileForm.fullName"
+              class="form-input"
+              type="text"
+              placeholder="Your full name"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="phone">Phone Number</label>
+            <input
+              id="phone"
+              v-model="profileForm.phone"
+              class="form-input"
+              type="tel"
+              placeholder="+44 7700 000000"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="city">City</label>
+            <select id="city" v-model="profileForm.city" class="form-input">
+              <option value="">Select a city</option>
+              <option v-for="c in UK_CITIES" :key="c" :value="c">{{ c }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="country">Country</label>
+            <input
+              id="country"
+              v-model="profileForm.country"
+              class="form-input"
+              type="text"
+              placeholder="Your country"
+            />
+          </div>
+        </div>
+        <div class="card-footer">
+          <p v-if="profileStatus === 'success'" class="save-success">
+            <span class="material-symbols-outlined save-icon">check_circle</span>
+            Profile updated successfully.
+          </p>
+          <p v-else-if="profileStatus === 'error'" class="save-error">{{ profileError }}</p>
+          <button class="btn-primary" :disabled="profileSaving" type="button" @click="saveProfile">
+            {{ profileSaving ? 'Saving…' : 'Save Changes' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -180,7 +229,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { uploadAvatar } from '@/services/storageService'
@@ -193,6 +242,7 @@ const avatarUrl = ref(auth.profile?.avatar_url ?? '')
 const avatarUploading = ref(false)
 const avatarError = ref('')
 
+const editingProfile = ref(false)
 const profileSaving = ref(false)
 const profileStatus = ref<'idle' | 'success' | 'error'>('idle')
 const profileError = ref('')
@@ -202,21 +252,61 @@ const passwordStatus = ref<'idle' | 'success' | 'error'>('idle')
 const passwordError = ref('')
 
 const profileForm = reactive({
-  fullName: auth.profile?.full_name ?? '',
-  phone: auth.profile?.phone ?? '',
-  city: auth.profile?.city ?? '',
-  country: auth.profile?.country ?? '',
+  fullName: '',
+  phone: '',
+  city: '',
+  country: '',
 })
+
+function syncFormFromStore() {
+  profileForm.fullName = auth.profile?.full_name ?? ''
+  profileForm.phone = auth.profile?.phone ?? ''
+  profileForm.city = auth.profile?.city ?? ''
+  profileForm.country = auth.profile?.country ?? ''
+}
+
+function openEditProfile() {
+  syncFormFromStore()
+  profileStatus.value = 'idle'
+  profileError.value = ''
+  editingProfile.value = true
+}
+
+function cancelEditProfile() {
+  editingProfile.value = false
+  profileStatus.value = 'idle'
+  profileError.value = ''
+}
 
 const passwordForm = reactive({
   newPassword: '',
   confirmPassword: '',
 })
 
-const notifications = reactive({
-  email: true,
-  sms: false,
-})
+const NOTIF_KEY = 'cleanlyst_notif_prefs'
+
+function loadNotifPrefs(): { email: boolean; sms: boolean } {
+  try {
+    const raw = localStorage.getItem(NOTIF_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch {
+    // ignore parse errors
+  }
+  return { email: true, sms: false }
+}
+
+const notifications = reactive(loadNotifPrefs())
+
+watch(
+  () => ({ email: notifications.email, sms: notifications.sms }),
+  (prefs) => {
+    try {
+      localStorage.setItem(NOTIF_KEY, JSON.stringify(prefs))
+    } catch {
+      // ignore storage errors (private browsing, quota exceeded)
+    }
+  },
+)
 
 const passwordMismatch = computed(
   () =>
@@ -250,7 +340,7 @@ async function handleAvatarChange(event: Event) {
       .eq('id', auth.userId)
     if (error) throw error
     avatarUrl.value = publicUrl
-    await auth.init()
+    await auth._loadProfileData(auth.userId)
   } catch (err) {
     avatarError.value = err instanceof Error ? err.message : 'Failed to upload photo.'
   } finally {
@@ -268,18 +358,19 @@ async function saveProfile() {
     const { error } = await supabase
       .from('profiles')
       .update({
-        full_name: profileForm.fullName,
+        full_name: profileForm.fullName.trim() || null,
         phone: profileForm.phone || null,
         city: profileForm.city || null,
         country: profileForm.country || null,
       })
       .eq('id', auth.userId)
     if (error) throw error
-    await auth.init()
+    await auth._loadProfileData(auth.userId)
     profileStatus.value = 'success'
     setTimeout(() => {
       profileStatus.value = 'idle'
-    }, 3000)
+      editingProfile.value = false
+    }, 1500)
   } catch (err) {
     profileStatus.value = 'error'
     profileError.value = err instanceof Error ? err.message : 'Failed to update profile.'
@@ -355,6 +446,77 @@ async function savePassword() {
   line-height: 1.6;
   color: var(--secondary, #5e5e5e);
   margin: 0;
+}
+
+/* ── Card heading row ── */
+.card-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--surface-container, #eeeeee);
+}
+
+.card-heading-row .card-heading {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  border-radius: var(--radius, 0.25rem);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--on-surface, #1a1c1c);
+  cursor: pointer;
+  transition: border-color 200ms ease;
+  flex-shrink: 0;
+}
+
+.btn-ghost:hover {
+  border-color: var(--primary, #000000);
+}
+
+.btn-ghost-icon {
+  font-size: 16px;
+}
+
+/* ── Read-only profile view ── */
+.profile-dl {
+  margin: 0;
+}
+
+.profile-dl-row {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--surface-container, #eeeeee);
+}
+
+.profile-dl-row:last-child {
+  border-bottom: none;
+}
+
+.profile-dt {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--secondary, #5e5e5e);
+  width: 7rem;
+  flex-shrink: 0;
+}
+
+.profile-dd {
+  font-size: 14px;
+  color: var(--on-surface, #1a1c1c);
+  margin: 0;
+  word-break: break-word;
 }
 
 /* ── Avatar ── */

@@ -1,67 +1,13 @@
 <template>
   <main class="page-main">
     <div class="page-header">
-      <h1 class="page-title">Set Pricing &amp; Availability</h1>
+      <h1 class="page-title">Availability</h1>
       <p class="page-desc">
-        Define your service rates and operational parameters. Changes to pricing will not affect
-        existing active bookings.
+        Set the days and hours you are available to take bookings. Changes take effect immediately
+        for new booking requests.
       </p>
     </div>
     <div class="form-grid">
-      <!-- Left Column: Form Controls -->
-      <div class="left-col">
-        <!-- Pricing Section -->
-        <section class="form-section">
-          <div class="section-head">
-            <span class="material-symbols-outlined section-icon">payments</span>
-            <h2 class="section-title">Hourly Rate</h2>
-          </div>
-          <div class="form-card">
-            <label class="form-label" for="base-hourly-price">Base Hourly Price (£)</label>
-            <div class="price-input-wrap">
-              <span class="price-prefix">£</span>
-              <input id="base-hourly-price" class="price-input" placeholder="45.00" type="number" />
-            </div>
-            <p class="input-hint">Recommended range in your area: £35 - £55</p>
-          </div>
-        </section>
-        <!-- Service Radius Section -->
-        <section class="form-section">
-          <div class="section-head">
-            <span class="material-symbols-outlined section-icon">map</span>
-            <h2 class="section-title">Travel Radius</h2>
-          </div>
-          <div class="radius-card">
-            <div>
-              <div class="radius-header">
-                <label class="form-label" for="travel-radius">Max Distance (miles)</label>
-                <span class="radius-value">25<span class="radius-value-unit">mi</span></span>
-              </div>
-              <input
-                id="travel-radius"
-                class="radius-slider"
-                max="100"
-                min="5"
-                step="5"
-                type="range"
-                value="25"
-              />
-            </div>
-            <div class="map-preview">
-              <img
-                class="map-preview-img"
-                alt="A minimalist overhead topographic map of a modern urban city layout with clean white streets and subtle grey building masses. The lighting is bright and even, evoking a professional architectural drafting style. A faint circular overlay indicates a service radius area in a translucent grey tone, maintaining a monochromatic and functional aesthetic."
-                data-location="New York City"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCaAwSAOBQnJMyE8G_7IR20zlwDj5f1oG8fRuPpgK19zq9Hn8Y-rzLtUbqb_glHKqXAfYwjiKLc0hDGNErlobbHCmyWEMHzIHOy-i7-oECrBB3VeifUOMPfGRj-4ZdwilTypW4z3uki7Jtl1jjgW2rgEhBV8TbparbSlbcoq49Zm1DMWyYK__FHVnXCxc9g9CrhCjUo9C5aLBs8X3SBOXeAPP4uD2FgraIKXpsgvuSiikJ3ea3Q9QKQdAxA7vB9OZ-mBq8LD9Fbiw"
-              />
-              <div class="map-overlay">
-                <div class="map-pulse"></div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-      <!-- Right Column: Availability Calendar -->
       <div class="right-col">
         <section class="schedule-section">
           <div class="schedule-header">
@@ -69,162 +15,77 @@
               <span class="material-symbols-outlined section-icon">calendar_month</span>
               <h2 class="section-title">Weekly Schedule</h2>
             </div>
-            <button class="copy-all-btn">Copy to all days</button>
           </div>
-          <div class="schedule-card">
+
+          <div v-if="loadError" class="load-error" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            {{ loadError }}
+          </div>
+
+          <div v-if="pageLoading" class="loading-state">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading schedule…</p>
+          </div>
+
+          <div v-else class="schedule-card">
             <div class="day-rows">
-              <!-- Monday -->
-              <div class="day-row">
+              <div
+                v-for="day in schedule"
+                :key="day.index"
+                class="day-row"
+                :class="{ 'day-row--off': !day.active }"
+              >
                 <div class="day-name-col">
-                  <span class="day-name">Monday</span>
-                  <span class="day-status">Available</span>
+                  <span class="day-name" :class="{ 'day-name--muted': !day.active }">
+                    {{ day.label }}
+                  </span>
+                  <span class="day-status" :class="{ 'day-status--off': !day.active }">
+                    {{ day.active ? 'Available' : 'Off' }}
+                  </span>
                 </div>
-                <div class="time-inputs">
-                  <input class="time-input" type="time" value="09:00" />
-                  <span class="time-sep">to</span>
-                  <input class="time-input" type="time" value="17:00" />
-                </div>
-                <label class="day-toggle-wrap" aria-label="Monday availability">
+                <div class="time-inputs" :class="{ 'time-inputs--disabled': !day.active }">
                   <input
-                    checked
-                    class="sr-only day-toggle-input"
-                    type="checkbox"
-                    aria-label="Monday availability"
+                    v-model="day.start"
+                    class="time-input"
+                    type="time"
+                    :disabled="!day.active"
+                    :aria-label="`${day.label} start time`"
                   />
-                  <div class="day-toggle"></div>
-                </label>
-              </div>
-              <!-- Tuesday -->
-              <div class="day-row">
-                <div class="day-name-col">
-                  <span class="day-name">Tuesday</span>
-                  <span class="day-status">Available</span>
-                </div>
-                <div class="time-inputs">
-                  <input class="time-input" type="time" value="09:00" />
                   <span class="time-sep">to</span>
-                  <input class="time-input" type="time" value="17:00" />
-                </div>
-                <label class="day-toggle-wrap" aria-label="Tuesday availability">
                   <input
-                    checked
-                    class="sr-only day-toggle-input"
-                    type="checkbox"
-                    aria-label="Tuesday availability"
+                    v-model="day.end"
+                    class="time-input"
+                    type="time"
+                    :disabled="!day.active"
+                    :aria-label="`${day.label} end time`"
                   />
-                  <div class="day-toggle"></div>
-                </label>
-              </div>
-              <!-- Wednesday (Off) -->
-              <div class="day-row day-row--off">
-                <div class="day-name-col">
-                  <span class="day-name day-name--muted">Wednesday</span>
-                  <span class="day-status day-status--off">Off</span>
                 </div>
-                <div class="time-inputs time-inputs--disabled">
-                  <input class="time-input" type="time" value="00:00" />
-                  <span class="time-sep">to</span>
-                  <input class="time-input" type="time" value="00:00" />
-                </div>
-                <label class="day-toggle-wrap" aria-label="Wednesday availability">
+                <label class="day-toggle-wrap" :aria-label="`${day.label} availability`">
                   <input
+                    v-model="day.active"
                     class="sr-only day-toggle-input"
                     type="checkbox"
-                    aria-label="Wednesday availability"
-                  />
-                  <div class="day-toggle"></div>
-                </label>
-              </div>
-              <!-- Thursday -->
-              <div class="day-row">
-                <div class="day-name-col">
-                  <span class="day-name">Thursday</span>
-                  <span class="day-status">Available</span>
-                </div>
-                <div class="time-inputs">
-                  <input class="time-input" type="time" value="09:00" />
-                  <span class="time-sep">to</span>
-                  <input class="time-input" type="time" value="17:00" />
-                </div>
-                <label class="day-toggle-wrap" aria-label="Thursday availability">
-                  <input
-                    checked
-                    class="sr-only day-toggle-input"
-                    type="checkbox"
-                    aria-label="Thursday availability"
-                  />
-                  <div class="day-toggle"></div>
-                </label>
-              </div>
-              <!-- Friday -->
-              <div class="day-row">
-                <div class="day-name-col">
-                  <span class="day-name">Friday</span>
-                  <span class="day-status">Available</span>
-                </div>
-                <div class="time-inputs">
-                  <input class="time-input" type="time" value="09:00" />
-                  <span class="time-sep">to</span>
-                  <input class="time-input" type="time" value="15:00" />
-                </div>
-                <label class="day-toggle-wrap" aria-label="Friday availability">
-                  <input
-                    checked
-                    class="sr-only day-toggle-input"
-                    type="checkbox"
-                    aria-label="Friday availability"
-                  />
-                  <div class="day-toggle"></div>
-                </label>
-              </div>
-
-              <!-- Saturday -->
-              <div class="day-row">
-                <div class="day-name-col">
-                  <span class="day-name">Saturday</span>
-                  <span class="day-status">Available</span>
-                </div>
-                <div class="time-inputs">
-                  <input class="time-input" type="time" value="09:00" />
-                  <span class="time-sep">to</span>
-                  <input class="time-input" type="time" value="15:00" />
-                </div>
-                <label class="day-toggle-wrap" aria-label="Saturday availability">
-                  <input
-                    checked
-                    class="sr-only day-toggle-input"
-                    type="checkbox"
-                    aria-label="Saturday availability"
-                  />
-                  <div class="day-toggle"></div>
-                </label>
-              </div>
-
-              <!-- Sunday (off)-->
-              <div class="day-row day-row--off">
-                <div class="day-name-col">
-                  <span class="day-name day-name--muted">Sunday</span>
-                  <span class="day-status day-status--off">Off</span>
-                </div>
-                <div class="time-inputs time-inputs--disabled">
-                  <input class="time-input" type="time" value="00:00" />
-                  <span class="time-sep">to</span>
-                  <input class="time-input" type="time" value="00:00" />
-                </div>
-                <label class="day-toggle-wrap" aria-label="Sunday availability">
-                  <input
-                    class="sr-only day-toggle-input"
-                    type="checkbox"
-                    aria-label="Sunday availability"
+                    :aria-label="`${day.label} availability`"
                   />
                   <div class="day-toggle"></div>
                 </label>
               </div>
             </div>
           </div>
+
+          <div v-if="saveError" class="save-error" role="alert">{{ saveError }}</div>
+          <div v-if="saveSuccess" class="save-success">
+            <span class="material-symbols-outlined">check_circle</span>
+            Schedule saved successfully.
+          </div>
+
           <div class="form-footer">
-            <button class="btn-discard">Discard Changes</button>
-            <button class="btn-save">Save Settings</button>
+            <button class="btn-discard" :disabled="pageLoading || saving" @click="discardChanges">
+              Discard Changes
+            </button>
+            <button class="btn-save" :disabled="pageLoading || saving" @click="saveSchedule">
+              {{ saving ? 'Saving…' : 'Save Settings' }}
+            </button>
           </div>
         </section>
       </div>
@@ -233,14 +94,122 @@
 </template>
 
 <script setup lang="ts">
-import type { PropType } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import {
+  getCleanerAvailability,
+  upsertAvailabilitySlots,
+} from '@/services/availabilityService'
 
-defineProps({
-  calendarDays: {
-    type: Array as PropType<string[]>,
-    default: () => [],
-  },
+const DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+// day_of_week stored as 1=Mon … 7=Sun (ISO week; adjust if schema differs)
+const DAY_NUMBERS = [1, 2, 3, 4, 5, 6, 7]
+
+interface DaySlot {
+  index: number
+  dayOfWeek: number
+  label: string
+  active: boolean
+  start: string
+  end: string
+}
+
+const DEFAULT_START = '09:00'
+const DEFAULT_END = '17:00'
+
+function buildDefaultSchedule(): DaySlot[] {
+  return DAY_LABELS.map((label, i) => ({
+    index: i,
+    dayOfWeek: DAY_NUMBERS[i],
+    label,
+    active: i < 5, // Mon-Fri on by default
+    start: DEFAULT_START,
+    end: DEFAULT_END,
+  }))
+}
+
+const auth = useAuthStore()
+const pageLoading = ref(true)
+const loadError = ref('')
+const saving = ref(false)
+const saveError = ref('')
+const saveSuccess = ref(false)
+
+const schedule = reactive<DaySlot[]>(buildDefaultSchedule())
+// Snapshot of the last-saved/loaded state so Discard can revert
+let savedSnapshot: DaySlot[] = buildDefaultSchedule()
+
+function applySnapshot(snap: DaySlot[]) {
+  for (let i = 0; i < schedule.length; i++) {
+    schedule[i].active = snap[i].active
+    schedule[i].start = snap[i].start
+    schedule[i].end = snap[i].end
+  }
+}
+
+function takeSnapshot(): DaySlot[] {
+  return schedule.map((d) => ({ ...d }))
+}
+
+onMounted(async () => {
+  if (!auth.initialized) await auth.init()
+  if (!auth.userId) {
+    pageLoading.value = false
+    return
+  }
+  try {
+    const slots = await getCleanerAvailability(auth.userId)
+    // Map DB rows back onto schedule slots by dayOfWeek
+    const byDay = new Map(slots.map((s) => [s.day_of_week, s]))
+    for (const day of schedule) {
+      const slot = byDay.get(day.dayOfWeek)
+      if (slot) {
+        day.active = slot.active
+        day.start = slot.start_time.slice(0, 5) // "HH:MM:SS" → "HH:MM"
+        day.end = slot.end_time.slice(0, 5)
+      } else {
+        // No DB row means this day is off
+        day.active = false
+      }
+    }
+    savedSnapshot = takeSnapshot()
+  } catch (e) {
+    loadError.value = e instanceof Error ? e.message : 'Failed to load schedule.'
+  } finally {
+    pageLoading.value = false
+  }
 })
+
+async function saveSchedule() {
+  if (!auth.userId) return
+  saving.value = true
+  saveError.value = ''
+  saveSuccess.value = false
+  try {
+    const rows = schedule.map((d) => ({
+      day_of_week: d.dayOfWeek,
+      start_time: d.active ? d.start : DEFAULT_START,
+      end_time: d.active ? d.end : DEFAULT_END,
+      active: d.active,
+    }))
+    await upsertAvailabilitySlots(auth.userId, rows)
+    savedSnapshot = takeSnapshot()
+    saveSuccess.value = true
+    setTimeout(() => {
+      saveSuccess.value = false
+    }, 2500)
+  } catch (e) {
+    saveError.value = e instanceof Error ? e.message : 'Failed to save schedule.'
+  } finally {
+    saving.value = false
+  }
+}
+
+function discardChanges() {
+  applySnapshot(savedSnapshot)
+  saveError.value = ''
+  saveSuccess.value = false
+}
 </script>
 
 <style scoped>
@@ -312,190 +281,8 @@ defineProps({
   .form-grid {
     grid-template-columns: repeat(12, 1fr);
   }
-  .left-col {
-    grid-column: span 5;
-  }
   .right-col {
-    grid-column: span 7;
-  }
-}
-
-.left-col {
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
-}
-
-/* ── Form Sections ── */
-.form-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.section-head {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.section-icon {
-  color: #a1a1aa; /* zinc-400 */
-}
-
-.section-title {
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  font-family: var(--font-h2, Inter, sans-serif);
-  color: var(--primary, #000000);
-}
-
-/* ── Form Card ── */
-.form-card {
-  padding: 2rem;
-  background-color: var(--surface-container-lowest, #ffffff);
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  border-radius: 0.25rem;
-}
-
-.form-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  font-family: var(--font-label-md, Inter, sans-serif);
-  margin-bottom: 0.5rem;
-  color: #52525b; /* zinc-600 */
-}
-
-/* ── Price Input ── */
-.price-input-wrap {
-  position: relative;
-}
-
-.price-prefix {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #a1a1aa; /* zinc-400 */
-  pointer-events: none;
-}
-
-.price-input {
-  width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  border-radius: 0.125rem;
-  outline: none;
-  transition: border-color 150ms;
-  font-size: 16px;
-  font-family: var(--font-body, Inter, sans-serif);
-  box-sizing: border-box;
-}
-
-.price-input:focus {
-  border-color: var(--primary, #000000);
-}
-
-.input-hint {
-  margin-top: 1rem;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
-  font-family: var(--font-caption, Inter, sans-serif);
-  color: #a1a1aa; /* zinc-400 */
-}
-
-/* ── Radius Card ── */
-.radius-card {
-  padding: 2rem;
-  background-color: var(--surface-container-lowest, #ffffff);
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  border-radius: 0.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.radius-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 1rem;
-}
-
-.radius-value {
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  font-family: var(--font-h2, Inter, sans-serif);
-  color: var(--primary, #000000);
-}
-
-.radius-value-unit {
-  font-size: 0.875rem;
-  font-weight: 400;
-  color: #a1a1aa; /* zinc-400 */
-  margin-left: 0.25rem;
-}
-
-.radius-slider {
-  width: 100%;
-  height: 0.25rem;
-  background-color: var(--surface-container, #eeeeee);
-  appearance: none;
-  cursor: pointer;
-  accent-color: var(--primary, #000000);
-  border-radius: 9999px;
-}
-
-/* ── Map Preview ── */
-.map-preview {
-  height: 12rem;
-  width: 100%;
-  background-color: var(--surface-container, #eeeeee);
-  border-radius: 0.125rem;
-  overflow: hidden;
-  position: relative;
-}
-
-.map-preview-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: grayscale(100%);
-  opacity: 0.5;
-}
-
-.map-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.map-pulse {
-  width: 6rem;
-  height: 6rem;
-  border-radius: 9999px;
-  border: 2px solid var(--primary, #000000);
-  background-color: rgba(0, 0, 0, 0.05);
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
+    grid-column: span 9;
   }
 }
 
@@ -518,23 +305,69 @@ defineProps({
   gap: 0.75rem;
 }
 
-.copy-all-btn {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  font-family: var(--font-label-md, Inter, sans-serif);
-  color: #71717a; /* zinc-500 */
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  text-decoration: underline;
-  padding: 0;
-  transition: color 150ms;
+.section-icon {
+  color: #a1a1aa;
 }
 
-.copy-all-btn:hover {
+.section-title {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-family: var(--font-h2, Inter, sans-serif);
   color: var(--primary, #000000);
+}
+
+/* ── Loading ── */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0;
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--outline-variant, #c4c7c7);
+  border-top-color: var(--primary, #000000);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 16px;
+  color: var(--secondary, #5e5e5e);
+}
+
+/* ── Error / Success ── */
+.load-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--error, #ba1a1a);
+  color: var(--error, #ba1a1a);
+  font-size: 14px;
+}
+
+.save-error {
+  font-size: 13px;
+  color: var(--error, #ba1a1a);
+  padding: 0.5rem 0;
+}
+
+.save-success {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 13px;
+  color: #2e7d32;
 }
 
 /* ── Schedule Card ── */
@@ -552,7 +385,7 @@ defineProps({
   flex-direction: column;
   justify-content: space-between;
   gap: 1.5rem;
-  border-bottom: 1px solid #f4f4f5; /* zinc-100 */
+  border-bottom: 1px solid #f4f4f5;
   transition: background-color 150ms;
 }
 
@@ -561,7 +394,7 @@ defineProps({
 }
 
 .day-row:hover {
-  background-color: rgba(250, 250, 250, 0.5); /* zinc-50/50 */
+  background-color: rgba(250, 250, 250, 0.5);
 }
 
 @media (min-width: 640px) {
@@ -572,7 +405,7 @@ defineProps({
 }
 
 .day-row--off {
-  background-color: rgba(250, 250, 250, 0.3); /* zinc-50/30 */
+  background-color: rgba(250, 250, 250, 0.3);
 }
 
 .day-name-col {
@@ -591,7 +424,7 @@ defineProps({
 }
 
 .day-name--muted {
-  color: #a1a1aa; /* zinc-400 */
+  color: #a1a1aa;
 }
 
 .day-status {
@@ -599,12 +432,12 @@ defineProps({
   font-weight: 400;
   line-height: 1.4;
   text-transform: uppercase;
-  color: #a1a1aa; /* zinc-400 */
+  color: #a1a1aa;
   letter-spacing: 0.05em;
 }
 
 .day-status--off {
-  color: #d4d4d8; /* zinc-300 */
+  color: #d4d4d8;
 }
 
 /* ── Time Inputs ── */
@@ -631,7 +464,7 @@ defineProps({
 }
 
 .time-sep {
-  color: #d4d4d8; /* zinc-300 */
+  color: #d4d4d8;
   font-size: 0.875rem;
 }
 
@@ -665,7 +498,7 @@ defineProps({
   position: relative;
   width: 2.75rem;
   height: 1.5rem;
-  background: #e4e4e7; /* zinc-200 */
+  background: #e4e4e7;
   border-radius: 9999px;
   transition: background-color 200ms;
 }
@@ -713,8 +546,13 @@ defineProps({
   transition: background-color 150ms;
 }
 
-.btn-discard:hover {
-  background-color: #fafafa; /* zinc-50 */
+.btn-discard:hover:not(:disabled) {
+  background-color: #fafafa;
+}
+
+.btn-discard:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-save {
@@ -729,10 +567,15 @@ defineProps({
   font-family: var(--font-label-md, Inter, sans-serif);
   cursor: pointer;
   border-radius: 0.125rem;
-  transition: transform 150ms;
+  transition: opacity 150ms;
 }
 
-.btn-save:active {
-  transform: scale(0.95);
+.btn-save:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

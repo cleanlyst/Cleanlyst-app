@@ -350,6 +350,14 @@ async function handleAvatarChange(event: Event) {
 
 async function saveProfile() {
   if (!auth.userId) return
+
+  const trimmedName = profileForm.fullName.trim()
+  if (!trimmedName) {
+    profileStatus.value = 'error'
+    profileError.value = 'Full name is required.'
+    return
+  }
+
   profileSaving.value = true
   profileStatus.value = 'idle'
   profileError.value = ''
@@ -358,14 +366,21 @@ async function saveProfile() {
     const { error } = await supabase
       .from('profiles')
       .update({
-        full_name: profileForm.fullName.trim() || null,
+        full_name: trimmedName,
         phone: profileForm.phone || null,
         city: profileForm.city || null,
         country: profileForm.country || null,
       })
       .eq('id', auth.userId)
     if (error) throw error
-    await auth._loadProfileData(auth.userId)
+
+    // Reload profile data — non-fatal; store may be stale briefly but save succeeded.
+    try {
+      await auth._loadProfileData(auth.userId)
+    } catch {
+      // ignore reload error — data was saved successfully
+    }
+
     profileStatus.value = 'success'
     setTimeout(() => {
       profileStatus.value = 'idle'

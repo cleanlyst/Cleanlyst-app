@@ -161,7 +161,7 @@ const paymentButtonLabel = computed(() =>
 )
 
 onMounted(async () => {
-  await auth.init()
+  if (!auth.initialized) await auth.init()
   const bookingId = route.query.bookingId as string
   if (!bookingId) { loading.value = false; return }
 
@@ -196,10 +196,9 @@ async function continueToPayment() {
   paying.value = true
   cancelError.value = ''
   try {
-    let payableBookingId = booking.value.id
+    const payableBookingId = booking.value.id
     if (booking.value.status === 'estimate_proposed') {
-      const updated = await transitionBookingState(booking.value.id, 'awaiting_customer_payment')
-      payableBookingId = updated.id
+      await transitionBookingState(booking.value.id, 'awaiting_customer_payment')
       booking.value = { ...booking.value, status: 'awaiting_customer_payment' }
     }
     const checkout = await createCheckoutSession(payableBookingId)

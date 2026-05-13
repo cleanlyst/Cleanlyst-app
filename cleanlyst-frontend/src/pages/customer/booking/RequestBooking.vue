@@ -335,7 +335,7 @@ const canSubmit = computed(
 )
 
 onMounted(async () => {
-  await auth.init()
+  if (!auth.initialized) await auth.init()
   const cleanerId = route.query.cleanerId as string
   if (!cleanerId) {
     loadError.value = 'No cleaner selected.'

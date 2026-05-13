@@ -13,6 +13,7 @@ export interface Profile {
   city: string | null
   country: string | null
   is_active: boolean
+  is_verified: boolean
 }
 
 export interface CleanerProfile {
@@ -24,6 +25,7 @@ export interface CleanerProfile {
   currency: string
   status: 'pending' | 'approved' | 'rejected' | 'suspended'
   onboarding_complete: boolean
+  is_available: boolean
   average_rating: number
   review_count: number
 }

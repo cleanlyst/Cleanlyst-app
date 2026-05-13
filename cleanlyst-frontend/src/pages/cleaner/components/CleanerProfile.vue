@@ -268,6 +268,13 @@ const statusTagClass = computed(() => {
 
 async function handleSaveEdit() {
   if (!auth.userId) return
+
+  const trimmedName = editForm.full_name.trim()
+  if (!trimmedName) {
+    editError.value = 'Full name is required.'
+    return
+  }
+
   editSaving.value = true
   editError.value = ''
   editSuccess.value = false
@@ -279,7 +286,7 @@ async function handleSaveEdit() {
       supabase
         .from('profiles')
         .update({
-          full_name: editForm.full_name.trim() || null,
+          full_name: trimmedName,
           city: editForm.city || null,
         })
         .eq('id', auth.userId),
@@ -300,9 +307,10 @@ async function handleSaveEdit() {
     if (profileResult.error) throw profileResult.error
     if (cleanerResult.error) throw cleanerResult.error
 
-    // Reload only profile data — avoids full re-init that resets auth state temporarily.
+    // Reload profile data — required to reflect changes in the display
     await auth._loadProfileData(auth.userId)
     syncFormFromStore()
+
     editSuccess.value = true
     setTimeout(() => {
       editSuccess.value = false

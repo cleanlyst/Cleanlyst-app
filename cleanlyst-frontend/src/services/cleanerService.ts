@@ -46,7 +46,6 @@ export async function searchCleaners(params: CleanerSearchParams = {}): Promise<
       )
     `)
     .eq('status', 'approved')
-    .eq('onboarding_complete', true)
     .range(offset, offset + limit - 1)
     .order('average_rating', { ascending: false })
 

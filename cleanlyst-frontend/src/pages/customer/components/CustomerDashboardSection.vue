@@ -2,7 +2,7 @@
   <main class="page-main">
     <section class="page-header mb-4">
       <div>
-        <h1 class="header-title">Welcome back, {{ auth.profile?.full_name ?? 'Cleaner' }}</h1>
+        <h1 class="header-title">Welcome back, {{ auth.profile?.full_name ?? 'Customer' }}</h1>
       </div>
       <div>
         <router-link :to="{ name: 'BookCleaner' }" class="button-secondary">
@@ -15,112 +15,63 @@
       <section class="main-col">
         <div class="section-header">
           <h2 class="section-title">Upcoming Bookings</h2>
-          <span class="booking-count-badge">2 SCHEDULED</span>
+          <span class="booking-count-badge">{{ upcomingBookings.length }} SCHEDULED</span>
         </div>
-        <div class="bookings-list">
-          <!-- Booking Card 1 -->
-          <div class="booking-card">
-            <div class="booking-inner">
-              <div class="booking-media">
-                <img
-                  alt="Cleaner profile"
-                  class="booking-img"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1tWjZbdKboZLWFw3bVbqJq7dvVzYk85LqT9A9A4FN976nRjtKXgBozeBnHCb0cXJ-XQe5weeUQ1ghNayYIQugGAtZgi-tvoPioLQDA7Cnji9Toomnug5bCiUoi-5iPaKU1UlAoL1NBZbBS3L7_QhhZ0wJdSfmfF-_pKvpEfr4OXFbgqQXTAyWcLo_pS8FcaZbWtX7gwQZK3QRsRpVgDKtJ1fUHysbYdEbMgpHRnu4ECZeZkVOdRqMpqX1Nady7zUu0cgHIccFAw"
-                />
-              </div>
-              <div class="booking-body">
-                <div class="booking-title-row">
-                  <div>
-                    <h3 class="booking-title">Deep Apartment Clean</h3>
-                    <p class="booking-provider">with Sarah Miller</p>
-                  </div>
-                  <span class="booking-price">$120.00</span>
-                </div>
-                <div class="booking-meta">
-                  <div class="booking-meta-item">
-                    <span
-                      class="material-symbols-outlined booking-meta-icon"
-                      data-icon="calendar_today"
-                      >calendar_today</span
-                    >
-                    <span class="booking-meta-text">Oct 24, 2024</span>
-                  </div>
-                  <div class="booking-meta-item">
-                    <span class="material-symbols-outlined booking-meta-icon" data-icon="schedule"
-                      >schedule</span
-                    >
-                    <span class="booking-meta-text">10:00 AM - 2:00 PM</span>
-                  </div>
-                  <div class="booking-meta-item">
-                    <span
-                      class="material-symbols-outlined booking-meta-icon"
-                      data-icon="location_on"
-                      >location_on</span
-                    >
-                    <span class="booking-meta-text">Home (742 Evergreen Terr)</span>
-                  </div>
-                </div>
-              </div>
-              <div class="booking-actions">
-                <button class="btn-icon">
-                  <span class="material-symbols-outlined" data-icon="edit">edit</span>
-                </button>
-                <button class="btn-icon btn-icon--danger">
-                  <span class="material-symbols-outlined" data-icon="cancel">cancel</span>
-                </button>
-              </div>
-            </div>
-          </div>
 
-          <!-- Booking Card 2 -->
-          <div class="booking-card">
+        <div v-if="props.loading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <p class="loading-text">Loading bookings…</p>
+        </div>
+
+        <div v-else-if="upcomingBookings.length === 0" class="empty-state">
+          <span class="material-symbols-outlined empty-icon">event_busy</span>
+          <p class="empty-title">No upcoming bookings</p>
+          <p class="empty-copy">
+            <router-link :to="{ name: 'BookCleaner' }" class="empty-link">Book a cleaner</router-link>
+            to get started.
+          </p>
+        </div>
+
+        <div v-else class="bookings-list">
+          <div v-for="b in upcomingBookings" :key="b.id" class="booking-card">
             <div class="booking-inner">
               <div class="booking-media">
-                <img
-                  alt="Cleaner profile"
-                  class="booking-img"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2salg7fJwXUrbD1-Wi455-2luTsG7GYMYo_uH1kE1euMYrpY-VTEQT3syuiykc5IwGcLpbtuZXdb6z79KOlw9Vms0QwRB-bRdP8y92xoaQSQQHVlTLEi5WX9oYQaAWyNMRz51jWZ3aQ3JBfRxPc3xyyRm7mlvICbXIwICtuJJNzRYoyxqBnIrBo2TgMoSuuOkl96_BoSQlXThT8spYlc4LwjNHiiJ4su5krvTGuw4zOSKVOUOrHIxQdEzu8oQVxkbugNkodr27Q"
-                />
+                <div class="booking-img-placeholder">
+                  <span class="material-symbols-outlined placeholder-icon">cleaning_services</span>
+                </div>
               </div>
               <div class="booking-body">
                 <div class="booking-title-row">
                   <div>
-                    <h3 class="booking-title">Standard Weekly Maintenance</h3>
-                    <p class="booking-provider">with EcoClean Pros</p>
+                    <h3 class="booking-title">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h3>
+                    <p class="booking-provider">{{ b.cleaner_name ?? 'Your cleaner' }}</p>
                   </div>
-                  <span class="booking-price">$85.00</span>
+                  <span class="booking-price">{{ formatPence(b.quote_cents) }}</span>
                 </div>
                 <div class="booking-meta">
                   <div class="booking-meta-item">
-                    <span
-                      class="material-symbols-outlined booking-meta-icon"
-                      data-icon="calendar_today"
-                      >calendar_today</span
-                    >
-                    <span class="booking-meta-text">Oct 31, 2024</span>
+                    <span class="material-symbols-outlined booking-meta-icon">calendar_today</span>
+                    <span class="booking-meta-text">{{ formatDate(b.scheduled_start) }}</span>
                   </div>
                   <div class="booking-meta-item">
-                    <span class="material-symbols-outlined booking-meta-icon" data-icon="schedule"
-                      >schedule</span
-                    >
-                    <span class="booking-meta-text">09:00 AM - 12:00 PM</span>
+                    <span class="material-symbols-outlined booking-meta-icon">location_on</span>
+                    <span class="booking-meta-text">{{ b.location_text }}</span>
                   </div>
                   <div class="booking-meta-item">
-                    <span
-                      class="material-symbols-outlined booking-meta-icon"
-                      data-icon="location_on"
-                      >location_on</span
-                    >
-                    <span class="booking-meta-text">Home (742 Evergreen Terr)</span>
+                    <span class="booking-meta-text status-inline" :class="statusClass(b.status)">
+                      {{ formatStatus(b.status) }}
+                    </span>
                   </div>
                 </div>
               </div>
               <div class="booking-actions">
-                <button class="btn-icon">
-                  <span class="material-symbols-outlined" data-icon="edit">edit</span>
-                </button>
-                <button class="btn-icon btn-icon--danger">
-                  <span class="material-symbols-outlined" data-icon="cancel">cancel</span>
+                <button
+                  v-if="canCancel(b.status)"
+                  class="btn-icon btn-icon--danger"
+                  title="Cancel booking"
+                  @click="props.cancelBooking(b.id)"
+                >
+                  <span class="material-symbols-outlined">cancel</span>
                 </button>
               </div>
             </div>
@@ -135,12 +86,15 @@
           <div class="overview-rows">
             <div class="overview-row">
               <span class="overview-label">Total Bookings</span>
-              <span class="overview-value">24</span>
+              <span class="overview-value">{{ props.bookings.length }}</span>
             </div>
-
+            <div class="overview-row">
+              <span class="overview-label">Upcoming</span>
+              <span class="overview-value">{{ upcomingBookings.length }}</span>
+            </div>
             <div class="overview-row overview-row--last">
               <span class="overview-label">Next Clean</span>
-              <span class="overview-value">In 3 Days</span>
+              <span class="overview-value">{{ nextCleanLabel }}</span>
             </div>
           </div>
         </div>
@@ -151,80 +105,36 @@
     <section class="past-section">
       <div class="past-header">
         <h2 class="past-title">Past Bookings</h2>
-        <button class="view-all-btn">
+        <router-link :to="{ name: 'CustomerBookings' }" class="view-all-btn">
           View All History
-          <span class="material-symbols-outlined view-all-icon" data-icon="arrow_forward"
-            >arrow_forward</span
-          >
-        </button>
+          <span class="material-symbols-outlined view-all-icon">arrow_forward</span>
+        </router-link>
       </div>
-      <div class="past-grid">
-        <!-- Past Booking Item 1 -->
-        <div class="past-card">
-          <div class="past-card-header">
-            <div>
-              <p class="past-date">Oct 10, 2024</p>
-              <h4 class="past-name">Move-out Cleaning</h4>
-            </div>
-            <span class="status-badge">COMPLETE</span>
-          </div>
-          <div class="cleaner-row">
-            <div class="cleaner-avatar">
-              <span class="material-symbols-outlined cleaner-avatar-icon" data-icon="person"
-                >person</span
-              >
-            </div>
-            <span class="cleaner-name">James Wilson</span>
-          </div>
-          <div class="past-footer">
-            <span class="past-price">$180.00</span>
-            <button class="rebook-btn">Re-book</button>
-          </div>
-        </div>
 
-        <!-- Past Booking Item 2 -->
-        <div class="past-card">
-          <div class="past-card-header">
-            <div>
-              <p class="past-date">Sep 28, 2024</p>
-              <h4 class="past-name">Standard Maintenance</h4>
-            </div>
-            <span class="status-badge">COMPLETE</span>
-          </div>
-          <div class="cleaner-row">
-            <div class="cleaner-avatar">
-              <span class="material-symbols-outlined cleaner-avatar-icon" data-icon="person"
-                >person</span
-              >
-            </div>
-            <span class="cleaner-name">Sarah Miller</span>
-          </div>
-          <div class="past-footer">
-            <span class="past-price">$85.00</span>
-            <button class="rebook-btn">Re-book</button>
-          </div>
-        </div>
+      <div v-if="pastBookings.length === 0" class="empty-past">
+        <p class="empty-past-text">No past bookings yet.</p>
+      </div>
 
-        <!-- Past Booking Item 3 -->
-        <div class="past-card">
+      <div v-else class="past-grid">
+        <div v-for="b in pastBookings.slice(0, 3)" :key="b.id" class="past-card">
           <div class="past-card-header">
             <div>
-              <p class="past-date">Sep 14, 2024</p>
-              <h4 class="past-name">Deep Window Clean</h4>
+              <p class="past-date">{{ formatDate(b.scheduled_start) }}</p>
+              <h4 class="past-name">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h4>
             </div>
-            <span class="status-badge">COMPLETE</span>
+            <span class="status-badge" :class="statusClass(b.status)">
+              {{ formatStatus(b.status).toUpperCase() }}
+            </span>
           </div>
           <div class="cleaner-row">
             <div class="cleaner-avatar">
-              <span class="material-symbols-outlined cleaner-avatar-icon" data-icon="person"
-                >person</span
-              >
+              <span class="material-symbols-outlined cleaner-avatar-icon">person</span>
             </div>
-            <span class="cleaner-name">Alex Rivera</span>
+            <span class="cleaner-name">{{ b.cleaner_name ?? 'Cleaner' }}</span>
           </div>
           <div class="past-footer">
-            <span class="past-price">$110.00</span>
-            <button class="rebook-btn">Re-book</button>
+            <span class="past-price">{{ formatPence(b.quote_cents) }}</span>
+            <button class="rebook-btn" @click="rebook(b)">Re-book</button>
           </div>
         </div>
       </div>
@@ -233,47 +143,90 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { PropType } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { formatDate, formatPence, formatStatus } from '@/utils/format'
 
-const auth = useAuthStore()
-
-interface BookingSummary {
+export interface BookingWithCleaner {
   id: string
   service_title_snapshot: string | null
   location_text: string
   scheduled_start: string
   status: string
+  quote_cents: number | null
+  cleaner_name: string | null
+  cleaner_id: string | null
 }
 
-interface CleanerDataItem {
-  id: string
-  name: string
-  rating: number
-  services: string
-  price: string
-  available: string
-  photo?: string
-}
+const auth = useAuthStore()
+const router = useRouter()
 
-defineProps({
-  cleanersData: { type: Array as PropType<CleanerDataItem[]>, default: () => [] },
-  fallbackPhoto: { type: String, default: '' },
-  bookings: { type: Array as PropType<BookingSummary[]>, default: () => [] },
-  recentBookings: {
-    type: Array as PropType<Array<{ id: string; name: string; detail: string }>>,
-    default: () => [],
+const UPCOMING_STATUSES = [
+  'pending_request',
+  'estimate_proposed',
+  'awaiting_customer_payment',
+  'payment_authorized',
+  'in_progress',
+  'completion_pending_customer',
+]
+
+const PAST_STATUSES = ['completed', 'cleaner_declined', 'cancelled', 'disputed', 'refunded']
+
+const props = defineProps({
+  bookings: { type: Array as PropType<BookingWithCleaner[]>, default: () => [] },
+  loading: { type: Boolean, default: false },
+  cancelBooking: {
+    type: Function as PropType<(id: string) => Promise<void>>,
+    default: () => Promise.resolve(),
   },
 })
+
+const upcomingBookings = computed(() =>
+  props.bookings.filter((b) => UPCOMING_STATUSES.includes(b.status)),
+)
+
+const pastBookings = computed(() =>
+  props.bookings.filter((b) => PAST_STATUSES.includes(b.status)),
+)
+
+const nextCleanLabel = computed(() => {
+  const next = upcomingBookings.value
+    .filter((b) => b.scheduled_start)
+    .sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime())[0]
+  if (!next) return '—'
+  const diff = Math.ceil(
+    (new Date(next.scheduled_start).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+  )
+  if (diff <= 0) return 'Today'
+  if (diff === 1) return 'Tomorrow'
+  return `In ${diff} days`
+})
+
+function canCancel(status: string): boolean {
+  return ['pending_request', 'estimate_proposed'].includes(status)
+}
+
+function statusClass(status: string): string {
+  if (['pending_request', 'estimate_proposed'].includes(status)) return 'pill--pending'
+  if (UPCOMING_STATUSES.includes(status)) return 'pill--active'
+  if (status === 'completed') return 'pill--completed'
+  return 'pill--cancelled'
+}
+
+function rebook(booking: BookingWithCleaner) {
+  if (booking.cleaner_id) {
+    router.push({ name: 'RequestBooking', query: { cleanerId: booking.cleaner_id } })
+  } else {
+    router.push({ name: 'BookCleaner' })
+  }
+}
 </script>
 
 <style scoped>
 .material-symbols-outlined {
-  font-variation-settings:
-    'FILL' 0,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -314,28 +267,18 @@ defineProps({
   background: #000000;
   color: #ffffff;
   border: 1px solid #000000;
-  transition:
-    background-color 200ms ease,
-    opacity 200ms ease,
-    transform 150ms ease,
-    border-color 200ms ease;
+  transition: opacity 200ms ease;
 }
 
-.button-secondary:hover {
-  opacity: 0.85;
-}
+.button-secondary:hover { opacity: 0.85; }
 
-/* Two-column layout */
 .content-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 2rem;
 }
 
-/* ── Main column ── */
-.main-col {
-  width: 100%;
-}
+.main-col { width: 100%; }
 
 .section-header {
   display: flex;
@@ -360,10 +303,66 @@ defineProps({
   border-radius: 0.25rem;
   font-family: var(--font-caption);
   font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
 }
 
+/* ── Loading / Empty ── */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0;
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--outline-variant, #c4c7c7);
+  border-top-color: var(--primary, #000000);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  font-size: 16px;
+  color: var(--secondary, #5e5e5e);
+}
+
+.empty-state {
+  border: 1px dashed var(--outline-variant, #c4c7c7);
+  border-radius: 0.25rem;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  color: var(--outline-variant, #c4c7c7);
+  display: block;
+  margin: 0 auto 1rem;
+}
+
+.empty-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--primary, #000000);
+  margin: 0 0 0.5rem;
+}
+
+.empty-copy {
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
+
+.empty-link {
+  color: var(--primary, #000000);
+  text-decoration: underline;
+}
+
+/* ── Bookings list ── */
 .bookings-list {
   display: flex;
   flex-direction: column;
@@ -378,9 +377,7 @@ defineProps({
   transition: border-color 200ms ease;
 }
 
-.booking-card:hover {
-  border-color: var(--primary, #000000);
-}
+.booking-card:hover { border-color: var(--primary, #000000); }
 
 .booking-inner {
   display: flex;
@@ -394,11 +391,19 @@ defineProps({
   flex-shrink: 0;
 }
 
-.booking-img {
+.booking-img-placeholder {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  background: var(--surface-container, #eeeeee);
   border-radius: 0.125rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-icon {
+  font-size: 2rem;
+  color: var(--secondary, #5e5e5e);
 }
 
 .booking-body {
@@ -435,8 +440,6 @@ defineProps({
   font-family: var(--font-label-md);
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
   color: var(--primary, #000000);
 }
 
@@ -455,15 +458,20 @@ defineProps({
   color: var(--secondary, #5e5e5e);
 }
 
-.booking-meta-icon {
-  font-size: 0.875rem;
-}
+.booking-meta-icon { font-size: 0.875rem; }
 
 .booking-meta-text {
   font-family: var(--font-caption);
   font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
+}
+
+.status-inline {
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .booking-actions {
@@ -478,19 +486,15 @@ defineProps({
   border-radius: 0.125rem;
   background: transparent;
   cursor: pointer;
-  transition: background-color 200ms ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background-color 200ms ease;
 }
 
-.btn-icon:hover {
-  background: var(--surface-container, #eeeeee);
-}
+.btn-icon:hover { background: var(--surface-container, #eeeeee); }
 
-.btn-icon--danger {
-  color: var(--error, #ba1a1a);
-}
+.btn-icon--danger { color: var(--error, #ba1a1a); }
 
 /* ── Sidebar ── */
 .sidebar {
@@ -510,15 +514,10 @@ defineProps({
   font-family: var(--font-label-md);
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
   margin-bottom: 1rem;
 }
 
-.overview-rows {
-  display: flex;
-  flex-direction: column;
-}
+.overview-rows { display: flex; flex-direction: column; }
 
 .overview-row {
   display: flex;
@@ -528,15 +527,11 @@ defineProps({
   border-bottom: 1px solid var(--surface-container, #eeeeee);
 }
 
-.overview-row--last {
-  border-bottom: none;
-}
+.overview-row--last { border-bottom: none; }
 
 .overview-label {
   font-family: var(--font-caption);
   font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
   color: var(--secondary, #5e5e5e);
 }
 
@@ -544,68 +539,10 @@ defineProps({
   font-family: var(--font-label-md);
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-}
-
-.membership-card {
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  background: #1c1b1b;
-  color: #ffffff;
-  padding: 1.5rem;
-  border-radius: 0.25rem;
-}
-
-.membership-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  opacity: 0.7;
-}
-
-.membership-title {
-  font-family: var(--font-h2);
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  margin-top: 0.5rem;
-}
-
-.membership-desc {
-  font-family: var(--font-caption);
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
-  margin-top: 0.5rem;
-  opacity: 0.8;
-}
-
-.membership-btn {
-  margin-top: 1.5rem;
-  width: 100%;
-  padding: 0.75rem 0;
-  background: #ffffff;
-  color: var(--primary, #000000);
-  font-family: var(--font-label-md);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  border: none;
-  border-radius: 0.125rem;
-  cursor: pointer;
-  transition: background-color 200ms ease;
-}
-
-.membership-btn:hover {
-  background: var(--surface-container, #eeeeee);
 }
 
 /* ── Past Bookings ── */
-.past-section {
-  margin-top: 6rem;
-}
+.past-section { margin-top: 6rem; }
 
 .past-header {
   display: flex;
@@ -630,22 +567,20 @@ defineProps({
   font-family: var(--font-label-md);
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
   color: var(--secondary, #5e5e5e);
   background: transparent;
   border: none;
   cursor: pointer;
+  text-decoration: none;
   transition: color 200ms ease;
 }
 
-.view-all-btn:hover {
-  color: var(--primary, #000000);
-}
+.view-all-btn:hover { color: var(--primary, #000000); }
 
-.view-all-icon {
-  font-size: 0.875rem;
-}
+.view-all-icon { font-size: 0.875rem; }
+
+.empty-past { padding: 2rem 0; }
+.empty-past-text { font-size: 14px; color: var(--secondary, #5e5e5e); }
 
 .past-grid {
   display: grid;
@@ -660,9 +595,7 @@ defineProps({
   transition: border-color 200ms ease;
 }
 
-.past-card:hover {
-  border-color: #a1a1aa;
-}
+.past-card:hover { border-color: #a1a1aa; }
 
 .past-card-header {
   display: flex;
@@ -674,8 +607,6 @@ defineProps({
 .past-date {
   font-family: var(--font-caption);
   font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
   color: var(--secondary, #5e5e5e);
 }
 
@@ -683,16 +614,14 @@ defineProps({
   font-family: var(--font-label-md);
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
 }
 
 .status-badge {
   font-size: 10px;
   font-weight: 700;
-  background: var(--surface-container, #eeeeee);
   padding: 0.25rem 0.5rem;
   border-radius: 0.125rem;
+  letter-spacing: 0.04em;
 }
 
 .cleaner-row {
@@ -714,15 +643,11 @@ defineProps({
   flex-shrink: 0;
 }
 
-.cleaner-avatar-icon {
-  font-size: 0.875rem;
-}
+.cleaner-avatar-icon { font-size: 0.875rem; }
 
 .cleaner-name {
   font-family: var(--font-caption);
   font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
 }
 
 .past-footer {
@@ -737,24 +662,25 @@ defineProps({
   font-family: var(--font-label-md);
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
 }
 
 .rebook-btn {
   font-family: var(--font-caption);
   font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
   background: transparent;
   border: none;
   cursor: pointer;
   text-decoration: underline;
+  color: var(--primary, #000000);
 }
 
-.rebook-btn:hover {
-  text-decoration: none;
-}
+.rebook-btn:hover { text-decoration: none; }
+
+/* ── Status colours ── */
+.pill--pending { background: #fff8e1; color: #e65100; border: 1px solid #ffcc80; }
+.pill--active { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+.pill--completed { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+.pill--cancelled { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
 
 @media (min-width: 768px) {
   .header-title {
@@ -765,37 +691,15 @@ defineProps({
     color: var(--primary, #000000);
     margin-bottom: 0.5rem;
   }
-  .booking-inner {
-    flex-direction: row;
-  }
-
-  .booking-media {
-    width: 8rem;
-    height: 8rem;
-  }
-
-  .booking-actions {
-    flex-direction: column;
-  }
-
-  .past-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  .booking-inner { flex-direction: row; }
+  .booking-media { width: 8rem; height: 8rem; }
+  .booking-actions { flex-direction: column; }
+  .past-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (min-width: 1024px) {
-  .page-main {
-    padding-left: 3rem;
-    padding-right: 3rem;
-  }
-
-  .content-grid {
-    grid-template-columns: 8fr 4fr;
-    gap: 2rem;
-  }
-
-  .past-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  .page-main { padding-left: 3rem; padding-right: 3rem; }
+  .content-grid { grid-template-columns: 8fr 4fr; gap: 2rem; }
+  .past-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 </style>

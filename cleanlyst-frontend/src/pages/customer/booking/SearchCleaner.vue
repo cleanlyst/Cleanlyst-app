@@ -8,93 +8,63 @@
             <h2 class="font-h2 text-h2 mb-4">Filters</h2>
             <div class="h-px bg-outline-variant w-full mb-6"></div>
           </div>
-          <!-- Service Filter -->
+
+          <!-- City filter -->
           <div class="space-y-4">
-            <span
+            <label
+              for="city-filter"
               class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-              >Service Type</span
-            >
-            <div class="flex flex-col gap-3">
-              <label class="flex items-center gap-3 cursor-pointer group">
-                <input
-                  checked
-                  class="w-5 h-5 border-outline rounded bg-surface focus:ring-0 text-primary"
-                  type="checkbox"
-                />
-                <span class="font-body text-body group-hover:text-primary transition-colors"
-                  >Residential Cleaning</span
-                >
-              </label>
-              <label class="flex items-center gap-3 cursor-pointer group">
-                <input
-                  class="w-5 h-5 border-outline rounded bg-surface focus:ring-0 text-primary"
-                  type="checkbox"
-                />
-                <span class="font-body text-body group-hover:text-primary transition-colors"
-                  >Deep Cleaning</span
-                >
-              </label>
-              <label class="flex items-center gap-3 cursor-pointer group">
-                <input
-                  class="w-5 h-5 border-outline rounded bg-surface focus:ring-0 text-primary"
-                  type="checkbox"
-                />
-                <span class="font-body text-body group-hover:text-primary transition-colors"
-                  >Office / Commercial</span
-                >
-              </label>
-              <label class="flex items-center gap-3 cursor-pointer group">
-                <input
-                  class="w-5 h-5 border-outline rounded bg-surface focus:ring-0 text-primary"
-                  type="checkbox"
-                />
-                <span class="font-body text-body group-hover:text-primary transition-colors"
-                  >Move In / Out</span
-                >
-              </label>
-            </div>
-          </div>
-          <!-- Availability Filter -->
-          <div class="space-y-4">
-            <span
-              class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-              >Availability</span
-            >
-            <select
+            >City</label>
+            <input
+              id="city-filter"
+              v-model="filters.city"
+              type="text"
               class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
-            >
-              <option>Next 24 Hours</option>
-              <option>This Week</option>
-              <option>Flexible Dates</option>
-            </select>
+              placeholder="e.g. Manchester"
+            />
           </div>
+
           <!-- Price Range -->
           <div class="space-y-4">
-            <span
-              class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-              >Price per Hour</span
-            >
-            <div class="flex items-center gap-2">
-              <input
-                class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
-                placeholder="Min"
-                type="text"
-              />
-              <span class="text-outline-variant">—</span>
-              <input
-                class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
-                placeholder="Max"
-                type="text"
-              />
-            </div>
+            <span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
+              Max Price per Hour (£)
+            </span>
+            <input
+              v-model.number="filters.maxRateGbp"
+              type="number"
+              min="0"
+              class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
+              placeholder="No limit"
+            />
           </div>
+
+          <!-- Min Rating -->
+          <div class="space-y-4">
+            <label
+              for="min-rating"
+              class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
+            >Min Rating</label>
+            <select
+              id="min-rating"
+              v-model.number="filters.minRating"
+              class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
+            >
+              <option :value="0">Any</option>
+              <option :value="4">4+</option>
+              <option :value="4.5">4.5+</option>
+              <option :value="5">5.0</option>
+            </select>
+          </div>
+
           <button
             class="w-full py-4 bg-primary text-on-primary font-label-md hover:bg-zinc-800 transition-colors"
+            @click="applyFilters"
           >
             Apply Filters
           </button>
           <button
             class="w-full py-4 bg-transparent border border-outline-variant text-primary font-label-md hover:bg-surface-container transition-colors"
+            @click="clearFilters"
           >
             Clear All
           </button>
@@ -106,241 +76,108 @@
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
             <h1 class="font-h1 text-h1">Available Cleaners</h1>
-            <p class="text-secondary font-body mt-2">Showing 12 professionals in your area</p>
+            <p class="text-secondary font-body mt-2">
+              <span v-if="loading">Searching…</span>
+              <span v-else-if="errorMessage" class="text-red-600">{{ errorMessage }}</span>
+              <span v-else>Showing {{ cleaners.length }} professional{{ cleaners.length !== 1 ? 's' : '' }}</span>
+            </p>
           </div>
           <div class="flex items-center gap-4 border-b border-outline-variant pb-2">
             <span class="font-label-md text-label-md text-secondary">Sort by:</span>
             <select
+              v-model="sortBy"
               class="bg-transparent border-none font-label-md focus:ring-0 p-0 cursor-pointer"
+              @change="applyFilters"
             >
-              <option>Highest Rated</option>
-              <option>Lowest Price</option>
-              <option>Newest</option>
+              <option value="rating">Highest Rated</option>
+              <option value="price_asc">Lowest Price</option>
             </select>
           </div>
         </div>
 
+        <!-- Loading skeleton -->
+        <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+          <div
+            v-for="n in 4"
+            :key="n"
+            class="bg-surface-container-lowest border border-outline-variant overflow-hidden animate-pulse"
+          >
+            <div class="aspect-[16/9] w-full bg-surface-container"></div>
+            <div class="p-padding-card space-y-3">
+              <div class="h-5 bg-surface-container rounded w-2/3"></div>
+              <div class="h-4 bg-surface-container rounded w-1/2"></div>
+              <div class="h-4 bg-surface-container rounded w-1/3"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div
+          v-else-if="cleaners.length === 0 && !errorMessage"
+          class="border border-dashed border-outline-variant p-16 text-center"
+        >
+          <span class="material-symbols-outlined text-outline-variant text-5xl block mb-4">search_off</span>
+          <p class="font-label-md text-label-md text-on-surface">No cleaners found</p>
+          <p class="text-caption text-on-surface-variant mt-1">Try adjusting your filters.</p>
+        </div>
+
         <!-- Results Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-          <!-- Card 1: Elena Sterling -->
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
           <div
+            v-for="c in cleaners"
+            :key="c.user_id"
             class="bg-surface-container-lowest border border-outline-variant overflow-hidden group hover:border-primary transition-colors"
           >
             <div class="aspect-[16/9] w-full relative overflow-hidden bg-surface-variant">
               <img
-                alt="Cleaner Profile"
+                v-if="c.profiles?.avatar_url"
+                :alt="displayName(c)"
+                :src="c.profiles.avatar_url"
                 class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdjMug5Li34M26097szzPj7xhqTcI2C12H0SaVP4oxjjcrETNacp40mcjEw47NWWO21UwJoN7gKdgN4hDuGxlLs3NabAduwm9txS2BwlzD34hfmnsUtbl_tOijbH6Wx4C94xP6kPnKVC6NwKuTLjHpgxh7zLKcAEqhg-SQM_eAd4GdRx90ImDzfUXPopWo1DQ5rHddqdeBFFGYddZMqCwS_4vmcVPsJHe9NdmmC1WZytZYKrCGT8oiFr9pIfHzRcTVi5DIHHkyMg"
               />
               <div
-                class="absolute top-4 left-4 bg-primary text-on-primary px-3 py-1 text-[10px] font-bold tracking-widest uppercase"
+                v-else
+                class="w-full h-full flex items-center justify-center bg-surface-container"
               >
-                Verified
+                <span class="material-symbols-outlined text-5xl text-on-surface-variant">person</span>
               </div>
-            </div>
-            <div class="p-padding-card space-y-4">
-              <div class="flex justify-between items-start">
-                <div>
-                  <h2 class="font-h2 text-h2 text-primary">Elena Sterling</h2>
-                  <div class="flex items-center gap-1 mt-1">
-                    <span class="material-symbols-outlined text-[18px] text-zinc-900 star-filled"
-                      >star</span
-                    >
-                    <span class="font-label-md text-label-md">4.9</span>
-                    <span class="text-secondary font-caption text-caption">(124 reviews)</span>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="font-h2 text-h2">$45</div>
-                  <div class="text-secondary font-caption text-caption">per hour</div>
-                </div>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <span
-                  class="bg-surface-container px-3 py-1 font-caption text-[10px] uppercase tracking-wider text-secondary"
-                  >Residential</span
-                >
-                <span
-                  class="bg-surface-container px-3 py-1 font-caption text-[10px] uppercase tracking-wider text-secondary"
-                  >Eco-Friendly</span
-                >
-              </div>
-              <div class="pt-4 flex items-center justify-between border-t border-outline-variant">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-secondary text-sm"
-                    >calendar_today</span
-                  >
-                  <span class="font-caption text-caption text-secondary">Available tomorrow</span>
-                </div>
-                <button
-                  class="px-6 py-2 bg-primary text-on-primary font-label-md active:scale-95 transition-all"
-                  @click="viewProfile('cleaner-1')"
-                >
-                  Book Cleaner
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 2: Marcus Thorne -->
-          <div
-            class="bg-surface-container-lowest border border-outline-variant overflow-hidden group hover:border-primary transition-colors"
-          >
-            <div class="aspect-[16/9] w-full relative overflow-hidden bg-surface-variant">
-              <img
-                alt="Cleaner Profile"
-                class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQbuNqbJ254w4QTGNSgFzn7TlA1GnhpWuEwGHR_Id3mbuVDWgT2n9XjY4QuhACDPNLK26YVZxojHFgvLoPgcOrBk7YaUkouhhBJFgdktm3_jNgJPvg1B5JZi8t2fz8vt2kRQCIOtKTtCury5gsMFW1EsRyc9FMIVaROp57X2R2v_H1exMuCxPrGbd5TXP9WYgbpViKy6xjeZ6qa9rv6oue88zPNMXbQt9OBQYMphGanjzF9HzJpbwjNlEfwuaDDxDPaPTQstzZ4w"
-              />
               <div
+                v-if="c.average_rating >= 4.9"
                 class="absolute top-4 left-4 bg-primary text-on-primary px-3 py-1 text-[10px] font-bold tracking-widest uppercase"
               >
-                Premium
+                Top Rated
               </div>
             </div>
             <div class="p-padding-card space-y-4">
               <div class="flex justify-between items-start">
                 <div>
-                  <h2 class="font-h2 text-h2 text-primary">Marcus Thorne</h2>
+                  <h2 class="font-h2 text-h2 text-primary">{{ displayName(c) }}</h2>
                   <div class="flex items-center gap-1 mt-1">
-                    <span class="material-symbols-outlined text-[18px] text-zinc-900 star-filled"
-                      >star</span
-                    >
-                    <span class="font-label-md text-label-md">4.7</span>
-                    <span class="text-secondary font-caption text-caption">(89 reviews)</span>
+                    <span class="material-symbols-outlined text-[18px] text-zinc-900 star-filled">star</span>
+                    <span class="font-label-md text-label-md">{{ c.average_rating.toFixed(1) }}</span>
+                    <span class="text-secondary font-caption text-caption">({{ c.review_count }} reviews)</span>
                   </div>
                 </div>
                 <div class="text-right">
-                  <div class="font-h2 text-h2">$52</div>
-                  <div class="text-secondary font-caption text-caption">per hour</div>
-                </div>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <span
-                  class="bg-surface-container px-3 py-1 font-caption text-[10px] uppercase tracking-wider text-secondary"
-                  >Deep Clean</span
-                >
-                <span
-                  class="bg-surface-container px-3 py-1 font-caption text-[10px] uppercase tracking-wider text-secondary"
-                  >Commercial</span
-                >
-              </div>
-              <div class="pt-4 flex items-center justify-between border-t border-outline-variant">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-secondary text-sm">schedule</span>
-                  <span class="font-caption text-caption text-secondary">Available Today</span>
-                </div>
-                <button
-                  class="px-6 py-2 bg-primary text-on-primary font-label-md active:scale-95 transition-all"
-                  @click="viewProfile('cleaner-2')"
-                >
-                  Book Cleaner
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 3: Sarah Chen -->
-          <div
-            class="bg-surface-container-lowest border border-outline-variant overflow-hidden group hover:border-primary transition-colors"
-          >
-            <div class="aspect-[16/9] w-full relative overflow-hidden bg-surface-variant">
-              <img
-                alt="Cleaner Profile"
-                class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7qr-x6wIPp3Xmajv9oZimWLgkvAZ3Zzx8g8VO4q08ViXvDe4Ix3VpmMLKR3bOcxyIw1-AbaX6MfbUEeyKrXi6dqt2AAIoqPUV6Mtt8ehSbFVmAqD7r5I7_hgXlK6WJlQyWjvZ-EPRguNK69GJlWV_wrCb7xF1zpLIFW3USzkBqHxLXZmYmE5eDBR6Hmgi5O_dIUDQJyjZdpFff6cfD4jQSxSkZS6u6qZU10pkxspMGM1Db4WIhULX29UU9P13TyM70oaiSRlW8w"
-              />
-            </div>
-            <div class="p-padding-card space-y-4">
-              <div class="flex justify-between items-start">
-                <div>
-                  <h2 class="font-h2 text-h2 text-primary">Sarah Chen</h2>
-                  <div class="flex items-center gap-1 mt-1">
-                    <span class="material-symbols-outlined text-[18px] text-zinc-900 star-filled"
-                      >star</span
-                    >
-                    <span class="font-label-md text-label-md">5.0</span>
-                    <span class="text-secondary font-caption text-caption">(42 reviews)</span>
+                  <div class="font-h2 text-h2">
+                    {{ c.hourly_rate_cents ? formatPence(c.hourly_rate_cents) : '—' }}
                   </div>
-                </div>
-                <div class="text-right">
-                  <div class="font-h2 text-h2">$38</div>
                   <div class="text-secondary font-caption text-caption">per hour</div>
                 </div>
               </div>
-              <div class="flex flex-wrap gap-2">
-                <span
-                  class="bg-surface-container px-3 py-1 font-caption text-[10px] uppercase tracking-wider text-secondary"
-                  >Residential</span
-                >
-                <span
-                  class="bg-surface-container px-3 py-1 font-caption text-[10px] uppercase tracking-wider text-secondary"
-                  >Move In</span
-                >
+              <p v-if="c.bio" class="font-body text-body text-on-surface-variant text-sm line-clamp-2">{{ c.bio }}</p>
+              <div v-if="c.profiles?.city" class="flex items-center gap-1 text-secondary text-sm">
+                <span class="material-symbols-outlined text-[16px]">location_on</span>
+                {{ c.profiles.city }}
               </div>
               <div class="pt-4 flex items-center justify-between border-t border-outline-variant">
                 <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-secondary text-sm"
-                    >event_available</span
-                  >
-                  <span class="font-caption text-caption text-secondary">Available Monday</span>
+                  <span class="material-symbols-outlined text-secondary text-sm">verified</span>
+                  <span class="font-caption text-caption text-secondary">Verified cleaner</span>
                 </div>
                 <button
                   class="px-6 py-2 bg-primary text-on-primary font-label-md active:scale-95 transition-all"
-                  @click="viewProfile('cleaner-3')"
-                >
-                  Book Cleaner
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Card 4: Julian Vance -->
-          <div
-            class="bg-surface-container-lowest border border-outline-variant overflow-hidden group hover:border-primary transition-colors"
-          >
-            <div class="aspect-[16/9] w-full relative overflow-hidden bg-surface-variant">
-              <img
-                alt="Cleaner Profile"
-                class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQlkQJueek6_fYFgEpvVkdZGSUoHksLRVtGX7vtqeQv2FWGf0lohhXTd0ZnLllyH7wA1W9PBhhFSwInTiyglLouEvNIQRrO7aj4nS1TBxEdesYqRWlsHB0XidBVJ3EnKKPfrt4LsyxqC38m1am74AoTdljU67FHI4TCXl5qdZ2UQTNY8Wmm9gVxSxeqd2_sOEbG-FzCu9sjyQS6slxpIJV14pWaHiyDY5B53UubWq1RbD4R3qsCV2UTdSGrWLdbJ-ov9f1V_H98w"
-              />
-            </div>
-            <div class="p-padding-card space-y-4">
-              <div class="flex justify-between items-start">
-                <div>
-                  <h2 class="font-h2 text-h2 text-primary">Julian Vance</h2>
-                  <div class="flex items-center gap-1 mt-1">
-                    <span class="material-symbols-outlined text-[18px] text-zinc-900 star-filled"
-                      >star</span
-                    >
-                    <span class="font-label-md text-label-md">4.8</span>
-                    <span class="text-secondary font-caption text-caption">(215 reviews)</span>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <div class="font-h2 text-h2">$40</div>
-                  <div class="text-secondary font-caption text-caption">per hour</div>
-                </div>
-              </div>
-              <div class="flex flex-wrap gap-2">
-                <span
-                  class="bg-surface-container px-3 py-1 font-caption text-[10px] uppercase tracking-wider text-secondary"
-                  >Residential</span
-                >
-                <span
-                  class="bg-surface-container px-3 py-1 font-caption text-[10px] uppercase tracking-wider text-secondary"
-                  >Appliance Care</span
-                >
-              </div>
-              <div class="pt-4 flex items-center justify-between border-t border-outline-variant">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-secondary text-sm">schedule</span>
-                  <span class="font-caption text-caption text-secondary">In high demand</span>
-                </div>
-                <button
-                  class="px-6 py-2 bg-primary text-on-primary font-label-md active:scale-95 transition-all"
-                  @click="viewProfile('cleaner-4')"
+                  @click="bookCleaner(c.user_id)"
                 >
                   Book Cleaner
                 </button>
@@ -350,31 +187,19 @@
         </div>
 
         <!-- Pagination -->
-        <div class="flex justify-center items-center gap-4 pt-12">
+        <div v-if="cleaners.length > 0" class="flex justify-center items-center gap-4 pt-12">
           <button
-            class="w-10 h-10 flex items-center justify-center border border-outline-variant hover:border-primary transition-colors"
+            class="w-10 h-10 flex items-center justify-center border border-outline-variant hover:border-primary transition-colors disabled:opacity-40"
+            :disabled="page === 1 || loading"
+            @click="goToPage(page - 1)"
           >
             <span class="material-symbols-outlined">chevron_left</span>
           </button>
-          <div class="flex items-center gap-2">
-            <button
-              class="w-10 h-10 flex items-center justify-center bg-primary text-on-primary font-label-md"
-            >
-              1
-            </button>
-            <button
-              class="w-10 h-10 flex items-center justify-center border border-outline-variant hover:border-primary font-label-md"
-            >
-              2
-            </button>
-            <button
-              class="w-10 h-10 flex items-center justify-center border border-outline-variant hover:border-primary font-label-md"
-            >
-              3
-            </button>
-          </div>
+          <span class="font-label-md text-label-md text-on-surface">Page {{ page }}</span>
           <button
-            class="w-10 h-10 flex items-center justify-center border border-outline-variant hover:border-primary transition-colors"
+            class="w-10 h-10 flex items-center justify-center border border-outline-variant hover:border-primary transition-colors disabled:opacity-40"
+            :disabled="cleaners.length < pageSize || loading"
+            @click="goToPage(page + 1)"
           >
             <span class="material-symbols-outlined">chevron_right</span>
           </button>
@@ -385,35 +210,104 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
+import { formatPence } from '@/utils/format'
 
 const router = useRouter()
 
-function viewProfile(cleanerId: string) {
-  router.push({ name: 'RequestBooking', query: { cleanerId } })
+const pageSize = 12
+const page = ref(1)
+const loading = ref(false)
+const errorMessage = ref('')
+const cleaners = ref<CleanerSearchResult[]>([])
+const sortBy = ref<'rating' | 'price_asc'>('rating')
+
+const filters = reactive({
+  city: '',
+  maxRateGbp: null as number | null,
+  minRating: 0,
+})
+
+onMounted(() => loadCleaners())
+
+async function loadCleaners() {
+  loading.value = true
+  errorMessage.value = ''
+  try {
+    const params: Parameters<typeof searchCleaners>[0] = {
+      limit: pageSize,
+      offset: (page.value - 1) * pageSize,
+    }
+    if (filters.city.trim()) params.city = filters.city.trim()
+    if (filters.maxRateGbp) params.maxRateCents = Math.round(filters.maxRateGbp * 100)
+    if (filters.minRating > 0) params.minRating = filters.minRating
+
+    const results = await searchCleaners(params)
+
+    if (sortBy.value === 'price_asc') {
+      results.sort((a, b) => (a.hourly_rate_cents ?? 0) - (b.hourly_rate_cents ?? 0))
+    }
+
+    cleaners.value = results
+  } catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : 'Failed to load cleaners.'
+    cleaners.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+function applyFilters() {
+  page.value = 1
+  loadCleaners()
+}
+
+function clearFilters() {
+  filters.city = ''
+  filters.maxRateGbp = null
+  filters.minRating = 0
+  sortBy.value = 'rating'
+  page.value = 1
+  loadCleaners()
+}
+
+function goToPage(n: number) {
+  page.value = n
+  loadCleaners()
+}
+
+function displayName(c: CleanerSearchResult): string {
+  return c.business_name ?? c.profiles?.full_name ?? 'Cleaner'
+}
+
+function bookCleaner(userId: string) {
+  router.push({ name: 'RequestBooking', query: { cleanerId: userId } })
 }
 </script>
 
 <style scoped>
 .material-symbols-outlined {
-  font-variation-settings:
-    'FILL' 0,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   vertical-align: middle;
 }
 
 .star-filled {
-  font-variation-settings:
-    'FILL' 1,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.animate-pulse { animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
 @media (min-width: 1024px) {
-  .lg\:w-72 {
-    width: 18rem;
-  }
+  .lg\:w-72 { width: 18rem; }
 }
 </style>

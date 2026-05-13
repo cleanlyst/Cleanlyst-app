@@ -6,6 +6,13 @@
       :bookingTotals="bookingTotals"
       :ratingLabel="ratingLabel"
       :errorMessage="errorMessage"
+      :loading="loading"
+      :bookings="bookings"
+      :isAvailable="isAvailable"
+      :toggleLoading="toggleLoading"
+      :toggleAvailability="toggleAvailability"
+      :startBooking="startBooking"
+      :markCompleted="markCompleted"
     />
     <CleanerBookingsSection
       v-if="activeRouteName === 'CleanerBookings'"
@@ -61,6 +68,7 @@ interface Booking {
   location_text: string
   status: BookingStatus
   created_at: string
+  quote_cents?: number | null
 }
 
 const auth = useAuthStore()
@@ -68,6 +76,8 @@ const route = useRoute()
 const bookings = ref<Booking[]>([])
 const loading = ref(true)
 const errorMessage = ref('')
+const isAvailable = ref(true)
+const toggleLoading = ref(false)
 const calendarDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const activeRouteName = computed(() =>
@@ -88,12 +98,11 @@ const ratingLabel = computed(() => {
 })
 
 const earningsToDate = computed(() => {
+  const completed = bookingTotals.value.completed
   const rate = auth.cleanerProfile?.hourly_rate_cents ?? 0
-  const amount = (bookingTotals.value.completed * 2 * rate) / 100
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: auth.cleanerProfile?.currency ?? 'GBP',
-  }).format(amount)
+  const currency = auth.cleanerProfile?.currency ?? 'GBP'
+  const amount = (completed * 2 * rate) / 100
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(amount)
 })
 
 const bookingTotals = computed(() => ({
@@ -114,18 +123,50 @@ async function loadBookings() {
     if (!auth.userId) { bookings.value = []; return }
 
     const supabase = requireSupabase()
-    const { data, error } = await supabase
-      .from('bookings')
-      .select('id, service_title_snapshot, scheduled_start, location_text, status, created_at')
-      .eq('cleaner_id', auth.userId)
-      .order('scheduled_start', { ascending: true })
-    if (error) throw error
-    bookings.value = (data ?? []) as Booking[]
+
+    const [bookingsResult, profileResult] = await Promise.all([
+      supabase
+        .from('bookings')
+        .select('id, service_title_snapshot, scheduled_start, location_text, status, created_at, quote_cents')
+        .eq('cleaner_id', auth.userId)
+        .order('scheduled_start', { ascending: true }),
+      supabase
+        .from('cleaner_profiles')
+        .select('is_available')
+        .eq('user_id', auth.userId)
+        .maybeSingle(),
+    ])
+
+    if (bookingsResult.error) throw bookingsResult.error
+    bookings.value = (bookingsResult.data ?? []) as Booking[]
+
+    if (!profileResult.error && profileResult.data) {
+      isAvailable.value = (profileResult.data as any).is_available ?? true
+    }
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load bookings.'
     bookings.value = []
   } finally {
     loading.value = false
+  }
+}
+
+async function toggleAvailability() {
+  if (!auth.userId) return
+  toggleLoading.value = true
+  try {
+    const supabase = requireSupabase()
+    const newValue = !isAvailable.value
+    const { error } = await supabase
+      .from('cleaner_profiles')
+      .update({ is_available: newValue })
+      .eq('user_id', auth.userId)
+    if (error) throw error
+    isAvailable.value = newValue
+  } catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : 'Failed to update availability.'
+  } finally {
+    toggleLoading.value = false
   }
 }
 
@@ -147,6 +188,15 @@ async function declineBooking(id: string) {
   }
 }
 
+async function startBooking(id: string) {
+  try {
+    await transitionBookingState(id, 'in_progress')
+    await loadBookings()
+  } catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : 'Failed to start booking.'
+  }
+}
+
 async function markCompleted(id: string) {
   try {
     await transitionBookingState(id, 'completed')
@@ -156,6 +206,5 @@ async function markCompleted(id: string) {
   }
 }
 
-// Exposed to child sections — uses shared format util
 const formatDate = formatDateTime
 </script>

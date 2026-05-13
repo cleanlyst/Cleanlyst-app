@@ -6,30 +6,40 @@
       <div>
         <h1 class="header-title">Welcome back, {{ auth.profile?.full_name ?? 'Cleaner' }}</h1>
         <p class="header-copy">
-          You have {{ props.bookingTotals.pending + props.bookingTotals.accepted }} upcoming
-          bookings.
+          You have {{ props.bookingTotals.pending + props.bookingTotals.accepted }} upcoming bookings.
         </p>
       </div>
       <div class="availability-card">
         <span class="availability-label">Availability Status</span>
-        <button aria-checked="true" class="availability-toggle" role="switch">
-          <span aria-hidden="true" class="availability-toggle__thumb"></span>
+        <button
+          :aria-checked="props.isAvailable"
+          :class="['availability-toggle', props.isAvailable ? 'availability-toggle--on' : '']"
+          role="switch"
+          :disabled="props.toggleLoading"
+          @click="props.toggleAvailability()"
+        >
+          <span
+            aria-hidden="true"
+            :class="['availability-toggle__thumb', props.isAvailable ? 'availability-toggle__thumb--on' : '']"
+          ></span>
         </button>
-        <span class="availability-badge">Active</span>
+        <span :class="['availability-badge', props.isAvailable ? 'availability-badge--active' : 'availability-badge--inactive']">
+          {{ props.isAvailable ? 'Active' : 'Inactive' }}
+        </span>
       </div>
     </section>
 
     <section class="earnings-grid">
       <div class="earnings-card">
         <div>
-          <span class="metric-label">Total Earnings (Oct)</span>
+          <span class="metric-label">Total Earnings (This Month)</span>
           <h2 class="metric-value-xl">{{ props.earningsToDate }}</h2>
         </div>
         <div class="metric-footer">
-          <span class="metric-footer-text">+12% from last month</span>
-          <button class="report-btn">
+          <span class="metric-footer-text">Based on completed jobs</span>
+          <router-link :to="{ name: 'CleanerFinancials' }" class="report-btn">
             View Report <span class="material-symbols-outlined">arrow_forward</span>
-          </button>
+          </router-link>
         </div>
       </div>
 
@@ -57,115 +67,109 @@
       <div class="bookings-col">
         <div class="section-header">
           <h2 class="section-title">Upcoming Bookings</h2>
-          <button class="section-link">View Calendar</button>
+          <router-link :to="{ name: 'CleanerAvailability' }" class="section-link">
+            View Calendar
+          </router-link>
         </div>
-        <div class="bookings-list">
-          <div class="booking-card">
-            <div class="booking-media">
-              <img
-                alt="Property Interior"
-                class="booking-img"
-                data-alt="A clean and minimal modern residential apartment interior with polished wooden floors and large windows. The lighting is bright and airy, reflecting a high-end light mode UI aesthetic. The room is uncluttered, demonstrating professional cleaning standards in a contemporary setting with soft grey and white tones."
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0nkOoWrlNT_ABFh8Wh_YdQ8m6TINXPU5jTt4SFqTD39avWjUGl8gCOweaFFLy7AvGwo0NuJv_-xK5KuW2mrzen4vTSddiouGEzNe5grpSJVsfo-YMvwmOm_8iXXE_c7Ic8lRrzxakBdlehfJ-3u-259JHJx7eITg5-wiFpGdx4_uIhGXLNJkP9azoFDhETsgUMVnQV83-0rWD9_glC6M0iVQUOMr0rUZHlyG5kIYqH6k-w7S4hVZhPDn28lTVOOo3gFdOLm9QQg"
-              />
-            </div>
-            <div class="booking-body">
-              <div class="booking-title-row">
-                <div>
-                  <h3 class="booking-title">Deep Clean - Residence 402</h3>
-                  <p class="booking-address">1200 Wall St, Downtown</p>
-                </div>
-                <span class="booking-time-badge">In 2 Hours</span>
-              </div>
-              <div class="booking-meta">
-                <div class="booking-meta-item">
-                  <span class="material-symbols-outlined">schedule</span>
-                  09:00 AM - 01:00 PM
-                </div>
-                <div class="booking-meta-item">
-                  <span class="material-symbols-outlined">payments</span>
-                  $145.00
-                </div>
-              </div>
-            </div>
-            <div class="booking-ctas">
-              <button class="btn-start">Start</button>
-              <button class="btn-action">Details</button>
-            </div>
-          </div>
 
-          <div class="booking-card">
+        <div v-if="props.loading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <p class="loading-text">Loading bookings…</p>
+        </div>
+
+        <div v-else-if="upcomingBookings.length === 0" class="empty-state">
+          <span class="material-symbols-outlined empty-icon">event_available</span>
+          <p class="empty-label">No upcoming bookings</p>
+          <p class="empty-desc">Accepted jobs will appear here.</p>
+        </div>
+
+        <div v-else class="bookings-list">
+          <div v-for="b in upcomingBookings.slice(0, 3)" :key="b.id" class="booking-card">
             <div class="booking-media">
-              <img
-                alt="Property Interior"
-                class="booking-img"
-                data-alt="Close up of a minimalist modern bathroom with white marble surfaces and sleek matte black fixtures. The lighting is high-key and crisp, emphasizing cleanliness and professional order. The image maintains a monochrome palette with sharp contrasts, fitting a functional minimalism wireframe design."
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsxhDsh8op7AhudhsSUql8N0Gy3oa4Q5qbP7cXS0moRY7AFtBbGITtx52bzNMMMLYGDWZGfCb66RjHNoJYFiB6SiP0AjW3CPNXW6f7tN1WYKsvwDflH7HfatRLk97OUN_asuY-YVgV5oZ7UN4F4MYazTxqPymlE2Iq8XdH5eKMbc6k7G1ncn1ThbO09FzCQKTPQEEhxEujpzwCQELRJ5VmnEY7irweY9cm39Ru7gPDIJVpA83U0SycfnE6hvVLxcLsAhlCz_duLA"
-              />
+              <div class="booking-img-placeholder">
+                <span class="material-symbols-outlined placeholder-icon">home</span>
+              </div>
             </div>
             <div class="booking-body">
               <div class="booking-title-row">
                 <div>
-                  <h3 class="booking-title">Routine Maintenance</h3>
-                  <p class="booking-address">45 Oak Lane, Westside</p>
+                  <h3 class="booking-title">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h3>
+                  <p class="booking-address">{{ b.location_text }}</p>
                 </div>
-                <span class="booking-time-badge">Tomorrow</span>
+                <span class="booking-time-badge">{{ relativeTime(b.scheduled_start) }}</span>
               </div>
               <div class="booking-meta">
                 <div class="booking-meta-item">
                   <span class="material-symbols-outlined">schedule</span>
-                  10:00 AM - 12:30 PM
+                  {{ formatDate(b.scheduled_start) }}
                 </div>
-                <div class="booking-meta-item">
+                <div v-if="b.quote_cents" class="booking-meta-item">
                   <span class="material-symbols-outlined">payments</span>
-                  $85.00
+                  {{ formatPence(b.quote_cents) }}
                 </div>
               </div>
             </div>
             <div class="booking-ctas">
-              <button class="btn-action">Reschedule</button>
-              <button class="btn-action">Details</button>
+              <button
+                v-if="b.status === 'payment_authorized'"
+                class="btn-start"
+                type="button"
+                @click="props.startBooking(b.id)"
+              >
+                Start
+              </button>
+              <button
+                v-if="b.status === 'in_progress'"
+                class="btn-start"
+                type="button"
+                @click="props.markCompleted(b.id)"
+              >
+                Complete
+              </button>
+              <router-link
+                :to="{ name: 'CleanerBookings' }"
+                class="btn-action"
+              >
+                Details
+              </router-link>
             </div>
           </div>
+        </div>
+
+        <div v-if="pendingBookings.length > 0" class="pending-requests-banner">
+          <span class="material-symbols-outlined">notifications</span>
+          <span>{{ pendingBookings.length }} incoming request{{ pendingBookings.length !== 1 ? 's' : '' }} awaiting review</span>
+          <router-link :to="{ name: 'CleanerBookings' }" class="pending-link">Review →</router-link>
         </div>
       </div>
 
       <div class="route-col">
-        <h2 class="section-title">Daily Route</h2>
-        <div class="route-map-card">
-          <div class="route-map">
-            <img
-              alt="Route Map"
-              class="route-map-img"
-              data-alt="A stylized minimalist map of a city grid in monochrome black and white tones. The map features clean geometric lines and simple markers for locations. The aesthetic is utilitarian and technical, using varying shades of grey to indicate density and terrain, perfectly aligned with a professional marketplace dashboard style."
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMdK9km2cFDeogop2cldqmog_G2vEVC7dZfBbBqJRQB_EE6H3beIE33rcXcqh8KvgdXfPYuXfTbXx-9Bw5MWqemDSw1OUEAyUaKavTWXtZFhD8ga7VZVEiTh1vQgtzXScr3da4QIKbXDUglnFqnw5i5HY8tLPe5VsQgI4tBKFf9hAlMUMIoEcF7Q-CjWRWq3UjTEXi-9zXZR8x2xE8zXwyDZ7ofBlOMfMhf0oCbH9fPgk1cYD5gcXrnq46_1qKdPovdXuR_k7smg"
-            />
-            <div class="route-overlay">
-              <div class="route-pin">
-                <span class="material-symbols-outlined">location_on</span>
-                <span class="route-pin-label">Next Stop: Wall St</span>
-              </div>
+        <h2 class="section-title">Daily Summary</h2>
+        <div class="summary-card">
+          <div class="summary-row">
+            <span class="material-symbols-outlined summary-icon">inbox</span>
+            <div>
+              <p class="summary-label">Incoming Requests</p>
+              <p class="summary-value">{{ props.bookingTotals.pending }}</p>
             </div>
           </div>
-          <div class="route-details">
-            <p class="route-details-label">Optimized Path</p>
-            <div class="route-stops">
-              <div class="route-stop">
-                <div class="stop-dot"></div>
-                <span class="stop-text">Home Base</span>
-              </div>
-              <div class="stop-connector"></div>
-              <div class="route-stop">
-                <div class="stop-dot--empty"></div>
-                <span class="stop-text">Residence 402 (2.4 miles)</span>
-              </div>
-              <div class="stop-connector"></div>
-              <div class="route-stop">
-                <div class="stop-dot--faded"></div>
-                <span class="stop-text stop-text--faded">Westside (6.1 miles)</span>
-              </div>
+          <div class="summary-row">
+            <span class="material-symbols-outlined summary-icon">event</span>
+            <div>
+              <p class="summary-label">Confirmed Jobs</p>
+              <p class="summary-value">{{ props.bookingTotals.accepted }}</p>
             </div>
           </div>
+          <div class="summary-row">
+            <span class="material-symbols-outlined summary-icon">check_circle</span>
+            <div>
+              <p class="summary-label">Completed</p>
+              <p class="summary-value">{{ props.bookingTotals.completed }}</p>
+            </div>
+          </div>
+          <router-link :to="{ name: 'CleanerBookings' }" class="btn-full-outline">
+            Manage All Bookings
+          </router-link>
         </div>
       </div>
     </section>
@@ -173,10 +177,29 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { PropType } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { formatPence } from '@/utils/format'
+
+interface BookingEntry {
+  id: string
+  service_title_snapshot: string | null
+  scheduled_start: string
+  location_text: string
+  status: string
+  quote_cents?: number | null
+}
 
 const auth = useAuthStore()
+
+const UPCOMING_STATUSES = [
+  'estimate_proposed',
+  'awaiting_customer_payment',
+  'payment_authorized',
+  'in_progress',
+  'completion_pending_customer',
+]
 
 const props = defineProps({
   earningsToDate: { type: String, default: '—' },
@@ -186,17 +209,55 @@ const props = defineProps({
   },
   ratingLabel: { type: String, default: 'No rating yet' },
   errorMessage: { type: String, default: '' },
+  loading: { type: Boolean, default: false },
+  bookings: { type: Array as PropType<BookingEntry[]>, default: () => [] },
+  isAvailable: { type: Boolean, default: true },
+  toggleLoading: { type: Boolean, default: false },
+  toggleAvailability: {
+    type: Function as PropType<() => Promise<void>>,
+    default: () => Promise.resolve(),
+  },
+  startBooking: {
+    type: Function as PropType<(id: string) => Promise<void>>,
+    default: () => Promise.resolve(),
+  },
+  markCompleted: {
+    type: Function as PropType<(id: string) => Promise<void>>,
+    default: () => Promise.resolve(),
+  },
 })
+
+const upcomingBookings = computed(() =>
+  props.bookings.filter((b) => UPCOMING_STATUSES.includes(b.status)),
+)
+
+const pendingBookings = computed(() =>
+  props.bookings.filter((b) => b.status === 'pending_request'),
+)
+
+function formatDate(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.valueOf())) return '—'
+  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+}
+
+function relativeTime(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.valueOf())) return '—'
+  const diffMs = date.getTime() - Date.now()
+  const diffH = Math.round(diffMs / (1000 * 60 * 60))
+  const diffD = Math.round(diffMs / (1000 * 60 * 60 * 24))
+  if (diffH < 0) return 'In progress'
+  if (diffH < 1) return 'Soon'
+  if (diffH < 24) return `In ${diffH}h`
+  if (diffD === 1) return 'Tomorrow'
+  return `In ${diffD} days`
+}
 </script>
 
 <style scoped>
-/* ── Material Symbols ─────────────────────────────────────────── */
 .material-symbols-outlined {
-  font-variation-settings:
-    'FILL' 0,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -206,7 +267,6 @@ const props = defineProps({
   direction: ltr;
 }
 
-/* ── Page shell ───────────────────────────────────────────────── */
 .page-main {
   padding-top: 2rem;
   padding-bottom: 5rem;
@@ -219,18 +279,12 @@ const props = defineProps({
 }
 
 @media (min-width: 1024px) {
-  .page-main {
-    padding-left: 3rem;
-    padding-right: 3rem;
-  }
+  .page-main { padding-left: 3rem; padding-right: 3rem; }
 }
 
-/* ── Error message ────────────────────────────────────────────── */
 .error-msg {
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
   color: #ba1a1a;
   background-color: #ffdad6;
   border: 1px solid #ba1a1a;
@@ -239,7 +293,6 @@ const props = defineProps({
   margin-bottom: 1.5rem;
 }
 
-/* ── Page header ──────────────────────────────────────────────── */
 .page-header {
   display: flex;
   flex-direction: column;
@@ -249,10 +302,7 @@ const props = defineProps({
 }
 
 @media (min-width: 768px) {
-  .page-header {
-    flex-direction: row;
-    align-items: flex-end;
-  }
+  .page-header { flex-direction: row; align-items: flex-end; }
 }
 
 .header-title {
@@ -266,17 +316,14 @@ const props = defineProps({
 
 .header-copy {
   font-size: 16px;
-  font-weight: 400;
-  line-height: 1.6;
   color: var(--secondary, #5e5e5e);
 }
 
-/* ── Availability card ────────────────────────────────────────── */
 .availability-card {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background-color: var(--surface-container-lowest, #ffffff);
+  background-color: #ffffff;
   padding: 1rem;
   border: 1px solid var(--outline-variant, #c4c7c7);
   border-radius: 0.25rem;
@@ -285,8 +332,6 @@ const props = defineProps({
 .availability-label {
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
   color: var(--primary, #000000);
 }
 
@@ -300,35 +345,46 @@ const props = defineProps({
   border-radius: 9999px;
   border: 2px solid transparent;
   transition: background-color 0.2s;
-  background-color: var(--primary, #000000);
+  background-color: var(--outline-variant, #c4c7c7);
   outline: none;
 }
+
+.availability-toggle--on { background-color: var(--primary, #000000); }
+.availability-toggle:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .availability-toggle__thumb {
   pointer-events: none;
   display: inline-block;
   height: 1.25rem;
   width: 1.25rem;
-  transform: translateX(1.25rem);
+  transform: translateX(0);
   border-radius: 9999px;
-  background-color: var(--on-primary, #ffffff);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
   transition: transform 0.2s ease-in-out;
 }
+
+.availability-toggle__thumb--on { transform: translateX(1.25rem); }
 
 .availability-badge {
   font-size: 10px;
   font-weight: 700;
-  line-height: 1.4;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--primary, #000000);
-  background-color: var(--surface-container, #eeeeee);
   border-radius: 0.25rem;
   padding: 0.125rem 0.5rem;
 }
 
-/* ── Earnings grid ────────────────────────────────────────────── */
+.availability-badge--active {
+  color: var(--primary, #000000);
+  background-color: var(--surface-container, #eeeeee);
+}
+
+.availability-badge--inactive {
+  color: var(--secondary, #5e5e5e);
+  background-color: var(--surface-container, #eeeeee);
+}
+
 .earnings-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -337,31 +393,25 @@ const props = defineProps({
 }
 
 @media (min-width: 768px) {
-  .earnings-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+  .earnings-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
-/* ── Earnings card ────────────────────────────────────────────── */
 .earnings-card {
   padding: 2rem;
   border: 1px solid var(--outline-variant, #c4c7c7);
-  background-color: var(--surface-container-lowest, #ffffff);
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
 @media (min-width: 768px) {
-  .earnings-card {
-    grid-column: span 2;
-  }
+  .earnings-card { grid-column: span 2; }
 }
 
 .metric-label {
   font-size: 10px;
   font-weight: 500;
-  line-height: 1.4;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--secondary, #5e5e5e);
@@ -385,18 +435,11 @@ const props = defineProps({
   align-items: center;
 }
 
-.metric-footer-text {
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
-  color: var(--secondary, #5e5e5e);
-}
+.metric-footer-text { font-size: 12px; color: var(--secondary, #5e5e5e); }
 
 .report-btn {
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
   color: var(--primary, #000000);
   display: flex;
   align-items: center;
@@ -405,17 +448,15 @@ const props = defineProps({
   border: none;
   cursor: pointer;
   padding: 0;
+  text-decoration: none;
 }
 
-.report-btn:hover {
-  text-decoration: underline;
-}
+.report-btn:hover { text-decoration: underline; }
 
-/* ── Metric cards (rating, completed) ────────────────────────── */
 .metric-card {
   padding: 2rem;
   border: 1px solid var(--outline-variant, #c4c7c7);
-  background-color: var(--surface-container-lowest, #ffffff);
+  background-color: #ffffff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -425,7 +466,6 @@ const props = defineProps({
   font-size: 24px;
   font-weight: 600;
   line-height: 1.3;
-  letter-spacing: -0.01em;
   color: var(--primary, #000000);
 }
 
@@ -438,21 +478,11 @@ const props = defineProps({
 
 .star-icon {
   color: var(--primary, #000000);
-  font-variation-settings:
-    'FILL' 1,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-.metric-sub {
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
-  color: var(--secondary, #5e5e5e);
-}
+.metric-sub { font-size: 12px; color: var(--secondary, #5e5e5e); }
 
-/* ── Content grid ─────────────────────────────────────────────── */
 .content-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -461,22 +491,17 @@ const props = defineProps({
 }
 
 @media (min-width: 1024px) {
-  .content-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  .content-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
-/* ── Bookings column ──────────────────────────────────────────── */
 .bookings-col {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 @media (min-width: 1024px) {
-  .bookings-col {
-    grid-column: span 2;
-  }
+  .bookings-col { grid-column: span 2; }
 }
 
 .section-header {
@@ -496,29 +521,71 @@ const props = defineProps({
 .section-link {
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
   color: var(--secondary, #5e5e5e);
   background: none;
   border: none;
   cursor: pointer;
   padding: 0;
+  text-decoration: none;
 }
 
-.section-link:hover {
+.section-link:hover { color: var(--primary, #000000); }
+
+/* ── Loading / Empty ── */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0;
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--outline-variant, #c4c7c7);
+  border-top-color: var(--primary, #000000);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text { font-size: 16px; color: var(--secondary, #5e5e5e); }
+
+.empty-state {
+  border: 1px dashed var(--outline-variant, #c4c7c7);
+  border-radius: 0.25rem;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  color: var(--outline-variant, #c4c7c7);
+  display: block;
+  margin: 0 auto 1rem;
+}
+
+.empty-label {
+  font-size: 18px;
+  font-weight: 500;
   color: var(--primary, #000000);
+  margin: 0 0 0.5rem;
 }
 
+.empty-desc { font-size: 14px; color: var(--secondary, #5e5e5e); margin: 0; }
+
+/* ── Booking cards ── */
 .bookings-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-/* ── Booking card ─────────────────────────────────────────────── */
 .booking-card {
   padding: 1.5rem;
-  background-color: var(--surface-container-lowest, #ffffff);
+  background-color: #ffffff;
   border: 1px solid var(--outline-variant, #c4c7c7);
   display: flex;
   flex-direction: column;
@@ -526,14 +593,10 @@ const props = defineProps({
   transition: border-color 0.15s;
 }
 
-.booking-card:hover {
-  border-color: var(--primary, #000000);
-}
+.booking-card:hover { border-color: var(--primary, #000000); }
 
 @media (min-width: 768px) {
-  .booking-card {
-    flex-direction: row;
-  }
+  .booking-card { flex-direction: row; }
 }
 
 .booking-media {
@@ -544,21 +607,19 @@ const props = defineProps({
   overflow: hidden;
 }
 
-@media (min-width: 768px) {
-  .booking-media {
-    width: 8rem;
-  }
-}
+@media (min-width: 768px) { .booking-media { width: 8rem; } }
 
-.booking-img {
+.booking-img-placeholder {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.booking-body {
-  flex-grow: 1;
-}
+.placeholder-icon { font-size: 2rem; color: var(--secondary, #5e5e5e); }
+
+.booking-body { flex-grow: 1; }
 
 .booking-title-row {
   display: flex;
@@ -569,22 +630,18 @@ const props = defineProps({
 .booking-title {
   font-size: 18px;
   font-weight: 700;
-  line-height: 1.3;
   color: var(--primary, #000000);
   margin-bottom: 0.25rem;
 }
 
 .booking-address {
   font-size: 16px;
-  font-weight: 400;
-  line-height: 1.6;
   color: var(--secondary, #5e5e5e);
 }
 
 .booking-time-badge {
   font-size: 10px;
   font-weight: 700;
-  line-height: 1.4;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   background-color: var(--surface-container, #eeeeee);
@@ -605,14 +662,10 @@ const props = defineProps({
   align-items: center;
   gap: 0.5rem;
   font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
   color: var(--secondary, #5e5e5e);
 }
 
-.booking-meta-item .material-symbols-outlined {
-  font-size: 1rem;
-}
+.booking-meta-item .material-symbols-outlined { font-size: 1rem; }
 
 .booking-ctas {
   display: flex;
@@ -620,22 +673,17 @@ const props = defineProps({
   justify-content: flex-end;
 }
 
-@media (min-width: 768px) {
-  .booking-ctas {
-    flex-direction: column;
-  }
-}
+@media (min-width: 768px) { .booking-ctas { flex-direction: column; } }
 
 .btn-start {
   padding: 0.5rem 1rem;
   background-color: var(--primary, #000000);
-  color: var(--on-primary, #ffffff);
+  color: #ffffff;
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
   border: none;
   cursor: pointer;
+  text-align: center;
 }
 
 .btn-action {
@@ -644,143 +692,95 @@ const props = defineProps({
   color: var(--primary, #000000);
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
   border: 1px solid var(--outline-variant, #c4c7c7);
   cursor: pointer;
   transition: background-color 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.btn-action:hover {
-  background-color: var(--surface-variant, #e2e2e2);
+.btn-action:hover { background-color: var(--surface-variant, #e2e2e2); }
+
+/* ── Pending banner ── */
+.pending-requests-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #fff8e1;
+  border: 1px solid #ffcc80;
+  border-radius: 0.25rem;
+  font-size: 14px;
+  color: #e65100;
 }
 
-/* ── Route column ─────────────────────────────────────────────── */
+.pending-link {
+  margin-left: auto;
+  font-weight: 600;
+  color: #e65100;
+  text-decoration: underline;
+}
+
+/* ── Summary card (right column) ── */
 .route-col {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.route-map-card {
+.summary-card {
   border: 1px solid var(--outline-variant, #c4c7c7);
-  background-color: var(--surface-container-lowest, #ffffff);
-  padding: 0.5rem;
-}
-
-.route-map {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  background-color: var(--surface-container, #eeeeee);
-  position: relative;
-}
-
-.route-map-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: grayscale(1);
-  opacity: 0.5;
-}
-
-.route-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-.route-pin {
-  padding: 1rem;
-  background-color: var(--surface-container-lowest, #ffffff);
-  border: 1px solid var(--primary, #000000);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.route-pin .material-symbols-outlined {
-  color: var(--primary, #000000);
-}
-
-.route-pin-label {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-}
-
-.route-details {
-  padding: 1rem;
-}
-
-.route-details-label {
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 1.4;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--secondary, #5e5e5e);
-  margin-bottom: 0.5rem;
-}
-
-.route-stops {
+  background-color: #ffffff;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 1.25rem;
 }
 
-.route-stop {
+.summary-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
 }
 
-.stop-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 9999px;
-  background-color: var(--primary, #000000);
-  flex-shrink: 0;
-}
-
-.stop-dot--empty {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 9999px;
-  border: 1px solid var(--primary, #000000);
-  background-color: var(--surface-container-lowest, #ffffff);
-  flex-shrink: 0;
-}
-
-.stop-dot--faded {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 9999px;
-  border: 1px solid var(--primary, #000000);
-  background-color: var(--surface-container-lowest, #ffffff);
-  opacity: 0.4;
-  flex-shrink: 0;
-}
-
-.stop-connector {
-  width: 1px;
-  height: 1rem;
-  background-color: var(--outline-variant, #c4c7c7);
-  margin-left: 0.1875rem;
-}
-
-.stop-text {
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.6;
-  color: var(--primary, #000000);
-}
-
-.stop-text--faded {
+.summary-icon {
+  font-size: 1.25rem;
   color: var(--secondary, #5e5e5e);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
 }
+
+.summary-label {
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
+
+.summary-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary, #000000);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.btn-full-outline {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  background-color: transparent;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary, #000000);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s;
+  margin-top: 0.5rem;
+}
+
+.btn-full-outline:hover { background-color: var(--surface-container, #eeeeee); }
 </style>

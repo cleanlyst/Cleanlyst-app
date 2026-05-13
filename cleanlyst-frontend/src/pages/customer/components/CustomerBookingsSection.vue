@@ -108,20 +108,15 @@ function formatStatus(value: string): string {
 }
 
 function statusClass(status: string): string {
-  const map: Record<string, string> = {
-    pending: 'status-pill--pending',
-    accepted: 'status-pill--active',
-    paid: 'status-pill--active',
-    in_progress: 'status-pill--active',
-    completed: 'status-pill--completed',
-    cancelled: 'status-pill--cancelled',
-    declined: 'status-pill--cancelled',
-  }
-  return map[status] ?? ''
+  if (['pending_request', 'estimate_proposed'].includes(status)) return 'status-pill--pending'
+  if (['awaiting_customer_payment', 'payment_authorized', 'in_progress', 'completion_pending_customer'].includes(status)) return 'status-pill--active'
+  if (status === 'completed') return 'status-pill--completed'
+  if (['cancelled', 'cleaner_declined', 'disputed', 'refunded'].includes(status)) return 'status-pill--cancelled'
+  return ''
 }
 
 function canCancel(status: string): boolean {
-  return ['pending', 'accepted'].includes(status)
+  return ['pending_request', 'estimate_proposed'].includes(status)
 }
 </script>
 

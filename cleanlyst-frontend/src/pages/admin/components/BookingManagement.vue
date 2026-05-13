@@ -1,183 +1,109 @@
 <template>
   <main class="page-main">
-    <!-- Header Section -->
+    <!-- Header -->
     <div class="page-header">
       <div>
         <h1 class="header-title">Booking Management</h1>
         <p class="header-copy">
-          Monitor and manage service transactions across the platform. Use manual overrides to
-          resolve disputes or adjust schedules.
+          Monitor and manage service transactions across the platform.
         </p>
       </div>
-      <div class="header-actions">
-        <button class="btn-outline">
-          <span class="material-symbols-outlined">download</span>
-          Export CSV
-        </button>
-        <button class="btn-primary">Manual Booking</button>
-      </div>
     </div>
+
+    <p v-if="errorMessage" class="mb-4 text-caption text-red-600">{{ errorMessage }}</p>
 
     <!-- Filter Bar -->
     <div class="filter-bar">
       <div class="tab-group">
-        <button class="tab-btn tab-btn--active">All Bookings</button>
-        <button class="tab-btn">Pending</button>
-        <button class="tab-btn">Active</button>
-        <button class="tab-btn">Completed</button>
-        <button class="tab-btn">Cancelled</button>
+        <button
+          v-for="tab in TABS"
+          :key="tab.value"
+          :class="['tab-btn', activeTab === tab.value && 'tab-btn--active']"
+          @click="setTab(tab.value)"
+        >
+          {{ tab.label }}
+        </button>
       </div>
       <div class="filter-divider"></div>
       <div class="search-wrap">
         <span class="material-symbols-outlined search-icon">search</span>
-        <input class="search-input" placeholder="Search by ID, client, or cleaner..." type="text" />
+        <input
+          v-model="searchQuery"
+          class="search-input"
+          placeholder="Search by service or status…"
+          type="text"
+          @input="onSearchInput"
+        />
       </div>
     </div>
 
     <!-- Bookings List -->
     <div class="bookings-list">
-      <!-- Row 1: Active Booking -->
-      <div class="booking-row">
-        <div class="flex-shrink-0">
-          <div class="booking-icon-box">
-            <span class="material-symbols-outlined">cleaning_services</span>
-          </div>
-        </div>
-        <div class="booking-grid">
-          <div>
-            <span class="col-label">BOOKING ID</span>
-            <span class="col-value">#CM-88219</span>
-          </div>
-          <div>
-            <span class="col-label">CLIENT / CLEANER</span>
-            <div class="col-value">Sarah Jenkins</div>
-            <div class="col-sub">assigned to Marc R.</div>
-          </div>
-          <div>
-            <span class="col-label">SCHEDULE</span>
-            <div class="col-value">Oct 24, 2024</div>
-            <div class="col-sub">09:00 AM - 12:00 PM</div>
-          </div>
-          <div>
-            <span class="col-label">STATUS</span>
-            <span class="status-badge status-badge--active">Active</span>
-          </div>
-        </div>
-        <div class="row-actions">
-          <button class="btn-row btn-row--outline">Modify</button>
-          <button class="btn-row btn-row--icon">
-            <span class="material-symbols-outlined">more_vert</span>
-          </button>
-        </div>
+      <div v-if="loading" class="booking-empty">
+        Loading bookings…
+      </div>
+      <div v-else-if="bookings.length === 0" class="booking-empty">
+        No bookings found.
       </div>
 
-      <!-- Row 2: Pending Booking -->
-      <div class="booking-row">
+      <div v-for="booking in bookings" :key="booking.id" :class="['booking-row', booking.status === 'cancelled' && 'booking-row--cancelled']">
         <div class="flex-shrink-0">
           <div class="booking-icon-box">
-            <span class="material-symbols-outlined">home_work</span>
+            <span class="material-symbols-outlined">{{ statusIcon(booking.status) }}</span>
           </div>
         </div>
         <div class="booking-grid">
           <div>
             <span class="col-label">BOOKING ID</span>
-            <span class="col-value">#CM-88224</span>
+            <span class="col-value font-mono text-sm">#{{ booking.id.slice(0, 8).toUpperCase() }}</span>
           </div>
           <div>
             <span class="col-label">CLIENT / CLEANER</span>
-            <div class="col-value">Robert Chen</div>
-            <div class="col-sub">Awaiting Assignment</div>
+            <div class="col-value">{{ booking.customer_name ?? '—' }}</div>
+            <div class="col-sub">{{ cleanerLabel(booking) }}</div>
           </div>
           <div>
             <span class="col-label">SCHEDULE</span>
-            <div class="col-value">Oct 25, 2024</div>
-            <div class="col-sub">02:00 PM - 05:00 PM</div>
+            <div class="col-value">{{ formatDate(booking.scheduled_start) }}</div>
+            <div class="col-sub">{{ formatTimeRange(booking.scheduled_start, booking.scheduled_end) }}</div>
           </div>
           <div>
             <span class="col-label">STATUS</span>
-            <span class="status-badge status-badge--pending">Pending</span>
+            <span :class="['status-badge', statusBadgeClass(booking.status)]">
+              {{ formatStatus(booking.status) }}
+            </span>
           </div>
         </div>
         <div class="row-actions">
-          <button class="btn-row btn-row--primary">Assign</button>
-          <button class="btn-row btn-row--icon">
-            <span class="material-symbols-outlined">more_vert</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Row 3: Completed Booking -->
-      <div class="booking-row">
-        <div class="flex-shrink-0">
-          <div class="booking-icon-box">
-            <span class="material-symbols-outlined">task_alt</span>
-          </div>
-        </div>
-        <div class="booking-grid">
-          <div>
-            <span class="col-label">BOOKING ID</span>
-            <span class="col-value">#CM-88190</span>
-          </div>
-          <div>
-            <span class="col-label">CLIENT / CLEANER</span>
-            <div class="col-value">Emily Watson</div>
-            <div class="col-sub">completed by Anna S.</div>
-          </div>
-          <div>
-            <span class="col-label">SCHEDULE</span>
-            <div class="col-value">Oct 21, 2024</div>
-            <div class="col-sub">Total: 4.5 Hours</div>
-          </div>
-          <div>
-            <span class="col-label">STATUS</span>
-            <span class="status-badge status-badge--completed">Completed</span>
-          </div>
-        </div>
-        <div class="row-actions">
-          <button class="btn-row btn-row--outline">Invoice</button>
-          <button class="btn-row btn-row--icon">
-            <span class="material-symbols-outlined">more_vert</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Row 4: Cancelled Booking -->
-      <div class="booking-row booking-row--cancelled">
-        <div class="flex-shrink-0">
-          <div class="booking-icon-box">
-            <span class="material-symbols-outlined">cancel</span>
-          </div>
-        </div>
-        <div class="booking-grid">
-          <div>
-            <span class="col-label">BOOKING ID</span>
-            <span class="col-value">#CM-88156</span>
-          </div>
-          <div>
-            <span class="col-label">CLIENT / CLEANER</span>
-            <div class="col-value">James Miller</div>
-            <div class="col-sub">N/A</div>
-          </div>
-          <div>
-            <span class="col-label">SCHEDULE</span>
-            <div class="col-value">Oct 20, 2024</div>
-            <div class="col-sub">User Cancelled</div>
-          </div>
-          <div>
-            <span class="col-label">STATUS</span>
-            <span class="status-badge status-badge--cancelled">Cancelled</span>
-          </div>
-        </div>
-        <div class="row-actions">
-          <button class="btn-row btn-row--outline">Reopen</button>
-          <button class="btn-row btn-row--icon">
-            <span class="material-symbols-outlined">more_vert</span>
-          </button>
+          <span class="col-value">{{ formatPence(booking.quote_cents) }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Manual Override Section / Sidebar Preview -->
+    <!-- Pagination -->
+    <div v-if="!loading && (page > 1 || bookings.length === PAGE_SIZE)" class="flex items-center justify-between mt-6 pt-4 border-t border-outline-variant">
+      <span class="font-caption text-caption text-secondary">
+        Page {{ page }}
+      </span>
+      <div class="flex gap-2">
+        <button
+          class="px-3 py-1.5 border border-outline-variant text-label-md disabled:opacity-40"
+          :disabled="page === 1 || loading"
+          @click="goToPage(page - 1)"
+        >
+          Previous
+        </button>
+        <button
+          class="px-3 py-1.5 border border-outline-variant text-label-md disabled:opacity-40"
+          :disabled="bookings.length < PAGE_SIZE || loading"
+          @click="goToPage(page + 1)"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+
+    <!-- Activity Monitor -->
     <div class="overrides-section">
       <div class="overrides-main">
         <h2 class="overrides-heading">System Overrides</h2>
@@ -195,52 +121,216 @@
           <button class="override-card">
             <span class="material-symbols-outlined override-card__icon">payments</span>
             <span class="override-card__title">Force Refund</span>
-            <span class="override-card__desc"
-              >Issue full or partial refunds directly to client wallet.</span
-            >
+            <span class="override-card__desc">Issue full or partial refunds directly to client wallet.</span>
           </button>
           <button class="override-card">
             <span class="material-symbols-outlined override-card__icon">person_search</span>
             <span class="override-card__title">Reassign Cleaner</span>
-            <span class="override-card__desc"
-              >Manually switch service providers for active bookings.</span
-            >
+            <span class="override-card__desc">Manually switch service providers for active bookings.</span>
           </button>
         </div>
       </div>
 
       <div class="activity-sidebar">
         <h3 class="activity-sidebar__heading">Activity Monitor</h3>
-        <div class="activity-list">
-          <div class="activity-item">
-            <div class="activity-dot"></div>
+        <div v-if="activityLoading" class="text-caption text-secondary">Loading…</div>
+        <div v-else-if="activityEvents.length === 0" class="text-caption text-secondary">No recent activity.</div>
+        <div v-else class="activity-list">
+          <div v-for="event in activityEvents" :key="event.id" class="activity-item">
+            <div :class="['activity-dot', event.isFirst ? '' : 'activity-dot--inactive']"></div>
             <div>
-              <p class="activity-item__title">#CM-88219 Status Change</p>
-              <p class="activity-item__meta">2 minutes ago • Admin: admin_user_01</p>
+              <p class="activity-item__title">
+                #{{ event.booking_id.slice(0, 8).toUpperCase() }}: {{ formatStatus(event.from_status ?? '') }} → {{ formatStatus(event.to_status ?? '') }}
+              </p>
+              <p class="activity-item__meta">{{ formatRelativeTime(event.created_at) }}</p>
             </div>
-          </div>
-          <div class="activity-item">
-            <div class="activity-dot activity-dot--inactive"></div>
-            <div>
-              <p class="activity-item__title">New Booking Request #CM-88224</p>
-              <p class="activity-item__meta">15 minutes ago • System</p>
-            </div>
-          </div>
-          <div class="activity-item">
-            <div class="activity-dot activity-dot--inactive"></div>
-            <div>
-              <p class="activity-item__title">Payment Verified #CM-88190</p>
-              <p class="activity-item__meta">1 hour ago • Stripe Integration</p>
-            </div>
-          </div>
-          <div class="activity-footer">
-            <button class="activity-footer__btn">View All Audit Logs</button>
           </div>
         </div>
       </div>
     </div>
   </main>
 </template>
+
+<script lang="ts" setup>
+import { onMounted, ref } from 'vue'
+import { requireSupabase } from '@/lib/supabase'
+import { formatDate, formatStatus, formatPence, formatRelativeTime } from '@/utils/format'
+
+const PAGE_SIZE = 20
+
+const TABS = [
+  { label: 'All Bookings', value: '' },
+  { label: 'Pending', value: 'pending_request' },
+  { label: 'Active', value: 'in_progress' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Cancelled', value: 'cancelled' },
+]
+
+interface BookingRow {
+  id: string
+  status: string
+  scheduled_start: string | null
+  scheduled_end: string | null
+  service_title_snapshot: string | null
+  quote_cents: number
+  customer_name: string | null
+  cleaner_name: string | null
+}
+
+interface ActivityEvent {
+  id: string
+  booking_id: string
+  from_status: string | null
+  to_status: string | null
+  created_at: string
+  isFirst: boolean
+}
+
+const loading = ref(false)
+const activityLoading = ref(false)
+const errorMessage = ref('')
+const activeTab = ref('')
+const searchQuery = ref('')
+const page = ref(1)
+
+const bookings = ref<BookingRow[]>([])
+const activityEvents = ref<ActivityEvent[]>([])
+
+let searchTimeout: ReturnType<typeof setTimeout>
+
+onMounted(async () => {
+  await Promise.all([loadBookings(), loadActivity()])
+})
+
+function onSearchInput() {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => { page.value = 1; loadBookings() }, 350)
+}
+
+function setTab(value: string) {
+  activeTab.value = value
+  page.value = 1
+  loadBookings()
+}
+
+function goToPage(n: number) {
+  page.value = n
+  loadBookings()
+}
+
+async function loadBookings() {
+  loading.value = true
+  errorMessage.value = ''
+  try {
+    const supabase = requireSupabase()
+
+    let q = supabase
+      .from('bookings')
+      .select(`
+        id,
+        status,
+        scheduled_start,
+        scheduled_end,
+        service_title_snapshot,
+        quote_cents,
+        customer:customer_id(full_name),
+        cleaner:cleaner_id(full_name)
+      `)
+      .order('created_at', { ascending: false })
+      .range((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE - 1)
+
+    if (activeTab.value) {
+      if (activeTab.value === 'pending_request') {
+        q = q.in('status', ['pending_request', 'awaiting_customer_payment', 'payment_authorized'])
+      } else {
+        q = q.eq('status', activeTab.value)
+      }
+    }
+
+    if (searchQuery.value.trim()) {
+      q = q.ilike('service_title_snapshot', `%${searchQuery.value.trim()}%`)
+    }
+
+    const { data, error } = await q
+    if (error) throw error
+
+    bookings.value = (data ?? []).map((row: any) => ({
+      id: row.id,
+      status: row.status,
+      scheduled_start: row.scheduled_start ?? null,
+      scheduled_end: row.scheduled_end ?? null,
+      service_title_snapshot: row.service_title_snapshot ?? null,
+      quote_cents: row.quote_cents ?? 0,
+      customer_name: row.customer?.full_name ?? null,
+      cleaner_name: row.cleaner?.full_name ?? null,
+    }))
+  } catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : 'Failed to load bookings.'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadActivity() {
+  activityLoading.value = true
+  try {
+    const supabase = requireSupabase()
+    const { data, error } = await supabase
+      .from('booking_status_events')
+      .select('id, booking_id, from_status, to_status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(8)
+
+    if (error) throw error
+
+    activityEvents.value = (data ?? []).map((row: any, i: number) => ({
+      id: row.id,
+      booking_id: row.booking_id,
+      from_status: row.from_status ?? null,
+      to_status: row.to_status ?? null,
+      created_at: row.created_at,
+      isFirst: i === 0,
+    }))
+  } catch (e) {
+    // Activity feed is non-critical; silently ignore
+  } finally {
+    activityLoading.value = false
+  }
+}
+
+function cleanerLabel(booking: BookingRow): string {
+  if (booking.cleaner_name) return `assigned to ${booking.cleaner_name}`
+  if (['pending_request', 'awaiting_customer_payment'].includes(booking.status)) return 'Awaiting assignment'
+  return '—'
+}
+
+function formatTimeRange(start: string | null, end: string | null): string {
+  if (!start || !end) return '—'
+  const fmt = (v: string) =>
+    new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(v))
+  return `${fmt(start)} – ${fmt(end)}`
+}
+
+function statusIcon(status: string): string {
+  const map: Record<string, string> = {
+    pending_request: 'schedule',
+    awaiting_customer_payment: 'payment',
+    payment_authorized: 'verified',
+    in_progress: 'cleaning_services',
+    completed: 'task_alt',
+    cancelled: 'cancel',
+    refunded: 'undo',
+  }
+  return map[status] ?? 'calendar_today'
+}
+
+function statusBadgeClass(status: string): string {
+  if (status === 'in_progress' || status === 'payment_authorized') return 'status-badge--active'
+  if (status === 'completed') return 'status-badge--completed'
+  if (status === 'cancelled' || status === 'refunded') return 'status-badge--cancelled'
+  return 'status-badge--pending'
+}
+</script>
 
 <style scoped>
 /* ── Material Symbols ─────────────────────────────────────── */
@@ -311,52 +401,6 @@
   color: var(--secondary, #5e5e5e);
   max-width: 42rem;
   margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-shrink: 0;
-}
-
-/* ── Shared buttons ───────────────────────────────────────── */
-.btn-outline {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  background: var(--surface-container-lowest, #ffffff);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  color: var(--primary, #000000);
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.btn-outline:hover {
-  background: var(--surface-container, #eeeeee);
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.5rem 1rem;
-  background: var(--primary, #000000);
-  color: var(--on-primary, #ffffff);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  border: none;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
 }
 
 /* ── Filter bar ───────────────────────────────────────────── */
@@ -463,6 +507,15 @@
   gap: 1.5rem;
 }
 
+.booking-empty {
+  padding: 3rem;
+  text-align: center;
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: var(--surface-container-lowest, #ffffff);
+}
+
 /* ── Booking row ──────────────────────────────────────────── */
 .booking-row {
   display: flex;
@@ -561,21 +614,10 @@
   letter-spacing: 0.06em;
 }
 
-.status-badge--active {
-  color: #27272a;
-}
-
-.status-badge--pending {
-  color: #71717a;
-}
-
-.status-badge--completed {
-  color: #27272a;
-}
-
-.status-badge--cancelled {
-  color: #a1a1aa;
-}
+.status-badge--active { color: #27272a; }
+.status-badge--pending { color: #71717a; }
+.status-badge--completed { color: #27272a; }
+.status-badge--cancelled { color: #a1a1aa; }
 
 /* ── Row actions ──────────────────────────────────────────── */
 .row-actions {
@@ -583,56 +625,7 @@
   align-items: center;
   gap: 0.5rem;
   margin-left: auto;
-}
-
-.btn-row--outline {
-  padding: 0.375rem 0.75rem;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  background: transparent;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  color: var(--primary, #000000);
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.btn-row--outline:hover {
-  background: var(--surface-container, #eeeeee);
-}
-
-.btn-row--primary {
-  padding: 0.375rem 0.75rem;
-  border: none;
-  background: var(--primary, #000000);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  color: var(--on-primary, #ffffff);
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.btn-row--primary:hover {
-  opacity: 0.9;
-}
-
-.btn-row--icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.375rem;
-  border: none;
-  background: transparent;
-  color: var(--secondary, #5e5e5e);
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-
-.btn-row--icon:hover {
-  color: var(--primary, #000000);
+  flex-shrink: 0;
 }
 
 /* ── Overrides section ────────────────────────────────────── */
@@ -679,28 +672,9 @@
   gap: 1rem;
 }
 
-.info-banner__icon {
-  color: var(--primary, #000000);
-  padding-top: 0.125rem;
-  flex-shrink: 0;
-}
-
-.info-banner__title {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  color: var(--primary, #000000);
-  margin: 0 0 0.25rem;
-}
-
-.info-banner__body {
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.6;
-  color: var(--secondary, #5e5e5e);
-  margin: 0;
-}
+.info-banner__icon { color: var(--primary, #000000); padding-top: 0.125rem; flex-shrink: 0; }
+.info-banner__title { font-size: 14px; font-weight: 500; line-height: 1.4; letter-spacing: 0.01em; color: var(--primary, #000000); margin: 0 0 0.25rem; }
+.info-banner__body { font-size: 14px; font-weight: 400; line-height: 1.6; color: var(--secondary, #5e5e5e); margin: 0; }
 
 /* ── Override grid ────────────────────────────────────────── */
 .override-grid {
@@ -728,30 +702,10 @@
   transition: border-color 0.15s ease;
 }
 
-.override-card:hover {
-  border-color: var(--primary, #000000);
-}
-
-.override-card__icon {
-  margin-bottom: 1rem;
-  color: var(--primary, #000000);
-}
-
-.override-card__title {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  color: var(--primary, #000000);
-  margin-bottom: 0.25rem;
-}
-
-.override-card__desc {
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
-  color: var(--secondary, #5e5e5e);
-}
+.override-card:hover { border-color: var(--primary, #000000); }
+.override-card__icon { margin-bottom: 1rem; color: var(--primary, #000000); }
+.override-card__title { font-size: 14px; font-weight: 500; line-height: 1.4; letter-spacing: 0.01em; color: var(--primary, #000000); margin-bottom: 0.25rem; }
+.override-card__desc { font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--secondary, #5e5e5e); }
 
 /* ── Activity sidebar ─────────────────────────────────────── */
 .activity-sidebar {
@@ -776,7 +730,6 @@
   gap: 1.5rem;
 }
 
-/* ── Activity item ────────────────────────────────────────── */
 .activity-item {
   display: flex;
   gap: 1rem;
@@ -795,43 +748,6 @@
   background: var(--outline-variant, #c4c7c7);
 }
 
-.activity-item__title {
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
-  color: var(--primary, #000000);
-  margin: 0 0 0.125rem;
-}
-
-.activity-item__meta {
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 1.4;
-  color: var(--secondary, #5e5e5e);
-  margin: 0;
-}
-
-/* ── Activity footer ──────────────────────────────────────── */
-.activity-footer {
-  padding-top: 1rem;
-  border-top: 1px solid var(--outline-variant, #c4c7c7);
-}
-
-.activity-footer__btn {
-  display: block;
-  width: 100%;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  color: var(--primary, #000000);
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
-
-.activity-footer__btn:hover {
-  text-decoration: underline;
-}
+.activity-item__title { font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--primary, #000000); margin: 0 0 0.125rem; }
+.activity-item__meta { font-size: 11px; font-weight: 400; line-height: 1.4; color: var(--secondary, #5e5e5e); margin: 0; }
 </style>

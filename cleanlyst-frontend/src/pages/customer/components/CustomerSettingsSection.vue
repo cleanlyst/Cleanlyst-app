@@ -55,13 +55,10 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="city">City</label>
-          <input
-            id="city"
-            v-model="profileForm.city"
-            class="form-input"
-            type="text"
-            placeholder="Your city"
-          />
+          <select id="city" v-model="profileForm.city" class="form-input">
+            <option value="">Select a city</option>
+            <option v-for="city in UK_CITIES" :key="city" :value="city">{{ city }}</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label" for="country">Country</label>
@@ -187,6 +184,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { uploadAvatar } from '@/services/storageService'
+import { UK_CITIES } from '@/utils/ukCities'
 
 const auth = useAuthStore()
 

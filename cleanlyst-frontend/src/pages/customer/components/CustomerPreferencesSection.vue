@@ -42,13 +42,10 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label" for="city">City</label>
-            <input
-              id="city"
-              v-model="form.city"
-              class="form-input"
-              placeholder="e.g. London"
-              type="text"
-            />
+            <select id="city" v-model="form.city" class="form-input">
+              <option value="">Select a city</option>
+              <option v-for="city in UK_CITIES" :key="city" :value="city">{{ city }}</option>
+            </select>
           </div>
 
           <div class="form-group">
@@ -144,6 +141,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
+import { UK_CITIES } from '@/utils/ukCities'
 
 const genderOptions = [
   { value: 'no_preference', label: 'No preference' },

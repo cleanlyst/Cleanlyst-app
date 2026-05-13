@@ -89,7 +89,7 @@
               </div>
             </div>
             <div class="booking-ctas">
-              <button class="btn-start">Start Job</button>
+              <button class="btn-start">Start</button>
               <button class="btn-action">Details</button>
             </div>
           </div>

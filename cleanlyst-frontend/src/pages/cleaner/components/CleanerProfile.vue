@@ -3,7 +3,6 @@
     <!-- Self View Header -->
     <div class="profile-header">
       <div class="profile-header-text">
-        <span class="self-view-badge">Self View Mode</span>
         <h1 class="profile-title">Your Public Profile</h1>
         <p class="profile-subtitle">
           This is how potential clients see your professional profile. Ensure your details and
@@ -43,6 +42,13 @@
           />
         </div>
         <div class="edit-group">
+          <label class="edit-label" for="ep-city">City</label>
+          <select id="ep-city" v-model="editForm.city" class="edit-input">
+            <option value="">Select a city</option>
+            <option v-for="city in UK_CITIES" :key="city" :value="city">{{ city }}</option>
+          </select>
+        </div>
+        <div class="edit-group">
           <label class="edit-label" for="ep-radius">Service Radius (km)</label>
           <input
             id="ep-radius"
@@ -56,7 +62,10 @@
         </div>
         <div class="edit-group">
           <label class="edit-label">Profile Photo</label>
-          <label class="avatar-upload-btn" :class="{ 'avatar-upload-btn--loading': avatarUploading }">
+          <label
+            class="avatar-upload-btn"
+            :class="{ 'avatar-upload-btn--loading': avatarUploading }"
+          >
             <input
               accept="image/jpeg,image/png,image/webp"
               class="sr-only"
@@ -72,7 +81,7 @@
       <div class="edit-footer">
         <p v-if="editError" class="edit-error">{{ editError }}</p>
         <p v-if="editSuccess" class="edit-success">
-          <span class="material-symbols-outlined" style="font-size:1rem">check_circle</span>
+          <span class="material-symbols-outlined" style="font-size: 1rem">check_circle</span>
           Profile updated.
         </p>
         <button class="edit-save-btn" :disabled="editSaving" @click="handleSaveEdit">
@@ -100,9 +109,7 @@
             <h2 class="cleaner-name">{{ auth.profile?.full_name ?? '—' }}</h2>
             <p class="cleaner-title">{{ auth.cleanerProfile?.business_name ?? 'Cleaner' }}</p>
             <div v-if="(auth.cleanerProfile?.review_count ?? 0) > 0" class="rating-row">
-              <span
-                class="material-symbols-outlined"
-                style="font-variation-settings: 'FILL' 1"
+              <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1"
                 >star</span
               >
               <span class="rating-label">
@@ -131,10 +138,7 @@
         <div class="card card--spaced">
           <h3 class="section-label">Account Status</h3>
           <div class="tags-row">
-            <span
-              class="tag"
-              :class="statusTagClass"
-            >{{ statusTagLabel }}</span>
+            <span class="tag" :class="statusTagClass">{{ statusTagLabel }}</span>
           </div>
         </div>
       </div>
@@ -158,7 +162,12 @@
           <div class="map-pin">
             <span class="material-symbols-outlined map-pin-icon">location_on</span>
             <p class="map-pin-text">
-              {{ auth.profile.city }}{{ auth.cleanerProfile?.service_radius_km ? ` — within ${auth.cleanerProfile.service_radius_km} km` : '' }}
+              {{ auth.profile.city
+              }}{{
+                auth.cleanerProfile?.service_radius_km
+                  ? ` — within ${auth.cleanerProfile.service_radius_km} km`
+                  : ''
+              }}
             </p>
           </div>
         </div>
@@ -172,6 +181,7 @@ import { computed, reactive, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { uploadAvatar } from '@/services/storageService'
+import { UK_CITIES } from '@/utils/ukCities'
 
 const auth = useAuthStore()
 
@@ -184,10 +194,12 @@ const avatarError = ref('')
 
 const editForm = reactive({
   bio: auth.cleanerProfile?.bio ?? '',
-  hourly_rate: auth.cleanerProfile?.hourly_rate_cents != null
-    ? auth.cleanerProfile.hourly_rate_cents / 100
-    : null as number | null,
-  service_radius_km: auth.cleanerProfile?.service_radius_km ?? null as number | null,
+  hourly_rate:
+    auth.cleanerProfile?.hourly_rate_cents != null
+      ? auth.cleanerProfile.hourly_rate_cents / 100
+      : (null as number | null),
+  service_radius_km: auth.cleanerProfile?.service_radius_km ?? (null as number | null),
+  city: auth.profile?.city ?? '',
 })
 
 const hourlyRateFormatted = computed(() => {
@@ -196,23 +208,29 @@ const hourlyRateFormatted = computed(() => {
   return `£${(cents / 100).toFixed(2)}`
 })
 
+// profiles.role is the authoritative source — cleanerProfile.status can lag behind
+// when an admin changes the role directly in the DB without going through the
+// approval Edge Function that updates both columns together.
 const statusTagLabel = computed(() => {
-  switch (auth.cleanerProfile?.status) {
-    case 'approved': return 'ACTIVE'
-    case 'pending': return 'PENDING APPROVAL'
-    case 'rejected': return 'REJECTED'
-    case 'suspended': return 'SUSPENDED'
-    default: return 'PENDING'
+  switch (auth.profile?.role) {
+    case 'cleaner_active':
+      return 'ACTIVE'
+    case 'cleaner_pending': {
+      // Distinguish rejected/suspended sub-states from a plain pending review
+      if (auth.cleanerProfile?.status === 'rejected') return 'REJECTED'
+      if (auth.cleanerProfile?.status === 'suspended') return 'SUSPENDED'
+      return 'PENDING APPROVAL'
+    }
+    default:
+      return 'PENDING'
   }
 })
 
 const statusTagClass = computed(() => {
-  switch (auth.cleanerProfile?.status) {
-    case 'approved': return 'tag--active'
-    case 'rejected':
-    case 'suspended': return 'tag--error'
-    default: return ''
-  }
+  if (auth.profile?.role === 'cleaner_active') return 'tag--active'
+  if (auth.cleanerProfile?.status === 'rejected' || auth.cleanerProfile?.status === 'suspended')
+    return 'tag--error'
+  return ''
 })
 
 async function handleSaveEdit() {
@@ -222,20 +240,35 @@ async function handleSaveEdit() {
   editSuccess.value = false
   try {
     const supabase = requireSupabase()
-    const { error } = await supabase
-      .from('cleaner_profiles')
-      .update({
-        bio: editForm.bio || null,
-        hourly_rate_cents: editForm.hourly_rate != null
-          ? Math.round(editForm.hourly_rate * 100)
-          : null,
-        service_radius_km: editForm.service_radius_km,
-      })
-      .eq('user_id', auth.userId)
-    if (error) throw error
+
+    // City lives on profiles; bio/rate/radius live on cleaner_profiles — run in parallel.
+    const [profileResult, cleanerResult] = await Promise.all([
+      supabase
+        .from('profiles')
+        .update({ city: editForm.city || null })
+        .eq('id', auth.userId),
+      // Upsert — if the cleaner_profiles row was never created (e.g. admin promoted
+      // the user directly via the DB), UPDATE would silently affect 0 rows.
+      supabase.from('cleaner_profiles').upsert(
+        {
+          user_id: auth.userId,
+          bio: editForm.bio || null,
+          hourly_rate_cents:
+            editForm.hourly_rate != null ? Math.round(editForm.hourly_rate * 100) : null,
+          service_radius_km: editForm.service_radius_km,
+        },
+        { onConflict: 'user_id' },
+      ),
+    ])
+
+    if (profileResult.error) throw profileResult.error
+    if (cleanerResult.error) throw cleanerResult.error
+
     await auth.init()
     editSuccess.value = true
-    setTimeout(() => { editSuccess.value = false }, 3000)
+    setTimeout(() => {
+      editSuccess.value = false
+    }, 3000)
   } catch (err) {
     editError.value = err instanceof Error ? err.message : 'Failed to save changes.'
   } finally {
@@ -686,8 +719,13 @@ async function handleAvatarChange(event: Event) {
   transition: opacity 200ms ease;
 }
 
-.edit-save-btn:hover { opacity: 0.9; }
-.edit-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.edit-save-btn:hover {
+  opacity: 0.9;
+}
+.edit-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .edit-error {
   font-size: 13px;

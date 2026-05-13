@@ -177,6 +177,49 @@
                   <div class="day-toggle"></div>
                 </label>
               </div>
+
+              <!-- Saturday -->
+              <div class="day-row">
+                <div class="day-name-col">
+                  <span class="day-name">Saturday</span>
+                  <span class="day-status">Available</span>
+                </div>
+                <div class="time-inputs">
+                  <input class="time-input" type="time" value="09:00" />
+                  <span class="time-sep">to</span>
+                  <input class="time-input" type="time" value="15:00" />
+                </div>
+                <label class="day-toggle-wrap" aria-label="Saturday availability">
+                  <input
+                    checked
+                    class="sr-only day-toggle-input"
+                    type="checkbox"
+                    aria-label="Saturday availability"
+                  />
+                  <div class="day-toggle"></div>
+                </label>
+              </div>
+
+              <!-- Sunday (off)-->
+              <div class="day-row day-row--off">
+                <div class="day-name-col">
+                  <span class="day-name day-name--muted">Sunday</span>
+                  <span class="day-status day-status--off">Off</span>
+                </div>
+                <div class="time-inputs time-inputs--disabled">
+                  <input class="time-input" type="time" value="00:00" />
+                  <span class="time-sep">to</span>
+                  <input class="time-input" type="time" value="00:00" />
+                </div>
+                <label class="day-toggle-wrap" aria-label="Sunday availability">
+                  <input
+                    class="sr-only day-toggle-input"
+                    type="checkbox"
+                    aria-label="Sunday availability"
+                  />
+                  <div class="day-toggle"></div>
+                </label>
+              </div>
             </div>
           </div>
           <div class="form-footer">

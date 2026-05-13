@@ -92,13 +92,14 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div class="space-y-2">
                     <label class="block font-label-md text-label-md" for="city">City</label>
-                    <input
+                    <select
                       id="city"
                       v-model="form.city"
-                      class="w-full bg-white border border-zinc-200 p-3 rounded focus:border-primary outline-none text-body"
-                      placeholder="e.g. London"
-                      type="text"
-                    />
+                      class="w-full bg-white border border-zinc-200 p-3 rounded focus:border-primary outline-none text-body appearance-none"
+                    >
+                      <option value="">Select a city</option>
+                      <option v-for="city in UK_CITIES" :key="city" :value="city">{{ city }}</option>
+                    </select>
                   </div>
                   <div class="space-y-2">
                     <label class="block font-label-md text-label-md" for="postcode">Postcode</label>
@@ -216,6 +217,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
+import { UK_CITIES } from '@/utils/ukCities'
 
 const router = useRouter()
 const store = useCustomerPreferencesStore()

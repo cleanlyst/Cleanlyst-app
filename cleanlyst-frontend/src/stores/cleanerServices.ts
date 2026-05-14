@@ -26,6 +26,15 @@ export interface ServiceDraft {
 const SELECT_COLS =
   'id, cleaner_id, title, category, description, base_price_cents, duration_minutes, active, created_at, updated_at'
 
+function errorMessage(e: unknown, fallback: string): string {
+  if (e instanceof Error) return e.message
+  if (e && typeof e === 'object' && 'message' in e) {
+    const msg = (e as { message: unknown }).message
+    if (typeof msg === 'string' && msg) return msg
+  }
+  return fallback
+}
+
 export const useCleanerServicesStore = defineStore('cleanerServices', () => {
   const services = ref<CleanerService[]>([])
   const loading = ref(false)
@@ -53,7 +62,7 @@ export const useCleanerServicesStore = defineStore('cleanerServices', () => {
       if (err) throw err
       services.value = (data ?? []) as CleanerService[]
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to load services.'
+      error.value = errorMessage(e, 'Failed to load services.')
     } finally {
       loading.value = false
     }
@@ -82,7 +91,7 @@ export const useCleanerServicesStore = defineStore('cleanerServices', () => {
       services.value.push(...((data ?? []) as CleanerService[]))
       _sort()
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to save services.'
+      error.value = errorMessage(e, 'Failed to save services.')
       throw e
     } finally {
       saving.value = false
@@ -107,7 +116,7 @@ export const useCleanerServicesStore = defineStore('cleanerServices', () => {
       const idx = services.value.findIndex((s) => s.id === id)
       if (idx !== -1) services.value[idx] = data as CleanerService
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to update service.'
+      error.value = errorMessage(e, 'Failed to update service.')
       throw e
     } finally {
       saving.value = false
@@ -123,7 +132,7 @@ export const useCleanerServicesStore = defineStore('cleanerServices', () => {
       if (err) throw err
       services.value = services.value.filter((s) => s.id !== id)
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to remove service.'
+      error.value = errorMessage(e, 'Failed to remove service.')
       throw e
     } finally {
       saving.value = false

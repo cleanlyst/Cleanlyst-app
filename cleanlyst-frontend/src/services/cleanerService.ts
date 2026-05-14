@@ -18,6 +18,7 @@ export interface CleanerSearchResult {
 
 export interface CleanerSearchParams {
   city?: string
+  serviceCategory?: string
   maxRateCents?: number
   minRating?: number
   limit?: number
@@ -26,7 +27,21 @@ export interface CleanerSearchParams {
 
 export async function searchCleaners(params: CleanerSearchParams = {}): Promise<CleanerSearchResult[]> {
   const supabase = getSupabaseClient()
-  const { limit = 20, offset = 0, maxRateCents, minRating } = params
+  const { limit = 20, offset = 0, maxRateCents, minRating, serviceCategory } = params
+
+  // When filtering by service category, first collect cleaner IDs that offer it.
+  // services.cleaner_id = profiles.id = cleaner_profiles.user_id
+  let allowedCleanerIds: string[] | null = null
+  if (serviceCategory) {
+    const { data: svcRows, error: svcErr } = await supabase
+      .from('services')
+      .select('cleaner_id')
+      .eq('category', serviceCategory)
+      .eq('active', true)
+    if (svcErr) throw svcErr
+    allowedCleanerIds = (svcRows ?? []).map((r) => r.cleaner_id as string)
+    if (allowedCleanerIds.length === 0) return []
+  }
 
   let query = supabase
     .from('cleaner_profiles')
@@ -49,6 +64,9 @@ export async function searchCleaners(params: CleanerSearchParams = {}): Promise<
     .range(offset, offset + limit - 1)
     .order('average_rating', { ascending: false })
 
+  if (allowedCleanerIds !== null) {
+    query = query.in('user_id', allowedCleanerIds)
+  }
   if (maxRateCents !== undefined) {
     query = query.lte('hourly_rate_cents', maxRateCents)
   }

@@ -11,6 +11,7 @@ import type { ServiceDraft } from '@/stores/cleanerServices'
 interface Props {
   existingTitles: Set<string>
   saving: boolean
+  saveError?: string | null
 }
 
 const props = defineProps<Props>()
@@ -71,7 +72,7 @@ function toggleSub(category: ServiceCategory, sub: SubService) {
     delete fieldErrors.value[key]
   } else {
     checkedSubs.value.add(key)
-    pricing.value[key] = { price: '', duration: String(DURATION_OPTIONS[2].minutes) } // default 1h
+    pricing.value[key] = { price: '', duration: String(DURATION_OPTIONS[2]?.minutes ?? 60) } // default 1h
   }
 }
 
@@ -95,6 +96,11 @@ function validate(): boolean {
     }
   }
   return valid
+}
+
+// v-if parent guarantees the entry exists; cast away undefined for TS checker
+function pricingOf(key: string): PricingEntry {
+  return pricing.value[key] as PricingEntry
 }
 
 function buildDrafts(): ServiceDraft[] {
@@ -139,6 +145,15 @@ function handleSubmit() {
       </button>
     </div>
 
+    <!-- Save error banner — shown immediately below header so it's always visible -->
+    <div v-if="saveError" class="save-error-banner" role="alert">
+      <span class="material-symbols-outlined save-error-icon">error</span>
+      <div>
+        <p class="save-error-title">Could not save services</p>
+        <p class="save-error-body">{{ saveError }}</p>
+      </div>
+    </div>
+
     <!-- Step 1: Category grid -->
     <section class="step-section">
       <h3 class="step-label">
@@ -150,13 +165,13 @@ function handleSubmit() {
           v-for="cat in SERVICE_CATALOG"
           :key="cat.slug"
           type="button"
-          :class="['cat-card', { 'cat-card--selected': selectedCategorySlugs.value.has(cat.slug) }]"
+          :class="['cat-card', { 'cat-card--selected': selectedCategorySlugs.has(cat.slug) }]"
           @click="toggleCategory(cat.slug)"
         >
           <span class="material-symbols-outlined cat-icon">{{ cat.icon }}</span>
           <span class="cat-name">{{ cat.name }}</span>
           <span
-            v-if="selectedCategorySlugs.value.has(cat.slug)"
+            v-if="selectedCategorySlugs.has(cat.slug)"
             class="material-symbols-outlined cat-check"
           >
             check_circle
@@ -173,11 +188,7 @@ function handleSubmit() {
       </h3>
 
       <div class="sub-section-list">
-        <div
-          v-for="cat in selectedCategories"
-          :key="cat.slug"
-          class="sub-section"
-        >
+        <div v-for="cat in selectedCategories" :key="cat.slug" class="sub-section">
           <div class="sub-section-header">
             <span class="material-symbols-outlined sub-section-icon">{{ cat.icon }}</span>
             <span class="sub-section-name">{{ cat.name }}</span>
@@ -190,7 +201,7 @@ function handleSubmit() {
               :class="[
                 'sub-row',
                 {
-                  'sub-row--checked': checkedSubs.value.has(subKey(cat, sub)),
+                  'sub-row--checked': checkedSubs.has(subKey(cat, sub)),
                   'sub-row--disabled': isAlreadyAdded(sub),
                 },
               ]"
@@ -199,13 +210,18 @@ function handleSubmit() {
                 <!-- Checkbox -->
                 <button
                   type="button"
-                  :class="['sub-checkbox', { 'sub-checkbox--checked': checkedSubs.value.has(subKey(cat, sub)) }]"
+                  :class="[
+                    'sub-checkbox',
+                    { 'sub-checkbox--checked': checkedSubs.has(subKey(cat, sub)) },
+                  ]"
                   :disabled="isAlreadyAdded(sub)"
                   @click="toggleSub(cat, sub)"
-                  :aria-pressed="checkedSubs.value.has(subKey(cat, sub))"
+                  :aria-pressed="checkedSubs.has(subKey(cat, sub))"
                 >
                   <span class="material-symbols-outlined checkbox-icon">
-                    {{ checkedSubs.value.has(subKey(cat, sub)) ? 'check_box' : 'check_box_outline_blank' }}
+                    {{
+                      checkedSubs.has(subKey(cat, sub)) ? 'check_box' : 'check_box_outline_blank'
+                    }}
                   </span>
                 </button>
 
@@ -216,7 +232,7 @@ function handleSubmit() {
 
               <!-- Inline pricing config (appears when sub is checked) -->
               <div
-                v-if="checkedSubs.value.has(subKey(cat, sub)) && pricing.value[subKey(cat, sub)]"
+                v-if="checkedSubs.has(subKey(cat, sub)) && pricing[subKey(cat, sub)]"
                 class="pricing-row"
               >
                 <!-- Price input -->
@@ -226,9 +242,9 @@ function handleSubmit() {
                     <span class="price-prefix">£</span>
                     <input
                       :id="`price-${subKey(cat, sub)}`"
-                      v-model="pricing.value[subKey(cat, sub)].price"
+                      v-model="pricingOf(subKey(cat, sub)).price"
                       class="pricing-input price-input"
-                      :class="{ 'pricing-input--error': !!fieldErrors.value[subKey(cat, sub)] }"
+                      :class="{ 'pricing-input--error': !!fieldErrors[subKey(cat, sub)] }"
                       type="number"
                       min="0.01"
                       step="0.01"
@@ -242,18 +258,22 @@ function handleSubmit() {
                   <label class="pricing-label" :for="`dur-${subKey(cat, sub)}`">Duration</label>
                   <select
                     :id="`dur-${subKey(cat, sub)}`"
-                    v-model="pricing.value[subKey(cat, sub)].duration"
+                    v-model="pricingOf(subKey(cat, sub)).duration"
                     class="pricing-input pricing-select"
                   >
-                    <option v-for="opt in DURATION_OPTIONS" :key="opt.minutes" :value="String(opt.minutes)">
+                    <option
+                      v-for="opt in DURATION_OPTIONS"
+                      :key="opt.minutes"
+                      :value="String(opt.minutes)"
+                    >
                       {{ opt.label }}
                     </option>
                   </select>
                 </div>
 
                 <!-- Field error -->
-                <p v-if="fieldErrors.value[subKey(cat, sub)]" class="pricing-error">
-                  {{ fieldErrors.value[subKey(cat, sub)] }}
+                <p v-if="fieldErrors[subKey(cat, sub)]" class="pricing-error">
+                  {{ fieldErrors[subKey(cat, sub)] }}
                 </p>
               </div>
             </div>
@@ -282,7 +302,11 @@ function handleSubmit() {
 <style scoped>
 /* ── Material Symbols ─────────────────────────────────────────────────── */
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -386,7 +410,9 @@ function handleSubmit() {
   background: #ffffff;
   cursor: pointer;
   text-align: left;
-  transition: border-color 150ms, background-color 150ms;
+  transition:
+    border-color 150ms,
+    background-color 150ms;
   min-height: 5rem;
 }
 
@@ -418,7 +444,11 @@ function handleSubmit() {
   right: 0.5rem;
   font-size: 1rem;
   color: var(--primary, #000000);
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 
 /* ── Sub-section list ─────────────────────────────────────────────────── */
@@ -507,7 +537,11 @@ function handleSubmit() {
 }
 
 .sub-checkbox--checked .checkbox-icon {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 
 .checkbox-icon {
@@ -608,6 +642,43 @@ function handleSubmit() {
   margin: 0.125rem 0 0;
 }
 
+/* ── Save-error banner (top of wizard) ────────────────────────────────── */
+.save-error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: #ffebee;
+  border: 1px solid #ba1a1a;
+  border-left: 4px solid #ba1a1a;
+}
+
+.save-error-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  color: #ba1a1a;
+  margin-top: 0.1rem;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+.save-error-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ba1a1a;
+  margin: 0 0 0.25rem;
+}
+
+.save-error-body {
+  font-size: 13px;
+  color: #b71c1c;
+  margin: 0;
+  line-height: 1.5;
+}
+
 /* ── Footer ───────────────────────────────────────────────────────────── */
 .selector-footer {
   display: flex;
@@ -689,8 +760,12 @@ function handleSubmit() {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-spinner {

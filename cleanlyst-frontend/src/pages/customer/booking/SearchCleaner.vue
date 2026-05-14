@@ -39,7 +39,7 @@
               class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
             >
               <option value="">All Services</option>
-              <option v-for="s in SERVICES" :key="s.slug" :value="s.slug">{{ s.title }}</option>
+              <option v-for="cat in SERVICE_CATALOG" :key="cat.slug" :value="cat.name">{{ cat.name }}</option>
             </select>
           </div>
 
@@ -257,7 +257,7 @@ import { useRouter } from 'vue-router'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import { formatPence } from '@/utils/format'
 import { UK_CITIES } from '@/utils/ukCities'
-import { SERVICES } from '@/utils/services'
+import { SERVICE_CATALOG } from '@/utils/serviceCatalog'
 
 const router = useRouter()
 
@@ -286,6 +286,7 @@ async function loadCleaners() {
       offset: (page.value - 1) * pageSize,
     }
     if (filters.city.trim()) params.city = filters.city.trim()
+    if (filters.service) params.serviceCategory = filters.service
     if (filters.maxRateGbp) params.maxRateCents = Math.round(filters.maxRateGbp * 100)
     if (filters.minRating > 0) params.minRating = filters.minRating
 

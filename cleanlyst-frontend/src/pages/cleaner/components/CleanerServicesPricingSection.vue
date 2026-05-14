@@ -1,3 +1,137 @@
+<template>
+  <main class="page-main">
+    <!-- ── Page header ───────────────────────────────────────────────────── -->
+    <section class="page-header">
+      <h1 class="header-title">Services &amp; Pricing</h1>
+      <p class="header-copy">Define every service you offer and set your pricing per service.</p>
+    </section>
+
+    <!-- ── Hourly Rate card with inline editor ───────────────────────────── -->
+    <div class="rate-card">
+      <!-- Always-visible header row -->
+      <div class="rate-card-header">
+        <div class="rate-card-left">
+          <span class="material-symbols-outlined rate-icon">payments</span>
+          <div>
+            <p class="rate-label">Hourly Rate</p>
+            <p class="rate-value">{{ hourlyRateLabel }}</p>
+          </div>
+        </div>
+        <button
+          class="btn-edit-rate"
+          type="button"
+          @click="rateEditorOpen ? cancelRateEdit() : openRateEditor()"
+        >
+          <span class="material-symbols-outlined">{{ rateEditorOpen ? 'close' : 'edit' }}</span>
+          {{ rateEditorOpen ? 'Cancel' : 'Edit Rate' }}
+        </button>
+      </div>
+
+      <!-- Inline expand: rate editor -->
+      <Transition name="rate-expand">
+        <div v-if="rateEditorOpen" class="rate-editor">
+          <div class="rate-editor-row">
+            <div class="rate-field">
+              <label class="rate-field-label" for="hourly-rate">New rate</label>
+              <div class="rate-input-wrap">
+                <span class="rate-prefix">£</span>
+                <input
+                  id="hourly-rate"
+                  v-model="rateInput"
+                  class="rate-input"
+                  :class="{ 'rate-input--error': !!rateError }"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  @keydown.enter="saveRate"
+                />
+                <span class="rate-suffix">/ hr</span>
+              </div>
+            </div>
+            <div class="rate-editor-actions">
+              <button class="btn-start" type="button" :disabled="rateSaving" @click="saveRate">
+                <span v-if="rateSaving" class="material-symbols-outlined btn-spin"
+                  >progress_activity</span
+                >
+                <span v-else-if="rateSaved" class="material-symbols-outlined">check</span>
+                {{ rateSaving ? 'Saving…' : rateSaved ? 'Saved!' : 'Save Rate' }}
+              </button>
+            </div>
+          </div>
+          <p v-if="rateError" class="rate-editor-error">{{ rateError }}</p>
+        </div>
+      </Transition>
+    </div>
+
+    <!-- ── Pending notice ────────────────────────────────────────────────── -->
+    <div v-if="!isApproved && !store.loading" class="notice-card">
+      <span class="material-symbols-outlined notice-icon">info</span>
+      <p class="notice-text">
+        Your account is still under review. You can browse and plan services now — they will go live
+        once your account is approved.
+      </p>
+    </div>
+
+    <!-- ── Global store error ────────────────────────────────────────────── -->
+    <div v-if="store.error" class="error-card">
+      <span class="material-symbols-outlined error-icon">error</span>
+      <p class="error-text">{{ store.error }}</p>
+    </div>
+
+    <!-- ── Loading spinner ───────────────────────────────────────────────── -->
+    <div v-if="store.loading" class="loading-state">
+      <span class="material-symbols-outlined loading-spin">progress_activity</span>
+      <span class="loading-text">Loading your services…</span>
+    </div>
+
+    <!-- ── Main content (hidden while loading) ───────────────────────────── -->
+    <template v-else>
+      <!-- My Services view -->
+      <section v-if="view === 'services'" class="services-section">
+        <div class="section-header">
+          <div class="section-header-left">
+            <h2 class="section-title">My Services</h2>
+            <span v-if="store.services.length" class="service-count">
+              {{ store.services.length }}
+            </span>
+          </div>
+          <!-- Always show — pending cleaners see it and get an RLS error on save -->
+          <button class="btn-add" type="button" @click="openWizard">
+            <span class="material-symbols-outlined">add</span>
+            Add Services
+          </button>
+        </div>
+
+        <MyServicesPanel
+          :services="store.services"
+          :mutating="mutating"
+          @update="handleUpdate"
+          @remove="handleRemove"
+        />
+
+        <div v-if="!store.services.length" class="empty-cta">
+          <button class="btn-start" type="button" @click="openWizard">
+            <span class="material-symbols-outlined">add</span>
+            Add your first service
+          </button>
+        </div>
+      </section>
+
+      <!-- Add Services wizard -->
+      <section v-else-if="view === 'wizard'" class="wizard-section">
+        <ServiceSelector
+          :existing-titles="existingTitles"
+          :saving="store.saving"
+          :save-error="wizardError"
+          @submit="handleSubmit"
+          @cancel="closeWizard"
+        />
+      </section>
+    </template>
+  </main>
+</template>
+
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
@@ -6,6 +140,15 @@ import type { ServiceDraft } from '@/stores/cleanerServices'
 import { requireSupabase } from '@/lib/supabase'
 import ServiceSelector from './services/ServiceSelector.vue'
 import MyServicesPanel from './services/MyServicesPanel.vue'
+
+function extractMessage(e: unknown, fallback: string): string {
+  if (e instanceof Error) return e.message
+  if (e && typeof e === 'object' && 'message' in e) {
+    const msg = (e as { message: unknown }).message
+    if (typeof msg === 'string' && msg) return msg
+  }
+  return fallback
+}
 
 // No props — reads directly from auth store so it can also write back
 type View = 'services' | 'wizard'
@@ -16,11 +159,11 @@ const store = useCleanerServicesStore()
 // ── View state ────────────────────────────────────────────────────────────────
 const view = ref<View>('services')
 const mutating = ref(false)
+const wizardError = ref<string | null>(null)
 
 // ── Derived auth data ─────────────────────────────────────────────────────────
 const isApproved = computed(
-  () =>
-    auth.cleanerProfile?.status === 'approved' || auth.profile?.role === 'cleaner_active',
+  () => auth.cleanerProfile?.status === 'approved' || auth.profile?.role === 'cleaner_active',
 )
 
 const existingTitles = computed(() => new Set(store.services.map((s) => s.title)))
@@ -81,7 +224,7 @@ async function saveRate() {
       rateSaved.value = false
     }, 1200)
   } catch (e) {
-    rateError.value = e instanceof Error ? e.message : 'Failed to save rate.'
+    rateError.value = extractMessage(e, 'Failed to save rate.')
   } finally {
     rateSaving.value = false
   }
@@ -97,20 +240,23 @@ onMounted(async () => {
 
 // ── Services handlers ─────────────────────────────────────────────────────────
 function openWizard() {
+  wizardError.value = null
   view.value = 'wizard'
 }
 
 function closeWizard() {
+  wizardError.value = null
   view.value = 'services'
 }
 
 async function handleSubmit(drafts: ServiceDraft[]) {
   if (!auth.userId) return
+  wizardError.value = null
   try {
     await store.addMany(auth.userId, drafts)
     view.value = 'services'
-  } catch {
-    // error surfaces via store.error banner
+  } catch (e) {
+    wizardError.value = store.error ?? extractMessage(e, 'Failed to save services.')
   }
 }
 
@@ -136,151 +282,14 @@ async function handleRemove(id: string) {
 }
 </script>
 
-<template>
-  <main class="page-main">
-    <!-- ── Page header ───────────────────────────────────────────────────── -->
-    <section class="page-header">
-      <h1 class="header-title">Services &amp; Pricing</h1>
-      <p class="header-copy">Define every service you offer and set your pricing per service.</p>
-    </section>
-
-    <!-- ── Hourly Rate card with inline editor ───────────────────────────── -->
-    <div class="rate-card">
-      <!-- Always-visible header row -->
-      <div class="rate-card-header">
-        <div class="rate-card-left">
-          <span class="material-symbols-outlined rate-icon">payments</span>
-          <div>
-            <p class="rate-label">Hourly Rate</p>
-            <p class="rate-value">{{ hourlyRateLabel }}</p>
-          </div>
-        </div>
-        <button
-          class="btn-edit-rate"
-          type="button"
-          @click="rateEditorOpen ? cancelRateEdit() : openRateEditor()"
-        >
-          <span class="material-symbols-outlined">{{ rateEditorOpen ? 'close' : 'edit' }}</span>
-          {{ rateEditorOpen ? 'Cancel' : 'Edit Rate' }}
-        </button>
-      </div>
-
-      <!-- Inline expand: rate editor -->
-      <Transition name="rate-expand">
-        <div v-if="rateEditorOpen" class="rate-editor">
-          <div class="rate-editor-row">
-            <div class="rate-field">
-              <label class="rate-field-label" for="hourly-rate">New rate</label>
-              <div class="rate-input-wrap">
-                <span class="rate-prefix">£</span>
-                <input
-                  id="hourly-rate"
-                  v-model="rateInput"
-                  class="rate-input"
-                  :class="{ 'rate-input--error': !!rateError }"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="0.00"
-                  @keydown.enter="saveRate"
-                />
-                <span class="rate-suffix">/ hr</span>
-              </div>
-            </div>
-            <div class="rate-editor-actions">
-              <button
-                class="btn-start"
-                type="button"
-                :disabled="rateSaving"
-                @click="saveRate"
-              >
-                <span
-                  v-if="rateSaving"
-                  class="material-symbols-outlined btn-spin"
-                >progress_activity</span>
-                <span v-else-if="rateSaved" class="material-symbols-outlined">check</span>
-                {{ rateSaving ? 'Saving…' : rateSaved ? 'Saved!' : 'Save Rate' }}
-              </button>
-            </div>
-          </div>
-          <p v-if="rateError" class="rate-editor-error">{{ rateError }}</p>
-        </div>
-      </Transition>
-    </div>
-
-    <!-- ── Pending notice ────────────────────────────────────────────────── -->
-    <div v-if="!isApproved && !store.loading" class="notice-card">
-      <span class="material-symbols-outlined notice-icon">info</span>
-      <p class="notice-text">
-        Your account is still under review. You can browse and plan services now — they will go
-        live once your account is approved.
-      </p>
-    </div>
-
-    <!-- ── Global store error ────────────────────────────────────────────── -->
-    <div v-if="store.error" class="error-card">
-      <span class="material-symbols-outlined error-icon">error</span>
-      <p class="error-text">{{ store.error }}</p>
-    </div>
-
-    <!-- ── Loading spinner ───────────────────────────────────────────────── -->
-    <div v-if="store.loading" class="loading-state">
-      <span class="material-symbols-outlined loading-spin">progress_activity</span>
-      <span class="loading-text">Loading your services…</span>
-    </div>
-
-    <!-- ── Main content (hidden while loading) ───────────────────────────── -->
-    <template v-else>
-
-      <!-- My Services view -->
-      <section v-if="view === 'services'" class="services-section">
-        <div class="section-header">
-          <div class="section-header-left">
-            <h2 class="section-title">My Services</h2>
-            <span v-if="store.services.length" class="service-count">
-              {{ store.services.length }}
-            </span>
-          </div>
-          <!-- Always show — pending cleaners see it and get an RLS error on save -->
-          <button class="btn-add" type="button" @click="openWizard">
-            <span class="material-symbols-outlined">add</span>
-            Add Services
-          </button>
-        </div>
-
-        <MyServicesPanel
-          :services="store.services"
-          :mutating="mutating"
-          @update="handleUpdate"
-          @remove="handleRemove"
-        />
-
-        <div v-if="!store.services.length" class="empty-cta">
-          <button class="btn-start" type="button" @click="openWizard">
-            <span class="material-symbols-outlined">add</span>
-            Add your first service
-          </button>
-        </div>
-      </section>
-
-      <!-- Add Services wizard -->
-      <section v-else-if="view === 'wizard'" class="wizard-section">
-        <ServiceSelector
-          :existing-titles="existingTitles"
-          :saving="store.saving"
-          @submit="handleSubmit"
-          @cancel="closeWizard"
-        />
-      </section>
-
-    </template>
-  </main>
-</template>
-
 <style scoped>
 /* ── Material Symbols ─────────────────────────────────────────────────── */
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -483,7 +492,9 @@ async function handleRemove(id: string) {
 /* ── Rate expand transition ───────────────────────────────────────────── */
 .rate-expand-enter-active,
 .rate-expand-leave-active {
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
 }
 
 .rate-expand-enter-from,
@@ -514,7 +525,9 @@ async function handleRemove(id: string) {
   margin-top: 0.1rem;
 }
 
-.notice-icon { color: var(--secondary, #5e5e5e); }
+.notice-icon {
+  color: var(--secondary, #5e5e5e);
+}
 
 .notice-text,
 .error-text {
@@ -528,8 +541,12 @@ async function handleRemove(id: string) {
   background: #ffebee;
 }
 
-.error-icon { color: #ba1a1a; }
-.error-text { color: #ba1a1a; }
+.error-icon {
+  color: #ba1a1a;
+}
+.error-text {
+  color: #ba1a1a;
+}
 
 /* ── Loading ──────────────────────────────────────────────────────────── */
 .loading-state {
@@ -614,14 +631,18 @@ async function handleRemove(id: string) {
   transition: opacity 0.15s;
 }
 
-.btn-start:hover:not(:disabled) { opacity: 0.85; }
+.btn-start:hover:not(:disabled) {
+  opacity: 0.85;
+}
 
 .btn-start:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.btn-start .material-symbols-outlined { font-size: 1rem; }
+.btn-start .material-symbols-outlined {
+  font-size: 1rem;
+}
 
 .btn-add {
   padding: 0.5rem 1rem;
@@ -638,13 +659,21 @@ async function handleRemove(id: string) {
   transition: background-color 0.15s;
 }
 
-.btn-add:hover { background-color: var(--surface-variant, #e2e2e2); }
+.btn-add:hover {
+  background-color: var(--surface-variant, #e2e2e2);
+}
 
-.btn-add .material-symbols-outlined { font-size: 1rem; }
+.btn-add .material-symbols-outlined {
+  font-size: 1rem;
+}
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .btn-spin {

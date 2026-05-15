@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Cleanlyst",
+    "slug": "cleanlyst-mobile-app",
+    "scheme": "cleanlyst",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.cleanlyst.app"
+    },
+    "android": {
+      "package": "com.cleanlyst.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#14B8A6"
+      }
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

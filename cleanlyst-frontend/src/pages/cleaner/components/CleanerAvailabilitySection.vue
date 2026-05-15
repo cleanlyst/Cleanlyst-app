@@ -96,18 +96,17 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import {
-  getCleanerAvailability,
-  upsertAvailabilitySlots,
-} from '@/services/availabilityService'
+import { getCleanerAvailability, upsertAvailabilitySlots } from '@/services/availabilityService'
 
 const DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 // day_of_week stored as 1=Mon … 7=Sun (ISO week; adjust if schema differs)
-const DAY_NUMBERS = [1, 2, 3, 4, 5, 6, 7]
+const DAY_NUMBERS = [1, 2, 3, 4, 5, 6, 7] as const
+
+type DayOfWeek = (typeof DAY_NUMBERS)[number]
 
 interface DaySlot {
   index: number
-  dayOfWeek: number
+  dayOfWeek: DayOfWeek
   label: string
   active: boolean
   start: string
@@ -118,14 +117,21 @@ const DEFAULT_START = '09:00'
 const DEFAULT_END = '17:00'
 
 function buildDefaultSchedule(): DaySlot[] {
-  return DAY_LABELS.map((label, i) => ({
-    index: i,
-    dayOfWeek: DAY_NUMBERS[i],
-    label,
-    active: i < 5, // Mon-Fri on by default
-    start: DEFAULT_START,
-    end: DEFAULT_END,
-  }))
+  return DAY_LABELS.map((label, i) => {
+    const dayOfWeek = DAY_NUMBERS[i]
+    if (dayOfWeek === undefined) {
+      throw new Error(`Invalid day index ${i} when building default schedule.`)
+    }
+
+    return {
+      index: i,
+      dayOfWeek,
+      label,
+      active: i < 5, // Mon-Fri on by default
+      start: DEFAULT_START,
+      end: DEFAULT_END,
+    }
+  })
 }
 
 const auth = useAuthStore()
@@ -140,10 +146,20 @@ const schedule = reactive<DaySlot[]>(buildDefaultSchedule())
 let savedSnapshot: DaySlot[] = buildDefaultSchedule()
 
 function applySnapshot(snap: DaySlot[]) {
+  if (snap.length !== schedule.length) {
+    throw new Error('Saved schedule snapshot length does not match the current schedule.')
+  }
+
   for (let i = 0; i < schedule.length; i++) {
-    schedule[i].active = snap[i].active
-    schedule[i].start = snap[i].start
-    schedule[i].end = snap[i].end
+    const scheduleDay = schedule[i]
+    const snapshotDay = snap[i]
+    if (!scheduleDay || !snapshotDay) {
+      throw new Error(`Missing schedule data at index ${i}`)
+    }
+
+    scheduleDay.active = snapshotDay.active
+    scheduleDay.start = snapshotDay.start
+    scheduleDay.end = snapshotDay.end
   }
 }
 
@@ -337,7 +353,9 @@ function discardChanges() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-text {

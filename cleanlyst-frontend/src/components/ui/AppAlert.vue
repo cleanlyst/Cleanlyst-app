@@ -53,17 +53,20 @@ function dismiss() {
   emit('dismiss')
 }
 
-const colorClass: Record<AlertType, string> = {
+const COLOR_MAP = {
   success: 'bg-green-50 border-green-200 text-green-800',
   error: 'bg-error-container border-error text-on-error-container',
   warning: 'bg-amber-50 border-amber-200 text-amber-800',
   info: 'bg-blue-50 border-blue-200 text-blue-800',
-}[props.type]
+} satisfies Record<AlertType, string>
 
-const iconName: Record<AlertType, string> = {
+const ICON_MAP = {
   success: 'check_circle',
   error: 'error',
   warning: 'warning',
   info: 'info',
-}[props.type]
+} satisfies Record<AlertType, string>
+
+const colorClass = COLOR_MAP[props.type]
+const iconName = ICON_MAP[props.type]
 </script>

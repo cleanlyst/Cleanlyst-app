@@ -80,12 +80,14 @@ const emit = defineEmits<{
 const uid = Math.random().toString(36).slice(2, 8)
 const titleId = `modal-title-${uid}`
 
-const widthClass: Record<string, string> = {
+const SIZE_MAP = {
   sm: 'max-w-sm',
   md: 'max-w-lg',
   lg: 'max-w-2xl',
   xl: 'max-w-4xl',
-}[props.size]
+} satisfies Record<NonNullable<typeof props.size>, string>
+
+const widthClass = SIZE_MAP[props.size]
 
 function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape' && props.modelValue) {

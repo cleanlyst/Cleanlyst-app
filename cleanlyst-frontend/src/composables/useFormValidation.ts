@@ -16,15 +16,11 @@ export function useFormValidation<T extends Record<string, unknown>>(
   }
 
   function validateField(field: keyof T): void {
-    const fieldRules = rules[field]
-    if (!fieldRules) return
-
-    let fieldError: string | null = null
-    for (const rule of fieldRules) {
-      const msg = rule(values[field])
-      if (msg) { fieldError = msg; break }
-    }
-    errors[field] = fieldError
+    const rule = rules[field]
+    if (!rule) return
+    // FieldRules<T> maps each field to a single Validator — call it directly.
+    // Cast through FormErrors<T> to sidestep Reactive<> mapped-type indexing limits.
+    ;(errors as FormErrors<T>)[field] = rule(values[field])
   }
 
   function handleSubmit(onValid: (values: T) => void | Promise<void>) {
@@ -39,7 +35,7 @@ export function useFormValidation<T extends Record<string, unknown>>(
 
   function reset() {
     Object.assign(values, initialValues)
-    Object.keys(errors).forEach((k) => { errors[k as keyof T] = null })
+    Object.keys(errors).forEach((k) => { ;(errors as FormErrors<T>)[k as keyof T] = null })
     submitted.value = false
   }
 

@@ -69,6 +69,7 @@ export const useCleanerServicesStore = defineStore('cleanerServices', () => {
   }
 
   async function addMany(cleanerId: string, drafts: ServiceDraft[]): Promise<void> {
+    if (drafts.length === 0) return
     saving.value = true
     error.value = null
     try {
@@ -83,13 +84,19 @@ export const useCleanerServicesStore = defineStore('cleanerServices', () => {
         pricing_model: 'fixed' as const,
         active: true,
       }))
-      const { data, error: err } = await supabase
-        .from('services')
-        .insert(rows)
-        .select(SELECT_COLS)
+      const { error: err } = await supabase.from('services').insert(rows)
       if (err) throw err
-      services.value.push(...((data ?? []) as CleanerService[]))
-      _sort()
+      // Reload from DB rather than relying on PostgREST read-back, which can
+      // return null when RLS SELECT policies don't match the INSERT condition.
+      const { data: fresh, error: fetchErr } = await supabase
+        .from('services')
+        .select(SELECT_COLS)
+        .eq('cleaner_id', cleanerId)
+        .eq('active', true)
+        .order('category')
+        .order('title')
+      if (fetchErr) throw fetchErr
+      services.value = (fresh ?? []) as CleanerService[]
     } catch (e) {
       error.value = errorMessage(e, 'Failed to save services.')
       throw e

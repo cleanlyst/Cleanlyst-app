@@ -70,7 +70,7 @@ export type FieldRules<T extends object> = {
 }
 
 export type FormErrors<T extends object> = {
-  [K in keyof T]?: string
+  [K in keyof T]?: string | null
 }
 
 export function validateForm<T extends object>(

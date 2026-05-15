@@ -207,7 +207,7 @@
           <div class="flex gap-3">
             <button
               class="flex-1 py-3 bg-primary text-on-primary font-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
-              :disabled="reviewLoading"
+              :disabled="!!reviewLoading"
               @click="submitReview('approved')"
             >
               {{ reviewLoading === 'approved' ? 'Approving…' : 'Approve' }}

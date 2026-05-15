@@ -1,7 +1,16 @@
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import { getSupabaseClient } from '@/services/supabaseClient'
 
-type ChangeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*'
+type ChangeEvent = '*' | 'INSERT' | 'UPDATE' | 'DELETE'
+
+// Matches the shape of RealtimePostgresChangesFilter without importing the
+// internal type, which is not consistently re-exported across SDK versions.
+interface PostgresChangesFilter {
+  event: ChangeEvent
+  schema: string
+  table: string
+  filter?: string
+}
 
 export interface SubscribeOptions<T extends Record<string, unknown>> {
   table: string
@@ -18,12 +27,14 @@ export function subscribeToTable<T extends Record<string, unknown>>(
   const supabase = getSupabaseClient()
   const { table, event = '*', filter, schema = 'public', onData } = options
 
-  const channelConfig: Record<string, unknown> = { event, schema, table }
-  if (filter) channelConfig.filter = filter
+  // Build a strongly-typed filter so TypeScript can resolve the correct
+  // postgres_changes overload on .on() without Parameters<> tricks.
+  const pgFilter: PostgresChangesFilter = { event, schema, table }
+  if (filter !== undefined) pgFilter.filter = filter
 
   return supabase
     .channel(channelName)
-    .on('postgres_changes', channelConfig as Parameters<RealtimeChannel['on']>[1], onData)
+    .on('postgres_changes', pgFilter, onData)
     .subscribe()
 }
 

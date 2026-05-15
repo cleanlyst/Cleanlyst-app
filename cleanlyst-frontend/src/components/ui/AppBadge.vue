@@ -28,7 +28,7 @@ const props = withDefaults(
   { variant: 'default', dot: false },
 )
 
-const colorClass: Record<BadgeVariant, string> = {
+const COLOR_MAP = {
   default: 'bg-surface-container-high text-on-surface',
   success: 'bg-green-100 text-green-800',
   warning: 'bg-amber-100 text-amber-800',
@@ -37,5 +37,7 @@ const colorClass: Record<BadgeVariant, string> = {
   pending: 'bg-amber-100 text-amber-800',
   active: 'bg-green-100 text-green-800',
   inactive: 'bg-surface-container-high text-on-surface-variant',
-}[props.variant]
+} satisfies Record<BadgeVariant, string>
+
+const colorClass = COLOR_MAP[props.variant]
 </script>

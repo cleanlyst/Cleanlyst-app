@@ -35,8 +35,12 @@
               <div class="prefs-dl-row">
                 <dt class="prefs-dt">Address</dt>
                 <dd class="prefs-dd">
-                  <span v-if="store.preferences.address_line_1">{{ store.preferences.address_line_1 }}</span>
-                  <span v-if="store.preferences.address_line_2">, {{ store.preferences.address_line_2 }}</span>
+                  <span v-if="store.preferences.address_line_1">{{
+                    store.preferences.address_line_1
+                  }}</span>
+                  <span v-if="store.preferences.address_line_2"
+                    >, {{ store.preferences.address_line_2 }}</span
+                  >
                   <span v-if="!store.preferences.address_line_1">—</span>
                 </dd>
               </div>
@@ -56,7 +60,13 @@
             <dl class="prefs-dl">
               <div class="prefs-dl-row">
                 <dt class="prefs-dt">Rooms</dt>
-                <dd class="prefs-dd">{{ store.preferences.room_count != null ? `${store.preferences.room_count} room${store.preferences.room_count !== 1 ? 's' : ''}` : '—' }}</dd>
+                <dd class="prefs-dd">
+                  {{
+                    store.preferences.room_count != null
+                      ? `${store.preferences.room_count} room${store.preferences.room_count !== 1 ? 's' : ''}`
+                      : '—'
+                  }}
+                </dd>
               </div>
               <div class="prefs-dl-row">
                 <dt class="prefs-dt">Pets</dt>
@@ -74,7 +84,9 @@
             <dl class="prefs-dl">
               <div class="prefs-dl-row">
                 <dt class="prefs-dt">Gender</dt>
-                <dd class="prefs-dd">{{ genderLabel(store.preferences.preferred_cleaner_gender) }}</dd>
+                <dd class="prefs-dd">
+                  {{ genderLabel(store.preferences.preferred_cleaner_gender) }}
+                </dd>
               </div>
             </dl>
           </div>
@@ -105,7 +117,9 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="address_line_2">Address Line 2 <span class="form-label-optional">(optional)</span></label>
+            <label class="form-label" for="address_line_2"
+              >Address Line 2 <span class="form-label-optional">(optional)</span></label
+            >
             <input
               id="address_line_2"
               v-model="form.address_line_2"
@@ -145,7 +159,9 @@
             <label class="form-label" for="room_count">Number of Rooms</label>
             <select id="room_count" v-model="form.room_count" class="form-select">
               <option :value="null">Select…</option>
-              <option v-for="n in 10" :key="n" :value="n">{{ n }} {{ n === 1 ? 'room' : 'rooms' }}</option>
+              <option v-for="n in 10" :key="n" :value="n">
+                {{ n }} {{ n === 1 ? 'room' : 'rooms' }}
+              </option>
             </select>
           </div>
 
@@ -194,7 +210,12 @@
                 class="time-option"
                 :class="{ 'time-option--selected': form.preferred_cleaner_gender === opt.value }"
               >
-                <input v-model="form.preferred_cleaner_gender" :value="opt.value" class="sr-only" type="radio" />
+                <input
+                  v-model="form.preferred_cleaner_gender"
+                  :value="opt.value"
+                  class="sr-only"
+                  type="radio"
+                />
                 <span class="time-option-name">{{ opt.label }}</span>
               </label>
             </div>
@@ -291,23 +312,26 @@ async function handleSave() {
   saving.value = true
   saveStatus.value = 'idle'
   saveError.value = ''
+  const payload = {
+    address_line_1: form.address_line_1 || null,
+    address_line_2: form.address_line_2 || null,
+    city: form.city || null,
+    postcode: form.postcode || null,
+    room_count: form.room_count,
+    has_pets: form.has_pets,
+    preferred_cleaner_gender: form.preferred_cleaner_gender,
+    notes: form.notes || null,
+  }
+  console.debug('[CustomerPreferencesSection] handleSave payload', payload)
   try {
-    await store.save({
-      address_line_1: form.address_line_1 || null,
-      address_line_2: form.address_line_2 || null,
-      city: form.city || null,
-      postcode: form.postcode || null,
-      room_count: form.room_count,
-      has_pets: form.has_pets,
-      preferred_cleaner_gender: form.preferred_cleaner_gender,
-      notes: form.notes || null,
-    })
+    await store.save(payload)
     saveStatus.value = 'success'
     setTimeout(() => {
       saveStatus.value = 'idle'
       editing.value = false
     }, 1500)
   } catch (e) {
+    console.error('[CustomerPreferencesSection] handleSave error', e)
     saveError.value = e instanceof Error ? e.message : 'Failed to save preferences.'
   } finally {
     saving.value = false

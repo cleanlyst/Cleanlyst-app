@@ -39,44 +39,29 @@
               class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
             >
               <option value="">All Services</option>
-              <option v-for="cat in SERVICE_CATALOG" :key="cat.slug" :value="cat.name">{{ cat.name }}</option>
+              <option v-for="cat in SERVICE_CATALOG" :key="cat.slug" :value="cat.name">
+                {{ cat.name }}
+              </option>
             </select>
           </div>
 
-          <!-- Max Rate filter -->
+          <!-- Booking Date filter -->
           <div class="space-y-4">
             <label
-              for="max-rate"
+              for="booking-date"
               class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-              >Max Rate (£/hr)</label
+              >Booking Date</label
             >
             <input
-              id="max-rate"
-              v-model.number="filters.maxRateGbp"
-              type="number"
-              min="0"
+              id="booking-date"
+              v-model="filters.bookingDate"
+              type="date"
+              :min="minDate"
               class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
-              placeholder="No limit"
             />
-          </div>
-
-          <!-- Min Rating -->
-          <div class="space-y-4">
-            <label
-              for="min-rating"
-              class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-              >Min Rating</label
-            >
-            <select
-              id="min-rating"
-              v-model.number="filters.minRating"
-              class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
-            >
-              <option :value="0">Any</option>
-              <option :value="4">4+</option>
-              <option :value="4.5">4.5+</option>
-              <option :value="5">5.0</option>
-            </select>
+            <p v-if="filters.bookingDate" class="text-xs text-on-surface-variant">
+              {{ formatDateDisplay(filters.bookingDate) }}
+            </p>
           </div>
 
           <button
@@ -271,9 +256,12 @@ const sortBy = ref<'rating' | 'price_asc'>('rating')
 const filters = reactive({
   city: '',
   service: '',
-  maxRateGbp: null as number | null,
+  bookingDate: '',
   minRating: 0,
 })
+
+// Calculate min date as tomorrow
+const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
 onMounted(() => loadCleaners())
 
@@ -287,7 +275,7 @@ async function loadCleaners() {
     }
     if (filters.city.trim()) params.city = filters.city.trim()
     if (filters.service) params.serviceCategory = filters.service
-    if (filters.maxRateGbp) params.maxRateCents = Math.round(filters.maxRateGbp * 100)
+    if (filters.bookingDate) params.availabilityDate = filters.bookingDate
     if (filters.minRating > 0) params.minRating = filters.minRating
 
     const results = await searchCleaners(params)
@@ -313,7 +301,7 @@ function applyFilters() {
 function clearFilters() {
   filters.city = ''
   filters.service = ''
-  filters.maxRateGbp = null
+  filters.bookingDate = ''
   filters.minRating = 0
   sortBy.value = 'rating'
   page.value = 1
@@ -327,6 +315,17 @@ function goToPage(n: number) {
 
 function displayName(c: CleanerSearchResult): string {
   return c.business_name ?? c.profiles?.full_name ?? 'Cleaner'
+}
+
+function formatDateDisplay(date: string): string {
+  if (!date) return ''
+  const d = new Date(date + 'T00:00:00')
+  return d.toLocaleDateString('en-GB', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 function bookCleaner(userId: string) {

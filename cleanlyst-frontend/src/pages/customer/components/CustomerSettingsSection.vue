@@ -11,8 +11,14 @@
     <div class="form-card">
       <div class="card-heading-row">
         <h2 class="card-heading">Personal Information</h2>
-        <button class="btn-ghost" type="button" @click="editingProfile ? cancelEditProfile() : openEditProfile()">
-          <span class="material-symbols-outlined btn-ghost-icon">{{ editingProfile ? 'close' : 'edit' }}</span>
+        <button
+          class="btn-ghost"
+          type="button"
+          @click="editingProfile ? cancelEditProfile() : openEditProfile()"
+        >
+          <span class="material-symbols-outlined btn-ghost-icon">{{
+            editingProfile ? 'close' : 'edit'
+          }}</span>
           {{ editingProfile ? 'Cancel' : 'Edit' }}
         </button>
       </div>
@@ -109,13 +115,12 @@
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label" for="country">Country</label>
-            <input
+            <AppCountrySelect
               id="country"
               v-model="profileForm.country"
-              class="form-input"
-              type="text"
-              placeholder="Your country"
+              label="Country"
+              placeholder="Select your country"
+              required
             />
           </div>
         </div>
@@ -234,6 +239,7 @@ import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { uploadAvatar } from '@/services/storageService'
 import { UK_CITIES } from '@/utils/ukCities'
+import AppCountrySelect from '@/components/ui/AppCountrySelect.vue'
 
 const auth = useAuthStore()
 
@@ -362,23 +368,36 @@ async function saveProfile() {
   profileStatus.value = 'idle'
   profileError.value = ''
   try {
-    const supabase = requireSupabase()
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: trimmedName,
-        phone: profileForm.phone || null,
-        city: profileForm.city || null,
-        country: profileForm.country || null,
-      })
-      .eq('id', auth.userId)
-    if (error) throw error
+    const payload = {
+      full_name: trimmedName,
+      phone: profileForm.phone || null,
+      city: profileForm.city || null,
+      country: profileForm.country || null,
+    }
 
-    // Reload profile data — non-fatal; store may be stale briefly but save succeeded.
+    console.debug('[CustomerSettingsSection] saveProfile payload', payload)
+
+    const supabase = requireSupabase()
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(payload)
+      .eq('id', auth.userId)
+      .select('*')
+      .single()
+
+    console.debug('[CustomerSettingsSection] saveProfile response', { data, error })
+
+    if (error) throw error
+    if (!data) {
+      throw new Error('Profile save returned no data.')
+    }
+
+    auth.profile = data as typeof auth.profile
+
     try {
       await auth._loadProfileData(auth.userId)
-    } catch {
-      // ignore reload error — data was saved successfully
+    } catch (reloadError) {
+      console.warn('[CustomerSettingsSection] _loadProfileData failed after save', reloadError)
     }
 
     profileStatus.value = 'success'
@@ -387,6 +406,7 @@ async function saveProfile() {
       editingProfile.value = false
     }, 1500)
   } catch (err) {
+    console.error('[CustomerSettingsSection] saveProfile error', err)
     profileStatus.value = 'error'
     profileError.value = err instanceof Error ? err.message : 'Failed to update profile.'
   } finally {

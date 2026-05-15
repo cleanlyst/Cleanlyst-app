@@ -103,6 +103,11 @@
           </button>
         </div>
 
+        <div v-if="wizardSuccess" class="success-card">
+          <span class="material-symbols-outlined success-icon">check_circle</span>
+          <p class="success-text">Service Added</p>
+        </div>
+
         <MyServicesPanel
           :services="store.services"
           :mutating="mutating"
@@ -124,6 +129,7 @@
           :existing-titles="existingTitles"
           :saving="store.saving"
           :save-error="wizardError"
+          :save-success="wizardSuccess"
           @submit="handleSubmit"
           @cancel="closeWizard"
         />
@@ -160,6 +166,8 @@ const store = useCleanerServicesStore()
 const view = ref<View>('services')
 const mutating = ref(false)
 const wizardError = ref<string | null>(null)
+const wizardSuccess = ref(false)
+let wizardSuccessTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Derived auth data ─────────────────────────────────────────────────────────
 const isApproved = computed(
@@ -241,21 +249,38 @@ onMounted(async () => {
 // ── Services handlers ─────────────────────────────────────────────────────────
 function openWizard() {
   wizardError.value = null
+  wizardSuccess.value = false
   view.value = 'wizard'
 }
 
 function closeWizard() {
+  if (wizardSuccessTimer !== null) {
+    clearTimeout(wizardSuccessTimer)
+    wizardSuccessTimer = null
+  }
   wizardError.value = null
+  wizardSuccess.value = false
   view.value = 'services'
 }
 
 async function handleSubmit(drafts: ServiceDraft[]) {
-  if (!auth.userId) return
+  if (!auth.userId) {
+    wizardError.value = 'Authentication error — please refresh the page and try again.'
+    return
+  }
+  console.debug('[CleanerServicesPricingSection] submitting drafts', drafts)
   wizardError.value = null
+  wizardSuccess.value = false
   try {
     await store.addMany(auth.userId, drafts)
     view.value = 'services'
+    wizardSuccess.value = true
+    wizardSuccessTimer = setTimeout(() => {
+      wizardSuccessTimer = null
+      wizardSuccess.value = false
+    }, 1400)
   } catch (e) {
+    console.error('[CleanerServicesPricingSection] save failed', e)
     wizardError.value = store.error ?? extractMessage(e, 'Failed to save services.')
   }
 }

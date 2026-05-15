@@ -56,11 +56,11 @@ export const useCleanerServicesStore = defineStore('cleanerServices', () => {
         .from('services')
         .select(SELECT_COLS)
         .eq('cleaner_id', cleanerId)
-        .eq('active', true)
         .order('category')
         .order('title')
       if (err) throw err
       services.value = (data ?? []) as CleanerService[]
+      _sort()
     } catch (e) {
       error.value = errorMessage(e, 'Failed to load services.')
     } finally {
@@ -69,7 +69,10 @@ export const useCleanerServicesStore = defineStore('cleanerServices', () => {
   }
 
   async function addMany(cleanerId: string, drafts: ServiceDraft[]): Promise<void> {
-    if (drafts.length === 0) return
+    if (drafts.length === 0) {
+      error.value = 'No services selected. Please select at least one service and set a price.'
+      throw new Error(error.value)
+    }
     saving.value = true
     error.value = null
     try {
@@ -84,19 +87,27 @@ export const useCleanerServicesStore = defineStore('cleanerServices', () => {
         pricing_model: 'fixed' as const,
         active: true,
       }))
+      console.debug('[cleanerServices] addMany payload', rows)
       const { error: err } = await supabase.from('services').insert(rows)
-      if (err) throw err
+      if (err) {
+        console.error('[cleanerServices] insert error', err)
+        throw err
+      }
       // Reload from DB rather than relying on PostgREST read-back, which can
       // return null when RLS SELECT policies don't match the INSERT condition.
       const { data: fresh, error: fetchErr } = await supabase
         .from('services')
         .select(SELECT_COLS)
         .eq('cleaner_id', cleanerId)
-        .eq('active', true)
         .order('category')
         .order('title')
-      if (fetchErr) throw fetchErr
+      if (fetchErr) {
+        console.error('[cleanerServices] refresh error', fetchErr)
+        throw fetchErr
+      }
+      console.debug('[cleanerServices] refreshed services', fresh)
       services.value = (fresh ?? []) as CleanerService[]
+      _sort()
     } catch (e) {
       error.value = errorMessage(e, 'Failed to save services.')
       throw e

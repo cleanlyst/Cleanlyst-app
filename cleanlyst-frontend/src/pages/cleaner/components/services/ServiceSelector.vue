@@ -12,6 +12,7 @@ interface Props {
   existingTitles: Set<string>
   saving: boolean
   saveError?: string | null
+  saveSuccess?: boolean
 }
 
 const props = defineProps<Props>()
@@ -24,7 +25,7 @@ const emit = defineEmits<{
 const selectedCategorySlugs = ref(new Set<string>())
 
 interface PricingEntry {
-  price: string
+  price: string | number
   duration: string
 }
 
@@ -86,8 +87,10 @@ function validate(): boolean {
   for (const key of checkedSubs.value) {
     const entry = pricing.value[key]
     if (!entry) continue
-    const price = parseFloat(entry.price)
-    if (!entry.price.trim() || isNaN(price) || price <= 0) {
+    const rawPrice = entry.price
+    const priceString = typeof rawPrice === 'string' ? rawPrice.trim() : String(rawPrice)
+    const price = parseFloat(priceString)
+    if (!priceString || isNaN(price) || price <= 0) {
       fieldErrors.value[key] = 'Enter a valid price greater than £0'
       valid = false
     } else if (!entry.duration) {
@@ -111,10 +114,11 @@ function buildDrafts(): ServiceDraft[] {
       if (!checkedSubs.value.has(key)) continue
       const entry = pricing.value[key]
       if (!entry) continue
+      const priceString = typeof entry.price === 'string' ? entry.price.trim() : String(entry.price)
       drafts.push({
         title: sub.name,
         category: cat.name,
-        base_price_cents: Math.round(parseFloat(entry.price) * 100),
+        base_price_cents: Math.round(parseFloat(priceString) * 100),
         duration_minutes: parseInt(entry.duration, 10),
       })
     }
@@ -123,9 +127,26 @@ function buildDrafts(): ServiceDraft[] {
 }
 
 function handleSubmit() {
-  if (selectedCount.value === 0) return
-  if (!validate()) return
-  emit('submit', buildDrafts())
+  if (selectedCount.value === 0 || props.saving || props.saveSuccess) return
+  try {
+    if (!validate()) return
+    const drafts = buildDrafts()
+    if (drafts.length === 0) {
+      // Validation passed but no pricing data — should not happen, but guard anyway
+      fieldErrors.value = {}
+      for (const key of checkedSubs.value) {
+        fieldErrors.value[key] = 'Enter a valid price greater than £0'
+      }
+      return
+    }
+    emit('submit', drafts)
+  } catch (e) {
+    console.error('ServiceSelector submit failure', e)
+    fieldErrors.value = {
+      ...fieldErrors.value,
+      submit: 'Unable to submit your selected services. Please check your prices and try again.',
+    }
+  }
 }
 </script>
 
@@ -288,14 +309,28 @@ function handleSubmit() {
       <button
         class="btn-start"
         type="button"
-        :disabled="selectedCount === 0 || saving"
+        :disabled="selectedCount === 0 || saving || saveSuccess"
         @click="handleSubmit"
       >
         <span v-if="saving" class="material-symbols-outlined btn-spinner">progress_activity</span>
+        <span v-else-if="saveSuccess" class="material-symbols-outlined btn-success-icon"
+          >check_circle</span
+        >
         <span v-else class="material-symbols-outlined">add</span>
-        {{ saving ? 'Saving…' : `Add ${selectedCount} Service${selectedCount !== 1 ? 's' : ''}` }}
+        {{
+          saving
+            ? 'Adding Service…'
+            : saveSuccess
+              ? 'Service Added'
+              : saveError
+                ? 'Retry'
+                : `Add ${selectedCount} Service${selectedCount !== 1 ? 's' : ''}`
+        }}
       </button>
     </div>
+    <p v-if="fieldErrors.submit" class="save-error-banner" role="alert">
+      {{ fieldErrors.submit }}
+    </p>
   </div>
 </template>
 
@@ -770,5 +805,13 @@ function handleSubmit() {
 
 .btn-spinner {
   animation: spin 1s linear infinite;
+}
+
+.btn-success-icon {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 </style>

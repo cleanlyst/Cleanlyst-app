@@ -64,6 +64,24 @@
             </p>
           </div>
 
+          <!-- Booking Time filter (only meaningful when a date is set) -->
+          <div v-if="filters.bookingDate" class="space-y-4">
+            <label
+              for="booking-time"
+              class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
+              >Start Time <span class="normal-case text-xs">(optional)</span></label
+            >
+            <input
+              id="booking-time"
+              v-model="filters.bookingTime"
+              type="time"
+              class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
+            />
+            <p class="text-xs text-on-surface-variant">
+              Only show cleaners available at this time.
+            </p>
+          </div>
+
           <button
             class="w-full py-4 bg-primary text-on-primary font-label-md hover:bg-zinc-800 transition-colors"
             @click="applyFilters"
@@ -257,6 +275,7 @@ const filters = reactive({
   city: '',
   service: '',
   bookingDate: '',
+  bookingTime: '',
   minRating: 0,
 })
 
@@ -276,6 +295,7 @@ async function loadCleaners() {
     if (filters.city.trim()) params.city = filters.city.trim()
     if (filters.service) params.serviceCategory = filters.service
     if (filters.bookingDate) params.availabilityDate = filters.bookingDate
+    if (filters.bookingDate && filters.bookingTime) params.availabilityTime = filters.bookingTime
     if (filters.minRating > 0) params.minRating = filters.minRating
 
     const results = await searchCleaners(params)
@@ -302,6 +322,7 @@ function clearFilters() {
   filters.city = ''
   filters.service = ''
   filters.bookingDate = ''
+  filters.bookingTime = ''
   filters.minRating = 0
   sortBy.value = 'rating'
   page.value = 1

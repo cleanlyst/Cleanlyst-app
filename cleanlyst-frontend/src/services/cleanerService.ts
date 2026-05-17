@@ -22,6 +22,7 @@ export interface CleanerSearchParams {
   maxRateCents?: number
   minRating?: number
   availabilityDate?: string // YYYY-MM-DD format
+  availabilityTime?: string // HH:MM format – only used when availabilityDate is also set
   limit?: number
   offset?: number
 }
@@ -37,6 +38,7 @@ export async function searchCleaners(
     minRating,
     serviceCategory,
     availabilityDate,
+    availabilityTime,
   } = params
 
   // When filtering by service category, first collect cleaner IDs that offer it.
@@ -56,30 +58,44 @@ export async function searchCleaners(
   // When filtering by availability date, collect cleaner IDs that are available
   let availableCleanerIds: string[] | null = null
   if (availabilityDate) {
-    // Calculate day of week (0=Sunday, 1=Monday, ..., 6=Saturday)
-    const dateObj = new Date(availabilityDate + 'T00:00:00')
-    const dayOfWeek = (dateObj.getDay() + 6) % 7 // Convert to 0=Monday, 6=Sunday
+    // PostgreSQL DOW: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+    // JS getDay() uses the same convention, so no conversion needed.
+    const dayOfWeek = new Date(availabilityDate + 'T00:00:00').getDay()
 
-    // Check availability_overrides for this specific date
+    // Check availability_overrides for this specific date (one-off exceptions)
     const { data: overrideRows, error: overrideErr } = await supabase
       .from('availability_overrides')
-      .select('cleaner_id')
+      .select('cleaner_id, is_available')
       .eq('date', availabilityDate)
-      .eq('is_available', true)
     if (overrideErr) throw overrideErr
 
-    // Check availability_slots for this day of week
-    const { data: slotRows, error: slotErr } = await supabase
+    const excludedOverrideIds = new Set<string>()
+    const availableOverrideIds = new Set<string>()
+    ;(overrideRows ?? []).forEach((row) => {
+      const cleanerId = row.cleaner_id as string
+      if (row.is_available) {
+        availableOverrideIds.add(cleanerId)
+      } else {
+        excludedOverrideIds.add(cleanerId)
+      }
+    })
+
+    let slotsQuery = supabase
       .from('availability_slots')
       .select('cleaner_id')
       .eq('day_of_week', dayOfWeek)
-      .eq('is_recurring', true)
+      .eq('active', true)
+
+    if (availabilityTime) {
+      slotsQuery = slotsQuery.lte('start_time', availabilityTime).gt('end_time', availabilityTime)
+    }
+
+    const { data: slotRows, error: slotErr } = await slotsQuery
     if (slotErr) throw slotErr
 
-    // Combine available cleaners from both sources
-    const availableIds = new Set<string>()
-    ;(overrideRows ?? []).forEach((r) => availableIds.add(r.cleaner_id as string))
+    const availableIds = new Set<string>(availableOverrideIds)
     ;(slotRows ?? []).forEach((r) => availableIds.add(r.cleaner_id as string))
+    excludedOverrideIds.forEach((id) => availableIds.delete(id))
 
     availableCleanerIds = Array.from(availableIds)
     if (availableCleanerIds.length === 0) return []

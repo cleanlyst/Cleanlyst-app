@@ -83,8 +83,13 @@
             <button class="btn-discard" :disabled="pageLoading || saving" @click="discardChanges">
               Discard Changes
             </button>
-            <button class="btn-save" :disabled="pageLoading || saving" @click="saveSchedule">
-              {{ saving ? 'Saving…' : 'Save Settings' }}
+            <button
+              class="btn-save"
+              :disabled="pageLoading || saving"
+              @click="saveSchedule"
+              :aria-busy="saving"
+            >
+              {{ saving ? 'Saving schedule…' : 'Save weekly schedule' }}
             </button>
           </div>
         </section>
@@ -99,8 +104,9 @@ import { useAuthStore } from '@/stores/auth'
 import { getCleanerAvailability, upsertAvailabilitySlots } from '@/services/availabilityService'
 
 const DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-// day_of_week stored as 1=Mon … 7=Sun (ISO week; adjust if schema differs)
-const DAY_NUMBERS = [1, 2, 3, 4, 5, 6, 7] as const
+// day_of_week uses PostgreSQL DOW: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+// UI order is Mon–Sun, so the mapping is: Mon=1, Tue=2, Wed=3, Thu=4, Fri=5, Sat=6, Sun=0
+const DAY_NUMBERS = [1, 2, 3, 4, 5, 6, 0] as const
 
 type DayOfWeek = (typeof DAY_NUMBERS)[number]
 
@@ -196,16 +202,30 @@ onMounted(async () => {
   }
 })
 
+function validateSchedule(): string | null {
+  for (const day of schedule) {
+    if (!day.active) continue
+    if (!day.start || !day.end) return `${day.label}: start and end times are required.`
+    if (day.end <= day.start) return `${day.label}: end time must be after start time.`
+  }
+  return null
+}
+
 async function saveSchedule() {
   if (!auth.userId) return
+  const validationError = validateSchedule()
+  if (validationError) {
+    saveError.value = validationError
+    return
+  }
   saving.value = true
   saveError.value = ''
   saveSuccess.value = false
   try {
     const rows = schedule.map((d) => ({
       day_of_week: d.dayOfWeek,
-      start_time: d.active ? d.start : DEFAULT_START,
-      end_time: d.active ? d.end : DEFAULT_END,
+      start_time: d.start,
+      end_time: d.end,
       active: d.active,
     }))
     await upsertAvailabilitySlots(auth.userId, rows)
@@ -215,7 +235,13 @@ async function saveSchedule() {
       saveSuccess.value = false
     }, 2500)
   } catch (e) {
-    saveError.value = e instanceof Error ? e.message : 'Failed to save schedule.'
+    if (e instanceof Error) {
+      saveError.value = e.message
+    } else if (e && typeof e === 'object' && 'message' in e) {
+      saveError.value = String((e as { message: unknown }).message)
+    } else {
+      saveError.value = 'Failed to save schedule.'
+    }
   } finally {
     saving.value = false
   }

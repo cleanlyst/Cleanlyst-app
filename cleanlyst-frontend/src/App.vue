@@ -40,8 +40,12 @@
                 <button v-if="unreadCount" type="button" @click="markAllRead">Mark all read</button>
               </div>
               <p v-if="notificationsLoading" class="notification-empty">Loading…</p>
-              <p v-else-if="notificationsError" class="notification-empty">{{ notificationsError }}</p>
-              <p v-else-if="notifications.length === 0" class="notification-empty">No notifications yet.</p>
+              <p v-else-if="notificationsError" class="notification-empty">
+                {{ notificationsError }}
+              </p>
+              <p v-else-if="notifications.length === 0" class="notification-empty">
+                No notifications yet.
+              </p>
               <template v-else>
                 <button
                   v-for="notification in notifications.slice(0, 6)"
@@ -288,6 +292,7 @@ async function handleSignOut() {
   display: flex;
   align-items: center;
   gap: 1rem;
+  margin-left: auto;
 }
 
 .notification-menu {

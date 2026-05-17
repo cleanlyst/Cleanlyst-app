@@ -27,7 +27,10 @@
         <!-- Service Address -->
         <section class="space-y-6">
           <h2 class="font-h2 text-h2 text-primary">Service Address</h2>
-          <div v-if="addressLine" class="p-6 bg-white border border-outline-variant rounded-lg flex items-start gap-4">
+          <div
+            v-if="addressLine"
+            class="p-6 bg-white border border-outline-variant rounded-lg flex items-start gap-4"
+          >
             <span class="material-symbols-outlined text-secondary mt-1">location_on</span>
             <div class="space-y-1">
               <p class="font-body text-body text-secondary">{{ addressLine }}</p>
@@ -38,17 +41,24 @@
             <router-link
               :to="{ name: 'CustomerPreferences' }"
               class="font-label-md text-label-md text-primary underline"
-            >Set your address in preferences →</router-link>
+              >Set your address in preferences →</router-link
+            >
           </div>
         </section>
 
         <!-- Service Selection -->
         <section class="space-y-6">
           <h2 class="font-h2 text-h2 text-primary">Service</h2>
-          <div v-if="servicesLoading" class="p-6 bg-surface-container-low border border-outline-variant rounded-lg">
+          <div
+            v-if="servicesLoading"
+            class="p-6 bg-surface-container-low border border-outline-variant rounded-lg"
+          >
             <p class="font-body text-body text-secondary">Loading services…</p>
           </div>
-          <div v-else-if="availableServices.length === 0" class="p-6 bg-surface-container-low border border-outline-variant rounded-lg">
+          <div
+            v-else-if="availableServices.length === 0"
+            class="p-6 bg-surface-container-low border border-outline-variant rounded-lg"
+          >
             <p class="font-body text-body text-secondary">
               This cleaner does not have any active services available for booking.
             </p>
@@ -67,7 +77,10 @@
                 {{ service.title }} · {{ formatPence(service.base_price_cents) }}
               </option>
             </select>
-            <p v-if="selectedService?.description" class="text-caption font-caption text-secondary mt-2">
+            <p
+              v-if="selectedService?.description"
+              class="text-caption font-caption text-secondary mt-2"
+            >
               {{ selectedService.description }}
             </p>
           </div>
@@ -102,7 +115,10 @@
             </div>
           </div>
           <div v-if="!selectedService?.duration_minutes">
-            <label for="booking-duration" class="block font-label-md text-label-md text-primary mb-2">
+            <label
+              for="booking-duration"
+              class="block font-label-md text-label-md text-primary mb-2"
+            >
               Duration
             </label>
             <select
@@ -160,14 +176,18 @@
           <div class="bg-white border border-outline-variant rounded-lg p-8 space-y-8">
             <h2 class="font-h2 text-h2 text-primary">Service Summary</h2>
             <div class="flex items-center gap-4">
-              <div class="h-16 w-16 rounded-full overflow-hidden bg-surface-container border border-outline-variant flex items-center justify-center">
+              <div
+                class="h-16 w-16 rounded-full overflow-hidden bg-surface-container border border-outline-variant flex items-center justify-center"
+              >
                 <img
                   v-if="cleaner?.profiles?.avatar_url"
                   class="w-full h-full object-cover"
                   :src="cleaner.profiles.avatar_url"
                   :alt="cleanerName"
                 />
-                <span v-else class="material-symbols-outlined text-on-surface-variant text-3xl">person</span>
+                <span v-else class="material-symbols-outlined text-on-surface-variant text-3xl"
+                  >person</span
+                >
               </div>
               <div>
                 <p class="font-label-md text-label-md text-primary">{{ cleanerName }}</p>
@@ -183,9 +203,13 @@
               <div class="flex justify-between items-center">
                 <div class="flex items-center gap-3">
                   <span class="material-symbols-outlined text-secondary">calendar_today</span>
-                  <span class="font-body text-body text-secondary">{{ bookingDate || 'Select date' }}</span>
+                  <span class="font-body text-body text-secondary">{{
+                    bookingDate || 'Select date'
+                  }}</span>
                 </div>
-                <span class="font-label-md text-label-md text-primary">{{ bookingTime || '—' }}</span>
+                <span class="font-label-md text-label-md text-primary">{{
+                  bookingTime || '—'
+                }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <div class="flex items-center gap-3">
@@ -194,7 +218,10 @@
                 </div>
                 <span class="font-label-md text-label-md text-primary">{{ durationLabel }}</span>
               </div>
-              <div v-if="selectedService || cleaner?.hourly_rate_cents" class="flex justify-between items-center">
+              <div
+                v-if="selectedService || cleaner?.hourly_rate_cents"
+                class="flex justify-between items-center"
+              >
                 <div class="flex items-center gap-3">
                   <span class="material-symbols-outlined text-secondary">cleaning_services</span>
                   <span class="font-body text-body text-secondary">
@@ -209,11 +236,15 @@
             <div class="pt-6 space-y-4 border-t border-surface-variant">
               <div class="flex justify-between items-center">
                 <span class="font-body text-body text-secondary">Subtotal</span>
-                <span class="font-body text-body text-primary">{{ formatPence(subtotalPence) }}</span>
+                <span class="font-body text-body text-primary">{{
+                  formatPence(subtotalPence)
+                }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="font-body text-body text-secondary">Service Fee (7%)</span>
-                <span class="font-body text-body text-primary">{{ formatPence(serviceFeePence) }}</span>
+                <span class="font-body text-body text-primary">{{
+                  formatPence(serviceFeePence)
+                }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="font-h2 text-h2 text-primary">Total</span>
@@ -231,12 +262,15 @@
               You won't be charged until the cleaner confirms.
             </p>
           </div>
-          <div class="bg-surface-container-low p-6 rounded-lg border border-outline-variant flex items-start gap-4">
+          <div
+            class="bg-surface-container-low p-6 rounded-lg border border-outline-variant flex items-start gap-4"
+          >
             <span class="material-symbols-outlined text-primary">shield</span>
             <div>
               <p class="font-label-md text-label-md text-primary">Cleanlyst Guarantee</p>
               <p class="text-caption font-caption text-secondary">
-                Your payment is held securely and only released 24 hours after the service is completed.
+                Your payment is held securely and only released 24 hours after the service is
+                completed.
               </p>
             </div>
           </div>
@@ -251,6 +285,10 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCleanerPublicProfile, type CleanerSearchResult } from '@/services/cleanerService'
 import { createBookingRequest } from '@/services/bookingService'
+import {
+  getCleanerAvailability,
+  getCleanerAvailabilityForDate,
+} from '@/services/availabilityService'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
@@ -287,8 +325,8 @@ const notes = ref('')
 
 const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-const cleanerName = computed(() =>
-  cleaner.value?.business_name ?? cleaner.value?.profiles?.full_name ?? 'Cleaner',
+const cleanerName = computed(
+  () => cleaner.value?.business_name ?? cleaner.value?.profiles?.full_name ?? 'Cleaner',
 )
 
 const selectedService = computed(
@@ -302,9 +340,10 @@ const addressLine = computed(() => {
   return parts.join(', ')
 })
 
-const subtotalPence = computed(() =>
-  selectedService.value?.base_price_cents
-    ?? (cleaner.value?.hourly_rate_cents ?? 0) * durationHours.value,
+const subtotalPence = computed(
+  () =>
+    selectedService.value?.base_price_cents ??
+    (cleaner.value?.hourly_rate_cents ?? 0) * durationHours.value,
 )
 
 const serviceFeePence = computed(() => Math.round(subtotalPence.value * 0.07))
@@ -312,7 +351,9 @@ const serviceFeePence = computed(() => Math.round(subtotalPence.value * 0.07))
 const totalPence = computed(() => subtotalPence.value + serviceFeePence.value)
 
 const hourlyRateLabel = computed(() =>
-  cleaner.value?.hourly_rate_cents ? `${formatPence(cleaner.value.hourly_rate_cents)}/hr` : 'Not set',
+  cleaner.value?.hourly_rate_cents
+    ? `${formatPence(cleaner.value.hourly_rate_cents)}/hr`
+    : 'Not set',
 )
 
 const durationLabel = computed(() => {
@@ -327,11 +368,11 @@ const durationLabel = computed(() => {
 
 const canSubmit = computed(
   () =>
-    !!bookingDate.value
-    && !!bookingTime.value
-    && !!cleaner.value
-    && !!selectedService.value
-    && !servicesLoading.value,
+    !!bookingDate.value &&
+    !!bookingTime.value &&
+    !!cleaner.value &&
+    !!selectedService.value &&
+    !servicesLoading.value,
 )
 
 onMounted(async () => {
@@ -343,10 +384,7 @@ onMounted(async () => {
     return
   }
   try {
-    const [cleanerData] = await Promise.all([
-      getCleanerPublicProfile(cleanerId),
-      prefsStore.load(),
-    ])
+    const [cleanerData] = await Promise.all([getCleanerPublicProfile(cleanerId), prefsStore.load()])
     if (!cleanerData) {
       loadError.value = 'Cleaner not found.'
     } else {
@@ -379,6 +417,51 @@ async function loadCleanerServices(cleanerId: string) {
   }
 }
 
+async function validateAvailability(
+  cleanerId: string,
+  date: string,
+  time: string,
+): Promise<string | null> {
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const slots = await getCleanerAvailabilityForDate(cleanerId, date)
+  if (slots.length === 0) {
+    const dayOfWeek = new Date(date + 'T00:00:00').getDay()
+    return `This cleaner is not available on ${dayNames[dayOfWeek]}. Please choose a different date.`
+  }
+
+  const matched = slots.some((slot) => {
+    const startHHMM = slot.start_time.slice(0, 5)
+    const endHHMM = slot.end_time.slice(0, 5)
+    return time >= startHHMM && time < endHHMM
+  })
+
+  if (!matched) {
+    const ranges = slots.map(
+      (slot) => `${slot.start_time.slice(0, 5)}–${slot.end_time.slice(0, 5)}`,
+    )
+    return `This cleaner is available during the following times: ${ranges.join(', ')}. Please choose a time inside one of these windows.`
+  }
+
+  return null
+}
+
+async function checkConflict(
+  cleanerId: string,
+  scheduledStart: Date,
+  scheduledEnd: Date,
+): Promise<boolean> {
+  const supabase = requireSupabase()
+  // Uses a security-definer RPC so customers can check cleaner conflicts
+  // without needing direct read access to all bookings rows.
+  const { data, error } = await supabase.rpc('cleaner_has_booking_conflict', {
+    p_cleaner_id: cleanerId,
+    p_start: scheduledStart.toISOString(),
+    p_end: scheduledEnd.toISOString(),
+  })
+  if (error) throw error
+  return data === true
+}
+
 async function submitBooking() {
   if (!canSubmit.value || !auth.userId || !cleaner.value || !selectedService.value) return
   submitting.value = true
@@ -388,10 +471,30 @@ async function submitBooking() {
     const scheduledStart = new Date(`${bookingDate.value}T${bookingTime.value}:00`)
     const durationMinutes = selectedService.value.duration_minutes ?? durationHours.value * 60
     const scheduledEnd = new Date(scheduledStart.getTime() + durationMinutes * 60 * 1000)
+
+    // Validate the cleaner is available at the requested time
+    const availabilityError = await validateAvailability(
+      cleaner.value.user_id,
+      bookingDate.value,
+      bookingTime.value,
+    )
+    if (availabilityError) {
+      submitError.value = availabilityError
+      return
+    }
+
+    // Check for a conflicting booking (best-effort; RLS limits visibility to own bookings)
+    const hasConflict = await checkConflict(cleaner.value.user_id, scheduledStart, scheduledEnd)
+    if (hasConflict) {
+      submitError.value =
+        'This cleaner is unavailable for your selected time. Please choose a different time or date.'
+      return
+    }
+
     const prefs = prefsStore.preferences
-    const location = [prefs?.address_line_1, prefs?.city, prefs?.postcode]
-      .filter(Boolean)
-      .join(', ') || 'Address not provided'
+    const location =
+      [prefs?.address_line_1, prefs?.city, prefs?.postcode].filter(Boolean).join(', ') ||
+      'Address not provided'
 
     await createBookingRequest({
       customerId: auth.userId,
@@ -419,12 +522,20 @@ async function submitBooking() {
 
 <style scoped>
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
   vertical-align: middle;
 }
 
 .star-filled {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 
 .loading-spinner {
@@ -436,5 +547,9 @@ async function submitBooking() {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>

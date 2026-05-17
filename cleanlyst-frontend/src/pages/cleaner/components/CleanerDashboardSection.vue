@@ -662,7 +662,7 @@ function relativeTime(value: string): string {
 
 .booking-card {
   padding: 1.5rem;
-  background-color: #ffffff;
+  background-color: var(--surface-container-lowest, #ffffff);
   border: 1px solid var(--outline-variant, #c4c7c7);
   display: flex;
   flex-direction: column;
@@ -674,24 +674,12 @@ function relativeTime(value: string): string {
   border-color: var(--primary, #000000);
 }
 
-@media (min-width: 768px) {
-  .booking-card {
-    flex-direction: row;
-  }
-}
-
 .booking-media {
   width: 100%;
   height: 8rem;
   background-color: var(--surface-container, #eeeeee);
   flex-shrink: 0;
   overflow: hidden;
-}
-
-@media (min-width: 768px) {
-  .booking-media {
-    width: 8rem;
-  }
 }
 
 .booking-img-placeholder {
@@ -762,12 +750,15 @@ function relativeTime(value: string): string {
 .booking-ctas {
   display: flex;
   gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--surface-variant, #e2e2e2);
   justify-content: flex-end;
 }
 
 @media (min-width: 768px) {
   .booking-ctas {
-    flex-direction: column;
+    align-items: stretch;
   }
 }
 

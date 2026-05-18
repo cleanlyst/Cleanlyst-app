@@ -18,7 +18,7 @@
               <p class="header-copy">Booking for {{ booking.customer?.full_name ?? 'Customer' }}</p>
             </div>
             <span :class="['status-pill', statusClass(booking.status)]">{{
-              formatStatusLabel(booking.status)
+              getBookingDisplayStatus(booking, 'cleaner')
             }}</span>
           </div>
 
@@ -57,9 +57,15 @@
 
           <div class="summary-meta-row">
             <div>
-              <span class="meta-label">Estimate</span>
+              <span class="meta-label">Duration</span>
               <p class="summary-text">
-                {{ booking.estimated_hours ? `${booking.estimated_hours}h` : 'Not set' }}
+                {{
+                  booking.duration_minutes
+                    ? `${(booking.duration_minutes / 60).toFixed(1)}h`
+                    : booking.estimated_hours
+                      ? `${booking.estimated_hours}h`
+                      : 'Not set'
+                }}
               </p>
             </div>
             <div>
@@ -95,16 +101,25 @@
               type="button"
               class="btn-decline"
               :disabled="actionLoading"
-              @click="declineBooking"
+              @click="declineModalOpen = true"
             >
-              {{ actionLoading && activeAction === 'decline' ? 'Declining…' : 'Decline booking' }}
+              Decline booking
+            </button>
+
+            <button
+              v-if="booking.status === 'accepted'"
+              type="button"
+              class="btn-secondary"
+              disabled
+            >
+              Waiting for customer payment
             </button>
 
             <button
               v-if="
-                booking.status === 'payment_authorized' &&
-                !isWithinStartWindow(booking) &&
-                !isAfterStart(booking)
+                (booking.status === 'paid_pending_start' ||
+                  booking.status === 'payment_authorized') &&
+                !isWithinStartWindow(booking)
               "
               type="button"
               class="btn-secondary"
@@ -113,13 +128,17 @@
               Available in {{ countdownText(booking.scheduled_start) }}
             </button>
             <button
-              v-if="booking.status === 'payment_authorized' && isWithinStartWindow(booking)"
+              v-if="
+                (booking.status === 'paid_pending_start' ||
+                  booking.status === 'payment_authorized') &&
+                isWithinStartWindow(booking)
+              "
               type="button"
               class="btn-start"
               :disabled="actionLoading"
               @click="startCleaning"
             >
-              {{ actionLoading && activeAction === 'start' ? 'Starting…' : 'Start Cleaning' }}
+              {{ actionLoading && activeAction === 'start' ? 'Starting…' : 'Start Job' }}
             </button>
             <button
               v-if="booking.status === 'in_progress'"
@@ -128,15 +147,7 @@
               :disabled="actionLoading"
               @click="endJob"
             >
-              {{ actionLoading && activeAction === 'end' ? 'Ending…' : 'End Job' }}
-            </button>
-            <button
-              v-if="booking.status === 'payment_authorized' && isAfterStart(booking)"
-              type="button"
-              class="btn-secondary"
-              disabled
-            >
-              Cleaning In Progress
+              {{ actionLoading && activeAction === 'end' ? 'Finishing…' : 'Finish Job' }}
             </button>
             <button
               v-if="
@@ -150,13 +161,20 @@
               Awaiting customer payment
             </button>
 
-            <button type="button" class="btn-action" @click="editModalOpen = true">
+            <button
+              v-if="canEditBooking(booking.status)"
+              type="button"
+              class="btn-action"
+              @click="editModalOpen = true"
+            >
               Edit booking
             </button>
           </div>
 
           <div class="action-summary">
-            <p class="summary-copy">Current status: {{ formatStatusLabel(booking.status) }}</p>
+            <p class="summary-copy">
+              Current status: {{ getBookingDisplayStatus(booking, 'cleaner') }}
+            </p>
             <p v-if="successMessage" class="success-text">{{ successMessage }}</p>
           </div>
         </section>
@@ -209,7 +227,24 @@
       </section>
 
       <AppModal v-model="editModalOpen" title="Edit booking details" size="md">
-        <div class="modal-field">
+        <div v-if="booking && booking.hourly_rate_cents != null">
+          <div class="modal-field">
+            <label class="modal-label" for="durationHours">Duration (hours)</label>
+            <input
+              id="durationHours"
+              type="number"
+              min="0.5"
+              step="0.5"
+              class="modal-input"
+              v-model.number="editDurationHours"
+            />
+          </div>
+          <p class="modal-hint">
+            New total:
+            {{ formatPence(Math.round(editDurationHours * booking.hourly_rate_cents * 1.07)) }}
+          </p>
+        </div>
+        <div v-else class="modal-field">
           <label class="modal-label" for="estimatedHours">Duration (hours)</label>
           <input
             id="estimatedHours"
@@ -236,6 +271,31 @@
           </button>
         </template>
       </AppModal>
+
+      <AppModal v-model="declineModalOpen" title="Decline booking" size="md">
+        <p class="modal-hint">Optionally provide a reason for the customer.</p>
+        <div class="modal-field">
+          <label class="modal-label" for="declineReasonInput">Reason (optional)</label>
+          <textarea
+            id="declineReasonInput"
+            rows="3"
+            class="modal-textarea"
+            v-model="declineReason"
+            placeholder="e.g. I'm unavailable at this time"
+          />
+        </div>
+        <template #footer>
+          <button type="button" class="btn-action" @click="declineModalOpen = false">Cancel</button>
+          <button
+            type="button"
+            class="btn-decline"
+            :disabled="actionLoading"
+            @click="confirmDecline"
+          >
+            {{ actionLoading && activeAction === 'decline' ? 'Declining…' : 'Confirm decline' }}
+          </button>
+        </template>
+      </AppModal>
     </main>
   </DashboardLayout>
 </template>
@@ -253,10 +313,13 @@ import type { RealtimeSubscription } from '@/lib/realtime'
 import {
   getBookingById,
   updateBookingDetails,
+  updateBookingDuration,
   transitionBookingState,
+  completeBooking,
   type BookingDetailRow,
 } from '@/services/bookingService'
-import { formatDate, formatDateTime, formatPence, formatStatus } from '@/utils/format'
+import { formatDate, formatDateTime, formatPence } from '@/utils/format'
+import { getBookingDisplayStatus } from '@/utils/bookingStatus'
 
 const auth = useAuthStore()
 const messagesStore = useMessagesStore()
@@ -269,7 +332,10 @@ const savingBooking = ref(false)
 const activeAction = ref<string | null>(null)
 const editModalOpen = ref(false)
 const editEstimatedHours = ref<number | null>(null)
+const editDurationHours = ref<number>(1)
 const editNotes = ref<string | null>(null)
+const declineModalOpen = ref(false)
+const declineReason = ref('')
 const messageDraft = ref('')
 const messageSending = ref(false)
 const errorMessage = ref('')
@@ -281,22 +347,19 @@ const paymentsChannel = ref<RealtimeSubscription | null>(null)
 
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
-function formatStatusLabel(value: string): string {
-  if (value === 'payment_authorized') return 'Paid'
-  if (value === 'estimate_proposed') return 'Accepted'
-  if (value === 'pending_request') return 'Incoming request'
-  if (value === 'completion_pending_customer') return 'Awaiting customer confirmation'
-  if (value === 'cleaner_declined') return 'Declined'
-  return formatStatus(value)
-}
-
 function statusClass(status: string) {
   if (status === 'completed') return 'status-pill--completed'
-  if (status === 'in_progress') return 'status-pill--active'
-  if (status === 'pending_request' || status === 'estimate_proposed') return 'status-pill--pending'
-  if (status === 'cancelled' || status === 'cleaner_declined' || status === 'refunded')
+  if (['in_progress', 'paid_pending_start', 'scheduled', 'payment_authorized'].includes(status))
+    return 'status-pill--active'
+  if (['pending_request', 'accepted', 'estimate_proposed'].includes(status))
+    return 'status-pill--pending'
+  if (['cancelled', 'declined', 'cleaner_declined', 'refunded'].includes(status))
     return 'status-pill--cancelled'
   return 'status-pill--active'
+}
+
+function canEditBooking(status: string): boolean {
+  return ['pending_request', 'accepted', 'estimate_proposed'].includes(status)
 }
 
 function orderTimeRange(start: string, end: string | null) {
@@ -319,17 +382,15 @@ function countdownText(startValue: string) {
   return `${remainingMinutes}m`
 }
 
-function isWithinStartWindow(currentBooking: BookingDetailRow) {
-  const start = new Date(currentBooking.scheduled_start).getTime()
-  const now = Date.now()
-  return (
-    currentBooking.status === 'payment_authorized' && now >= start - 30 * 60 * 1000 && now <= start
-  )
-}
-
-function isAfterStart(currentBooking: BookingDetailRow) {
-  const start = new Date(currentBooking.scheduled_start).getTime()
-  return Date.now() > start
+function isWithinStartWindow(currentBooking: BookingDetailRow): boolean {
+  const isStartableStatus =
+    currentBooking.status === 'paid_pending_start' || currentBooking.status === 'payment_authorized'
+  if (!isStartableStatus) return false
+  const start = new Date(currentBooking.scheduled_start)
+  const now = new Date()
+  const isToday = start.toDateString() === now.toDateString()
+  const isWithin30Min = now.getTime() >= start.getTime() - 30 * 60 * 1000
+  return isToday || isWithin30Min
 }
 
 async function refreshBooking() {
@@ -343,6 +404,9 @@ async function refreshBooking() {
     }
     booking.value = data
     editEstimatedHours.value = booking.value.estimated_hours
+    editDurationHours.value = booking.value.duration_minutes
+      ? booking.value.duration_minutes / 60
+      : 1
     editNotes.value = booking.value.notes
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load booking.'
@@ -358,7 +422,7 @@ async function acceptBooking() {
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await transitionBookingState(bookingId, 'estimate_proposed')
+    await transitionBookingState(bookingId, 'accepted')
     successMessage.value = 'Booking accepted'
     await refreshBooking()
   } catch (e) {
@@ -369,14 +433,16 @@ async function acceptBooking() {
   }
 }
 
-async function declineBooking() {
+async function confirmDecline() {
   if (!booking.value) return
   actionLoading.value = true
   activeAction.value = 'decline'
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await transitionBookingState(bookingId, 'cleaner_declined')
+    await transitionBookingState(bookingId, 'declined', declineReason.value || undefined)
+    declineModalOpen.value = false
+    declineReason.value = ''
     successMessage.value = 'Booking declined'
     await refreshBooking()
   } catch (e) {
@@ -412,11 +478,11 @@ async function endJob() {
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await transitionBookingState(bookingId, 'completion_pending_customer')
-    successMessage.value = 'Work completed. Awaiting customer confirmation.'
+    await completeBooking(bookingId)
+    successMessage.value = 'Job completed. Earnings credited.'
     await refreshBooking()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to end job.'
+    errorMessage.value = e instanceof Error ? e.message : 'Cannot complete job.'
   } finally {
     actionLoading.value = false
     activeAction.value = null
@@ -429,12 +495,16 @@ async function saveBookingDetails() {
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await updateBookingDetails(bookingId, {
-      notes: editNotes.value ?? null,
-      estimated_hours: editEstimatedHours.value ?? null,
-    })
+    if (booking.value.hourly_rate_cents != null) {
+      await updateBookingDuration(bookingId, Math.round(editDurationHours.value * 60))
+    } else {
+      await updateBookingDetails(bookingId, {
+        notes: editNotes.value ?? null,
+        estimated_hours: editEstimatedHours.value ?? null,
+      })
+    }
     editModalOpen.value = false
-    successMessage.value = 'Changes Saved'
+    successMessage.value = 'Changes saved'
     await refreshBooking()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to save booking.'
@@ -767,5 +837,11 @@ onBeforeUnmount(() => {
 
 .modal-textarea {
   min-height: 7rem;
+}
+
+.modal-hint {
+  font-size: 13px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0 0 1rem;
 }
 </style>

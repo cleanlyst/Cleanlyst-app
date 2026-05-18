@@ -8,6 +8,7 @@ export interface BookingListRow {
   scheduled_start: string
   scheduled_end?: string | null
   status: BookingStatus
+  payment_status?: string | null
   created_at: string
   quote_cents: number | null
   cleaner_id?: string | null
@@ -28,6 +29,8 @@ export interface BookingRequestInput {
   cleanerPayoutCents: number
   currency?: string
   notes?: string | null
+  durationMinutes?: number | null
+  hourlyRateCents?: number | null
 }
 
 function normalizeCustomerRelationship(raw: unknown): BookingListRow['customer'] {
@@ -69,6 +72,10 @@ function normalizeBookingListRows(data: unknown): BookingListRow[] {
           ? null
           : String(row.scheduled_end),
       status: row.status as BookingStatus,
+      payment_status:
+        row.payment_status === null || row.payment_status === undefined
+          ? null
+          : String(row.payment_status),
       created_at: String(row.created_at ?? ''),
       quote_cents:
         row.quote_cents === null || row.quote_cents === undefined ? null : Number(row.quote_cents),
@@ -83,7 +90,7 @@ function normalizeBookingListRows(data: unknown): BookingListRow[] {
 }
 
 const BOOKING_LIST_SELECT =
-  'id, service_title_snapshot, scheduled_start, scheduled_end, location_text, status, created_at, quote_cents, cleaner_id, customer:profiles!customer_id(id, full_name, avatar_url)'
+  'id, service_title_snapshot, scheduled_start, scheduled_end, location_text, status, payment_status, created_at, quote_cents, cleaner_id, customer:profiles!customer_id(id, full_name, avatar_url)'
 
 export async function getMyBookings() {
   const supabase = getSupabaseClient()
@@ -148,6 +155,9 @@ export async function createBookingRequest(input: BookingRequestInput): Promise<
       cleaner_payout_cents: input.cleanerPayoutCents,
       currency: input.currency ?? 'GBP',
       status: 'pending_request',
+      payment_status: 'unpaid',
+      duration_minutes: input.durationMinutes ?? null,
+      hourly_rate_cents: input.hourlyRateCents ?? null,
       notes: input.notes ?? null,
     })
     .select('id')
@@ -181,8 +191,13 @@ export interface BookingDetailRow extends BookingListRow {
   customer_id: string
   scheduled_end: string | null
   started_at?: string | null
+  paid_at?: string | null
   notes: string | null
   estimated_hours: number | null
+  duration_minutes: number | null
+  hourly_rate_cents: number | null
+  decline_reason?: string | null
+  booking_edit_note?: string | null
   cleaner_payout_cents: number | null
   currency?: string | null
   payments?: Array<{ status: string; amount_cents: number | null; captured_at: string | null }>
@@ -234,11 +249,29 @@ function normalizeBookingDetailRow(raw: unknown): BookingDetailRow | null {
         : String(row.scheduled_end),
     started_at:
       row.started_at === null || row.started_at === undefined ? null : String(row.started_at),
+    paid_at:
+      row.paid_at === null || row.paid_at === undefined ? null : String(row.paid_at),
     notes: row.notes === null || row.notes === undefined ? null : String(row.notes),
     estimated_hours:
       row.estimated_hours === null || row.estimated_hours === undefined
         ? null
         : Number(row.estimated_hours),
+    duration_minutes:
+      row.duration_minutes === null || row.duration_minutes === undefined
+        ? null
+        : Number(row.duration_minutes),
+    hourly_rate_cents:
+      row.hourly_rate_cents === null || row.hourly_rate_cents === undefined
+        ? null
+        : Number(row.hourly_rate_cents),
+    decline_reason:
+      row.decline_reason === null || row.decline_reason === undefined
+        ? null
+        : String(row.decline_reason),
+    booking_edit_note:
+      row.booking_edit_note === null || row.booking_edit_note === undefined
+        ? null
+        : String(row.booking_edit_note),
     cleaner_payout_cents:
       row.cleaner_payout_cents === null || row.cleaner_payout_cents === undefined
         ? null
@@ -289,6 +322,37 @@ export async function updateBookingDetails(
   return booking
 }
 
-export async function completeBooking(bookingId: string) {
-  return transitionBookingState(bookingId, 'completed')
+export async function completeBooking(bookingId: string): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('complete_booking', { p_booking_id: bookingId })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to complete booking.')
+  return booking
+}
+
+export async function updateBookingDuration(
+  bookingId: string,
+  durationMinutes: number,
+): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('update_booking_duration', {
+    p_booking_id: bookingId,
+    p_duration_minutes: durationMinutes,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to update booking duration.')
+  return booking
+}
+
+export async function processBookingPayment(bookingId: string): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('process_booking_payment', {
+    p_booking_id: bookingId,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to process payment.')
+  return booking
 }

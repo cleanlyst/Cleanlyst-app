@@ -107,7 +107,9 @@
                     {{ b.location_text }}
                   </p>
                 </div>
-                <span class="status-pill status-pill--active">{{ formatStatus(b.status) }}</span>
+                <span class="status-pill status-pill--active">{{
+                  getBookingDisplayStatus(b, 'cleaner')
+                }}</span>
               </div>
               <div class="booking-meta">
                 <div class="booking-meta-item">
@@ -123,7 +125,7 @@
                 type="button"
                 @click="markCompleted(b.id)"
               >
-                Mark Complete
+                Finish Job
               </button>
               <router-link
                 :to="{ name: 'CleanerBookingDetails', params: { bookingId: b.id } }"
@@ -188,6 +190,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { PropType } from 'vue'
+import { getBookingDisplayStatus } from '@/utils/bookingStatus'
 
 interface BookingEntry {
   id: string
@@ -195,6 +198,7 @@ interface BookingEntry {
   scheduled_start: string
   location_text: string
   status: string
+  payment_status?: string | null
 }
 
 interface BookingTotals {
@@ -234,6 +238,8 @@ const props = defineProps({
 })
 
 const UPCOMING_STATUSES = [
+  'accepted',
+  'paid_pending_start',
   'estimate_proposed',
   'awaiting_customer_payment',
   'payment_authorized',
@@ -241,7 +247,14 @@ const UPCOMING_STATUSES = [
   'completion_pending_customer',
 ]
 
-const PAST_STATUSES = ['completed', 'cleaner_declined', 'cancelled', 'disputed', 'refunded']
+const PAST_STATUSES = [
+  'completed',
+  'declined',
+  'cleaner_declined',
+  'cancelled',
+  'disputed',
+  'refunded',
+]
 
 const pendingBookings = computed(() => props.bookings.filter((b) => b.status === 'pending_request'))
 
@@ -253,7 +266,7 @@ const pastBookings = computed(() => props.bookings.filter((b) => PAST_STATUSES.i
 
 function statusClass(status: string): string {
   if (status === 'completed') return 'status-pill--completed'
-  if (['cleaner_declined', 'cancelled', 'disputed', 'refunded'].includes(status))
+  if (['declined', 'cleaner_declined', 'cancelled', 'disputed', 'refunded'].includes(status))
     return 'status-pill--cancelled'
   if (UPCOMING_STATUSES.includes(status)) return 'status-pill--active'
   return ''

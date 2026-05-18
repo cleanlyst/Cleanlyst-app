@@ -507,6 +507,8 @@ async function submitBooking() {
       cleanerPayoutCents: subtotalPence.value,
       currency: cleaner.value.currency,
       notes: notes.value || null,
+      durationMinutes,
+      hourlyRateCents: cleaner.value.hourly_rate_cents ?? null,
     })
     router.push({ name: 'CustomerBookings' })
   } catch (e) {

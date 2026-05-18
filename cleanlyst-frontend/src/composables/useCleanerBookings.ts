@@ -13,6 +13,8 @@ export function useCleanerBookings() {
     pending: bookings.value.filter((b) => b.status === 'pending_request').length,
     accepted: bookings.value.filter((b) =>
       [
+        'accepted',
+        'paid_pending_start',
         'estimate_proposed',
         'awaiting_customer_payment',
         'payment_authorized',

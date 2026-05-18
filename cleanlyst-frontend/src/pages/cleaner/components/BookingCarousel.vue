@@ -40,15 +40,8 @@
     </div>
 
     <div v-else class="carousel-viewport" aria-live="polite">
-      <div
-        class="carousel-track"
-        :style="{ transform: `translateX(-${currentIdx * 100}%)` }"
-      >
-        <div
-          v-for="b in slides"
-          :key="b.id"
-          class="carousel-slide"
-        >
+      <div class="carousel-track" :style="{ transform: `translateX(-${currentIdx * 100}%)` }">
+        <div v-for="b in slides" :key="b.id" class="carousel-slide">
           <div class="booking-card">
             <div class="booking-img-placeholder">
               <span class="material-symbols-outlined placeholder-icon">home</span>
@@ -57,11 +50,13 @@
             <div class="booking-body">
               <div class="booking-title-row">
                 <div class="booking-title-wrap">
-                  <h3 class="booking-title">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h3>
+                  <h3 class="booking-title">
+                    {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
+                  </h3>
                   <p class="booking-address">{{ b.location_text }}</p>
                 </div>
                 <span :class="['status-badge', statusBadgeClass(b.status)]">
-                  {{ statusLabel(b.status) }}
+                  {{ getBookingDisplayStatus(b, 'cleaner') }}
                 </span>
               </div>
 
@@ -80,9 +75,32 @@
                 </div>
               </div>
 
-              <div v-if="b.status === 'payment_authorized' && !isWithinStartWindow(b)" class="countdown-banner">
+              <div v-if="b.status === 'accepted'" class="countdown-banner">
+                <span class="material-symbols-outlined">payments</span>
+                Waiting for customer payment
+              </div>
+
+              <div
+                v-if="
+                  (b.status === 'paid_pending_start' || b.status === 'payment_authorized') &&
+                  !isWithinStartWindow(b)
+                "
+                class="countdown-banner"
+              >
                 <span class="material-symbols-outlined">timer</span>
                 Available in {{ countdownText(b.scheduled_start) }}
+              </div>
+
+              <div
+                v-if="
+                  (b.status === 'paid_pending_start' || b.status === 'payment_authorized') &&
+                  isWithinStartWindow(b)
+                "
+                class="in-progress-banner"
+                style="background: #1565c0"
+              >
+                <span class="material-symbols-outlined">payments</span>
+                Paid – ready to start
               </div>
 
               <div v-if="b.status === 'in_progress'" class="in-progress-banner">
@@ -112,7 +130,12 @@
                 </button>
               </template>
 
-              <template v-else-if="b.status === 'payment_authorized' && isWithinStartWindow(b)">
+              <template
+                v-else-if="
+                  (b.status === 'paid_pending_start' || b.status === 'payment_authorized') &&
+                  isWithinStartWindow(b)
+                "
+              >
                 <button
                   class="btn-primary"
                   type="button"
@@ -120,7 +143,7 @@
                   @click="emit('start', b.id)"
                 >
                   <span v-if="loadingId === b.id" class="btn-spinner"></span>
-                  <span v-else>Start Cleaning</span>
+                  <span v-else>Start Job</span>
                 </button>
               </template>
 
@@ -132,7 +155,7 @@
                   @click="emit('end', b.id)"
                 >
                   <span v-if="loadingId === b.id" class="btn-spinner"></span>
-                  <span v-else>End Job</span>
+                  <span v-else>Finish Job</span>
                 </button>
               </template>
 
@@ -154,6 +177,7 @@
 import { computed, ref } from 'vue'
 import type { PropType } from 'vue'
 import { formatPence } from '@/utils/format'
+import { getBookingDisplayStatus } from '@/utils/bookingStatus'
 
 interface CarouselBooking {
   id: string
@@ -161,12 +185,15 @@ interface CarouselBooking {
   scheduled_start: string
   location_text: string
   status: string
+  payment_status?: string | null
   quote_cents?: number | null
   customer?: { id: string; full_name: string; avatar_url: string | null } | null
 }
 
 const ACTIVE_STATUSES = [
   'pending_request',
+  'accepted',
+  'paid_pending_start',
   'estimate_proposed',
   'awaiting_customer_payment',
   'payment_authorized',
@@ -205,9 +232,13 @@ function next() {
 }
 
 function isWithinStartWindow(b: CarouselBooking): boolean {
-  const start = new Date(b.scheduled_start).getTime()
-  const now = Date.now()
-  return now >= start - 30 * 60 * 1000
+  const isStartableStatus = b.status === 'paid_pending_start' || b.status === 'payment_authorized'
+  if (!isStartableStatus) return false
+  const start = new Date(b.scheduled_start)
+  const now = new Date()
+  const isToday = start.toDateString() === now.toDateString()
+  const isWithin30Min = now.getTime() >= start.getTime() - 30 * 60 * 1000
+  return isToday || isWithin30Min
 }
 
 function countdownText(scheduledStart: string): string {
@@ -227,20 +258,9 @@ function formatDate(value: string): string {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(d)
 }
 
-function statusLabel(status: string): string {
-  const map: Record<string, string> = {
-    pending_request: 'Request',
-    estimate_proposed: 'Estimate Sent',
-    awaiting_customer_payment: 'Awaiting Payment',
-    payment_authorized: 'Confirmed',
-    in_progress: 'In Progress',
-    completion_pending_customer: 'Pending Review',
-  }
-  return map[status] ?? status
-}
-
 function statusBadgeClass(status: string): string {
-  if (status === 'in_progress') return 'badge--active'
+  if (['in_progress', 'paid_pending_start', 'scheduled', 'payment_authorized'].includes(status))
+    return 'badge--active'
   if (status === 'pending_request') return 'badge--pending'
   return 'badge--default'
 }
@@ -248,7 +268,11 @@ function statusBadgeClass(status: string): string {
 
 <style scoped>
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -351,7 +375,9 @@ function statusBadgeClass(status: string): string {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-text {

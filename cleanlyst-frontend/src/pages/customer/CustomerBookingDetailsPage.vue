@@ -19,7 +19,7 @@
               <p class="header-copy">Your booking reference</p>
             </div>
             <span :class="['status-pill', statusClass(booking.status)]">
-              {{ statusLabel(booking.status) }}
+              {{ getBookingDisplayStatus(booking, 'customer') }}
             </span>
           </div>
 
@@ -55,9 +55,20 @@
             <div>
               <span class="meta-label">Duration</span>
               <p class="summary-text">
-                {{ booking.estimated_hours ? `${booking.estimated_hours}h` : 'TBC' }}
+                {{
+                  booking.duration_minutes
+                    ? `${(booking.duration_minutes / 60).toFixed(1)}h`
+                    : booking.estimated_hours
+                      ? `${booking.estimated_hours}h`
+                      : 'TBC'
+                }}
               </p>
             </div>
+          </div>
+
+          <div v-if="booking.booking_edit_note" class="edit-note-banner">
+            <span class="material-symbols-outlined">info</span>
+            {{ booking.booking_edit_note }}
           </div>
         </section>
 
@@ -68,6 +79,16 @@
           </div>
 
           <div class="action-group">
+            <button
+              v-if="booking.payment_status === 'unpaid'"
+              type="button"
+              class="btn-primary"
+              @click="payModalOpen = true"
+            >
+              Make Payment
+            </button>
+
+            <!-- Legacy: pre-new-flow bookings that still require customer confirmation -->
             <button
               v-if="booking.status === 'completion_pending_customer'"
               type="button"
@@ -93,8 +114,10 @@
             <div
               v-if="
                 !canCancel &&
+                booking.status !== 'accepted' &&
                 booking.status !== 'completion_pending_customer' &&
-                !isTerminal(booking.status)
+                !isTerminal(booking.status) &&
+                statusInfo(booking.status)
               "
               class="status-info"
             >
@@ -104,7 +127,7 @@
           </div>
 
           <div class="action-footer">
-            <p class="footer-copy">Status: {{ statusLabel(booking.status) }}</p>
+            <p class="footer-copy">Status: {{ getBookingDisplayStatus(booking, 'customer') }}</p>
             <p v-if="successMessage" class="success-text">{{ successMessage }}</p>
           </div>
 
@@ -113,6 +136,45 @@
             Back to Dashboard
           </router-link>
         </section>
+      </div>
+
+      <!-- Payment modal -->
+      <div v-if="payModalOpen" class="modal-backdrop" @click.self="payModalOpen = false">
+        <div class="modal-box">
+          <div class="modal-header">
+            <h2 class="modal-title">Confirm Payment</h2>
+            <button class="modal-close" type="button" @click="payModalOpen = false">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p class="modal-desc">
+              You are about to pay
+              <strong>{{
+                booking && booking.quote_cents != null
+                  ? formatPence(booking.quote_cents, booking.currency ?? 'GBP')
+                  : '—'
+              }}</strong>
+              for <strong>{{ booking?.service_title_snapshot ?? 'Cleaning Booking' }}</strong
+              >.
+            </p>
+            <p v-if="booking?.booking_edit_note" class="modal-note">
+              {{ booking.booking_edit_note }}
+            </p>
+            <p v-if="errorMessage" class="modal-error">{{ errorMessage }}</p>
+            <div class="modal-actions">
+              <button
+                class="btn-primary modal-btn"
+                type="button"
+                :disabled="paymentProcessing"
+                @click="confirmPayment"
+              >
+                {{ paymentProcessing ? 'Processing…' : 'Confirm & Pay' }}
+              </button>
+              <button class="btn-cancel" type="button" @click="payModalOpen = false">Cancel</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Chat Panel -->
@@ -186,9 +248,11 @@ import { getSupabaseClient } from '@/services/supabaseClient'
 import {
   getBookingById,
   transitionBookingState,
+  processBookingPayment,
   type BookingDetailRow,
 } from '@/services/bookingService'
 import { formatDate, formatDateTime, formatPence } from '@/utils/format'
+import { getBookingDisplayStatus } from '@/utils/bookingStatus'
 import { cancelBooking as cancelBookingRequest } from '@/services/bookingService'
 
 const auth = useAuthStore()
@@ -200,6 +264,8 @@ const booking = ref<BookingDetailRow | null>(null)
 const loading = ref(true)
 const actionLoading = ref(false)
 const activeAction = ref<string | null>(null)
+const payModalOpen = ref(false)
+const paymentProcessing = ref(false)
 const messageDraft = ref('')
 const messageSending = ref(false)
 const errorMessage = ref('')
@@ -211,32 +277,24 @@ const statusChannel = ref<RealtimeSubscription | null>(null)
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
 const canCancel = computed(() =>
-  ['pending_request', 'estimate_proposed'].includes(booking.value?.status ?? ''),
+  ['pending_request', 'accepted', 'estimate_proposed'].includes(booking.value?.status ?? ''),
 )
 
 function isTerminal(status: string): boolean {
-  return ['completed', 'cancelled', 'cleaner_declined', 'disputed', 'refunded'].includes(status)
-}
-
-function statusLabel(status: string): string {
-  const map: Record<string, string> = {
-    pending_request: 'Pending Approval',
-    estimate_proposed: 'Accepted',
-    awaiting_customer_payment: 'Awaiting Payment',
-    payment_authorized: 'Confirmed',
-    in_progress: 'In Progress',
-    completion_pending_customer: 'Awaiting Your Confirmation',
-    completed: 'Completed',
-    cancelled: 'Cancelled',
-    cleaner_declined: 'Declined',
-    disputed: 'Disputed',
-    refunded: 'Refunded',
-  }
-  return map[status] ?? status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  return [
+    'completed',
+    'cancelled',
+    'declined',
+    'cleaner_declined',
+    'disputed',
+    'refunded',
+  ].includes(status)
 }
 
 function statusInfo(status: string): string {
   const map: Record<string, string> = {
+    paid_pending_start: 'Payment confirmed. Your cleaner will start soon.',
+    scheduled: 'Your cleaner will start soon.',
     payment_authorized: 'Your cleaner will start soon.',
     in_progress: 'Cleaning is in progress.',
   }
@@ -245,8 +303,10 @@ function statusInfo(status: string): string {
 
 function statusClass(status: string): string {
   if (status === 'completed') return 'status-pill--completed'
-  if (['in_progress', 'payment_authorized'].includes(status)) return 'status-pill--active'
-  if (['pending_request', 'estimate_proposed'].includes(status)) return 'status-pill--pending'
+  if (['in_progress', 'paid_pending_start', 'scheduled', 'payment_authorized'].includes(status))
+    return 'status-pill--active'
+  if (['pending_request', 'accepted', 'estimate_proposed'].includes(status))
+    return 'status-pill--pending'
   if (['completion_pending_customer'].includes(status)) return 'status-pill--warning'
   return 'status-pill--cancelled'
 }
@@ -307,6 +367,23 @@ async function cancelBooking() {
   } finally {
     actionLoading.value = false
     activeAction.value = null
+  }
+}
+
+async function confirmPayment() {
+  if (!booking.value) return
+  paymentProcessing.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+  try {
+    await processBookingPayment(bookingId)
+    payModalOpen.value = false
+    successMessage.value = '✓ Payment successful! Your cleaner will start soon.'
+    await refreshBooking()
+  } catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : 'Failed to process payment.'
+  } finally {
+    paymentProcessing.value = false
   }
 }
 
@@ -795,5 +872,117 @@ onBeforeUnmount(() => {
 .message-actions .btn-primary {
   width: auto;
   padding: 0.5rem 1.25rem;
+}
+
+.edit-note-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 13px;
+  color: #1565c0;
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  padding: 0.75rem 1rem;
+  margin-top: 1.25rem;
+}
+
+.edit-note-banner .material-symbols-outlined {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Payment modal ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.modal-box {
+  background: #ffffff;
+  border-radius: 0.5rem;
+  width: 100%;
+  max-width: 28rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--outline-variant, #c4c7c7);
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--secondary, #5e5e5e);
+  display: flex;
+  padding: 0;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-desc {
+  font-size: 15px;
+  color: var(--primary, #000000);
+  margin: 0 0 1rem;
+  line-height: 1.6;
+}
+
+.modal-note {
+  font-size: 13px;
+  color: #1565c0;
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  padding: 0.625rem 0.875rem;
+  margin: 0 0 1rem;
+}
+
+.modal-error {
+  font-size: 13px;
+  color: #ba1a1a;
+  margin: 0 0 0.75rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.modal-btn {
+  flex: 1;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  background: transparent;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  border-radius: var(--radius, 0.25rem);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 200ms ease;
+}
+
+.btn-cancel:hover {
+  background: var(--surface-container, #eeeeee);
 }
 </style>

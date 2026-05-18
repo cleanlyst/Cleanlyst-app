@@ -18,6 +18,7 @@
           :loading="props.loading"
           :loading-id="props.actionLoadingId"
           @confirm-complete="props.confirmComplete"
+          @payment-done="emit('paymentDone', $event)"
         />
       </section>
 
@@ -105,6 +106,7 @@ export interface BookingWithCleaner {
   location_text: string
   scheduled_start: string
   status: string
+  payment_status?: string | null
   quote_cents: number | null
   cleaner_name: string | null
   cleaner_id: string | null
@@ -115,6 +117,8 @@ const router = useRouter()
 
 const UPCOMING_STATUSES = [
   'pending_request',
+  'accepted',
+  'paid_pending_start',
   'estimate_proposed',
   'awaiting_customer_payment',
   'payment_authorized',
@@ -122,11 +126,15 @@ const UPCOMING_STATUSES = [
   'completion_pending_customer',
 ]
 
-const PAST_STATUSES = ['completed', 'cleaner_declined', 'cancelled', 'disputed', 'refunded']
+const PAST_STATUSES = ['completed', 'declined', 'cleaner_declined', 'cancelled', 'disputed', 'refunded']
 
 const upcomingBookings = computed(() =>
   props.bookings.filter((b) => UPCOMING_STATUSES.includes(b.status)),
 )
+
+const emit = defineEmits<{
+  (e: 'paymentDone', id: string): void
+}>()
 
 const props = defineProps({
   bookings: { type: Array as PropType<BookingWithCleaner[]>, default: () => [] },
@@ -160,8 +168,8 @@ const nextCleanLabel = computed(() => {
 })
 
 function statusClass(status: string): string {
-  if (['pending_request', 'estimate_proposed'].includes(status)) return 'pill--pending'
-  if (UPCOMING_STATUSES.includes(status)) return 'pill--active'
+  if (['pending_request', 'accepted', 'estimate_proposed'].includes(status)) return 'pill--pending'
+  if (['paid_pending_start', 'scheduled', 'payment_authorized', 'in_progress', 'awaiting_customer_payment', 'completion_pending_customer'].includes(status)) return 'pill--active'
   if (status === 'completed') return 'pill--completed'
   return 'pill--cancelled'
 }

@@ -47,6 +47,7 @@ import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useCleanerBookings } from '@/composables/useCleanerBookings'
+import { completeBooking } from '@/services/bookingService'
 import { formatDateTime, formatStatus } from '@/utils/format'
 import { subscribeToTable, unsubscribe } from '@/lib/realtime'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
@@ -171,9 +172,7 @@ async function toggleAvailability() {
 async function acceptBooking(id: string) {
   actionLoadingId.value = id
   try {
-    const supabase = requireSupabase()
-    const { error } = await supabase.rpc('accept_booking', { p_booking_id: id })
-    if (error) throw error
+    await transition(id, 'accepted')
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to accept booking.'
@@ -185,7 +184,7 @@ async function acceptBooking(id: string) {
 async function declineBooking(id: string) {
   actionLoadingId.value = id
   try {
-    await transition(id, 'cleaner_declined')
+    await transition(id, 'declined')
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to decline booking.'
@@ -209,10 +208,10 @@ async function startBooking(id: string) {
 async function markCompleted(id: string) {
   actionLoadingId.value = id
   try {
-    await transition(id, 'completion_pending_customer')
+    await completeBooking(id)
     await loadBookings()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to mark booking completed.'
+    errorMessage.value = e instanceof Error ? e.message : 'Cannot complete job.'
   } finally {
     actionLoadingId.value = null
   }

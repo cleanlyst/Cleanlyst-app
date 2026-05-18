@@ -53,7 +53,7 @@
             </div>
           </div>
           <span class="status-pill" :class="statusClass(b.status)">{{
-            formatStatus(b.status)
+            getBookingDisplayStatus(b, 'customer')
           }}</span>
         </div>
         <div class="card-actions">
@@ -63,10 +63,28 @@
           >
             View Booking
           </router-link>
-          <button v-if="canCancel(b.status)" class="btn-danger" type="button" @click="props.cancelBooking(b.id)">
+          <button
+            v-if="showPayButton(b)"
+            type="button"
+            class="btn-primary-sm"
+            @click="openPayModal(b)"
+          >
+            Make Payment
+          </button>
+          <button
+            v-if="canCancel(b.status)"
+            class="btn-danger"
+            type="button"
+            @click="props.cancelBooking(b.id)"
+          >
             Cancel
           </button>
-          <button v-if="canConfirmComplete(b.status)" class="btn-success" type="button" @click="props.confirmComplete(b.id)">
+          <button
+            v-if="canConfirmComplete(b.status)"
+            class="btn-success"
+            type="button"
+            @click="props.confirmComplete(b.id)"
+          >
             Confirm Complete
           </button>
           <button
@@ -79,6 +97,70 @@
           </button>
         </div>
       </article>
+    </div>
+
+    <!-- Payment modal -->
+    <div v-if="payingBooking" class="modal-backdrop" @click.self="closePayModal">
+      <div class="modal-box">
+        <template v-if="!paySuccess">
+          <div class="modal-header">
+            <h2 class="modal-title">Booking Payment</h2>
+            <button
+              class="modal-close"
+              type="button"
+              :disabled="payProcessing"
+              @click="closePayModal"
+            >
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="pay-row">
+              <span class="pay-label">Service</span>
+              <span class="pay-val">{{
+                payingBooking.service_title_snapshot ?? 'Cleaning Booking'
+              }}</span>
+            </div>
+            <div class="pay-row">
+              <span class="pay-label">Cleaner</span>
+              <span class="pay-val">{{ payingBooking.cleaner_name ?? '—' }}</span>
+            </div>
+            <div class="pay-row pay-row--total">
+              <span class="pay-label">Amount</span>
+              <span class="pay-val pay-amount">{{
+                payingBooking.quote_cents ? formatPence(payingBooking.quote_cents) : '—'
+              }}</span>
+            </div>
+            <p v-if="payError" class="pay-error">{{ payError }}</p>
+            <div class="modal-actions">
+              <button
+                class="btn-pay-confirm"
+                type="button"
+                :disabled="payProcessing"
+                @click="confirmPayment"
+              >
+                <span v-if="payProcessing" class="btn-spinner"></span>
+                <span v-else>Confirm Payment</span>
+              </button>
+              <button
+                class="btn-pay-cancel"
+                type="button"
+                :disabled="payProcessing"
+                @click="closePayModal"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <div class="modal-success">
+            <span class="material-symbols-outlined success-check">check_circle</span>
+            <p class="success-title">Payment Successful</p>
+            <button class="btn-pay-confirm" type="button" @click="closePayModal">Done</button>
+          </div>
+        </template>
+      </div>
     </div>
 
     <!-- Review modal -->
@@ -99,7 +181,9 @@
               type="button"
               @click="reviewRating = n"
             >
-              <span class="material-symbols-outlined">{{ n <= reviewRating ? 'star' : 'star_border' }}</span>
+              <span class="material-symbols-outlined">{{
+                n <= reviewRating ? 'star' : 'star_border'
+              }}</span>
             </button>
           </div>
           <textarea
@@ -130,6 +214,9 @@
 import { ref } from 'vue'
 import type { PropType } from 'vue'
 import { createReview } from '@/services/reviewService'
+import { processBookingPayment } from '@/services/bookingService'
+import { formatPence } from '@/utils/format'
+import { getBookingDisplayStatus, isCustomerPaymentRequired } from '@/utils/bookingStatus'
 
 interface BookingSummary {
   id: string
@@ -137,6 +224,9 @@ interface BookingSummary {
   location_text: string
   scheduled_start: string
   status: string
+  payment_status?: string | null
+  quote_cents?: number | null
+  cleaner_name?: string | null
 }
 
 interface BookingTotals {
@@ -170,6 +260,48 @@ const reviewSubmitting = ref(false)
 const reviewError = ref('')
 const reviewedIds = ref<Set<string>>(new Set())
 
+// Payment modal state
+const payingBooking = ref<BookingSummary | null>(null)
+const payProcessing = ref(false)
+const paySuccess = ref(false)
+const payError = ref('')
+const optimisticPaidIds = ref(new Set<string>())
+
+function showPayButton(b: BookingSummary): boolean {
+  return isCustomerPaymentRequired(b) && !optimisticPaidIds.value.has(b.id)
+}
+
+function openPayModal(b: BookingSummary) {
+  if (optimisticPaidIds.value.has(b.id)) return
+  payingBooking.value = b
+  payProcessing.value = false
+  paySuccess.value = false
+  payError.value = ''
+}
+
+function closePayModal() {
+  if (payProcessing.value) return
+  payingBooking.value = null
+  paySuccess.value = false
+  payError.value = ''
+}
+
+async function confirmPayment() {
+  if (!payingBooking.value || payProcessing.value) return
+  const bookingId = payingBooking.value.id
+  payProcessing.value = true
+  payError.value = ''
+  try {
+    await processBookingPayment(bookingId)
+    optimisticPaidIds.value = new Set([...optimisticPaidIds.value, bookingId])
+    paySuccess.value = true
+  } catch (e) {
+    payError.value = e instanceof Error ? e.message : 'Payment failed. Please try again.'
+  } finally {
+    payProcessing.value = false
+  }
+}
+
 function openReview(bookingId: string) {
   reviewingBookingId.value = bookingId
   reviewRating.value = 5
@@ -186,7 +318,11 @@ async function submitReview() {
   reviewSubmitting.value = true
   reviewError.value = ''
   try {
-    await createReview(reviewingBookingId.value, reviewRating.value, reviewComment.value || undefined)
+    await createReview(
+      reviewingBookingId.value,
+      reviewRating.value,
+      reviewComment.value || undefined,
+    )
     reviewedIds.value = new Set([...reviewedIds.value, reviewingBookingId.value])
     closeReview()
   } catch (e) {
@@ -197,7 +333,7 @@ async function submitReview() {
 }
 
 function canCancel(status: string): boolean {
-  return ['pending_request', 'estimate_proposed'].includes(status)
+  return ['pending_request', 'accepted', 'estimate_proposed'].includes(status)
 }
 
 function canConfirmComplete(status: string): boolean {
@@ -210,15 +346,23 @@ function formatDate(value: string): string {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 
-function formatStatus(value: string): string {
-  return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-}
-
 function statusClass(status: string): string {
-  if (['pending_request', 'estimate_proposed'].includes(status)) return 'status-pill--pending'
-  if (['awaiting_customer_payment', 'payment_authorized', 'in_progress', 'completion_pending_customer'].includes(status)) return 'status-pill--active'
+  if (['pending_request', 'accepted', 'estimate_proposed'].includes(status))
+    return 'status-pill--pending'
+  if (
+    [
+      'paid_pending_start',
+      'scheduled',
+      'awaiting_customer_payment',
+      'payment_authorized',
+      'in_progress',
+      'completion_pending_customer',
+    ].includes(status)
+  )
+    return 'status-pill--active'
   if (status === 'completed') return 'status-pill--completed'
-  if (['cancelled', 'cleaner_declined', 'disputed', 'refunded'].includes(status)) return 'status-pill--cancelled'
+  if (['cancelled', 'declined', 'cleaner_declined', 'disputed', 'refunded'].includes(status))
+    return 'status-pill--cancelled'
   return ''
 }
 </script>
@@ -498,6 +642,26 @@ function statusClass(status: string): string {
   opacity: 0.85;
 }
 
+.btn-primary-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  background: var(--primary, #000000);
+  color: #ffffff;
+  border: 1px solid var(--primary, #000000);
+  border-radius: var(--radius, 0.25rem);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 200ms ease;
+}
+
+.btn-primary-sm:hover {
+  opacity: 0.85;
+}
+
 .btn-danger {
   display: inline-flex;
   align-items: center;
@@ -534,7 +698,9 @@ function statusClass(status: string): string {
   transition: background-color 200ms ease;
 }
 
-.btn-success:hover { background: #e8f5e9; }
+.btn-success:hover {
+  background: #e8f5e9;
+}
 
 .btn-outline {
   display: inline-flex;
@@ -552,7 +718,9 @@ function statusClass(status: string): string {
   transition: background-color 200ms ease;
 }
 
-.btn-outline:hover { background: var(--surface-container, #eeeeee); }
+.btn-outline:hover {
+  background: var(--surface-container, #eeeeee);
+}
 
 /* ── Review modal ── */
 .modal-backdrop {
@@ -598,7 +766,9 @@ function statusClass(status: string): string {
   padding: 0;
 }
 
-.modal-body { padding: 1.5rem; }
+.modal-body {
+  padding: 1.5rem;
+}
 
 .star-row {
   display: flex;
@@ -615,7 +785,9 @@ function statusClass(status: string): string {
   display: flex;
 }
 
-.star-btn .material-symbols-outlined { font-size: 2rem; }
+.star-btn .material-symbols-outlined {
+  font-size: 2rem;
+}
 
 .review-textarea {
   width: 100%;
@@ -630,7 +802,9 @@ function statusClass(status: string): string {
   margin-bottom: 0.5rem;
 }
 
-.review-textarea:focus { border-color: var(--primary, #000000); }
+.review-textarea:focus {
+  border-color: var(--primary, #000000);
+}
 
 .review-error {
   color: var(--error, #ba1a1a);
@@ -644,7 +818,9 @@ function statusClass(status: string): string {
   margin-top: 1rem;
 }
 
-.modal-btn { flex: 1; }
+.modal-btn {
+  flex: 1;
+}
 
 .btn-cancel {
   flex: 1;
@@ -658,7 +834,117 @@ function statusClass(status: string): string {
   transition: background-color 200ms ease;
 }
 
-.btn-cancel:hover { background: var(--surface-container, #eeeeee); }
+.btn-cancel:hover {
+  background: var(--surface-container, #eeeeee);
+}
+
+/* ── Payment modal ── */
+.pay-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid var(--surface-container, #eeeeee);
+}
+
+.pay-row--total {
+  border-bottom: none;
+  padding-top: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+.pay-label {
+  font-size: 13px;
+  color: var(--secondary, #5e5e5e);
+}
+.pay-val {
+  font-size: 13px;
+  font-weight: 500;
+}
+.pay-amount {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.pay-error {
+  color: var(--error, #ba1a1a);
+  font-size: 13px;
+  margin: 0.75rem 0 0;
+}
+
+.btn-pay-confirm {
+  flex: 1;
+  padding: 0.625rem 1.25rem;
+  background: var(--primary, #000000);
+  color: #ffffff;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: opacity 0.15s;
+}
+
+.btn-pay-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-pay-cancel {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  background: transparent;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-pay-cancel:hover {
+  background: var(--surface-container, #eeeeee);
+}
+.btn-pay-cancel:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.modal-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5rem 1.5rem;
+  gap: 1rem;
+  text-align: center;
+}
+
+.success-check {
+  font-size: 3rem;
+  color: #2e7d32;
+}
+.success-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.btn-spinner {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 @media (max-width: 768px) {
   .stats-row {

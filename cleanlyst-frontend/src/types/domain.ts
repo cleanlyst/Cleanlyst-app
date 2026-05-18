@@ -2,6 +2,10 @@ export type UserRole = 'customer' | 'cleaner_pending' | 'cleaner_active' | 'admi
 
 export type BookingStatus =
   | 'pending_request'
+  | 'accepted'
+  | 'declined'
+  | 'paid_pending_start'
+  | 'scheduled'
   | 'estimate_proposed'
   | 'awaiting_customer_payment'
   | 'payment_authorized'

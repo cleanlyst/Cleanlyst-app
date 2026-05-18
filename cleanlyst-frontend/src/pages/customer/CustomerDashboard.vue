@@ -7,6 +7,7 @@
       :actionLoadingId="actionLoadingId"
       :cancelBooking="cancelBooking"
       :confirmComplete="confirmComplete"
+      @payment-done="loadBookings"
     />
     <CustomerBookingsSection
       v-if="activeRouteName === 'CustomerBookings'"

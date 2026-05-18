@@ -161,8 +161,8 @@
                   <span
                     :class="[
                       'flex items-center gap-1.5 font-caption text-caption',
-                      tx.status === 'captured'
-                        ? 'text-secondary'
+                      tx.status === 'released'
+                        ? 'text-green-700'
                         : tx.status === 'refunded' || tx.status === 'failed'
                           ? 'text-red-600'
                           : 'text-secondary',
@@ -171,8 +171,8 @@
                     <span
                       :class="[
                         'w-1.5 h-1.5 rounded-full',
-                        tx.status === 'captured'
-                          ? 'bg-secondary'
+                        tx.status === 'released'
+                          ? 'bg-green-600'
                           : tx.status === 'refunded' || tx.status === 'failed'
                             ? 'bg-error'
                             : 'bg-outline',
@@ -214,11 +214,6 @@ interface PlatformFeeRow {
   platform_fee_cents: number | null
 }
 
-interface PayoutRow {
-  amount_cents: number | null
-  cleaner_id: string | null
-}
-
 interface Transaction {
   id: string
   amount_cents: number
@@ -252,35 +247,32 @@ async function loadMetrics() {
     const supabase = requireSupabase()
     const ytdStart = `${currentYear}-01-01T00:00:00Z`
 
-    const [capturedResult, platformFeeResult, payoutsResult] = await Promise.all([
+    const [paymentsResult, releasedFeesResult] = await Promise.all([
       supabase
         .from('payments')
         .select('amount_cents')
-        .eq('status', 'captured')
-        .gte('captured_at', ytdStart),
-      supabase.from('booking_financials').select('platform_fee_cents').gte('created_at', ytdStart),
+        .in('status', ['captured', 'released'])
+        .gte('created_at', ytdStart),
       supabase
-        .from('payouts')
-        .select('amount_cents, cleaner_id')
-        .in('status', ['pending', 'processing', 'released']),
+        .from('payments')
+        .select('platform_fee_cents, cleaner_payout_cents')
+        .eq('status', 'released')
+        .gte('created_at', ytdStart),
     ])
 
-    const captured = (capturedResult.data ?? []) as AmountRow[]
-    const revenueYtdPence = captured.reduce((s: number, r) => s + (r.amount_cents ?? 0), 0)
+    const allPayments = (paymentsResult.data ?? []) as AmountRow[]
+    const revenueYtdPence = allPayments.reduce((s: number, r) => s + (r.amount_cents ?? 0), 0)
 
-    const fees = (platformFeeResult.data ?? []) as PlatformFeeRow[]
-    const platformFeeYtdPence = fees.reduce((s: number, r) => s + (r.platform_fee_cents ?? 0), 0)
-
-    const payouts = (payoutsResult.data ?? []) as PayoutRow[]
-    const pendingPayoutPence = payouts.reduce((s: number, r) => s + (r.amount_cents ?? 0), 0)
-    const pendingPayoutCleaners = new Set(payouts.map((r) => r.cleaner_id)).size
+    const releasedFees = (releasedFeesResult.data ?? []) as Array<{ platform_fee_cents: number | null; cleaner_payout_cents: number | null }>
+    const platformFeeYtdPence = releasedFees.reduce((s: number, r) => s + (r.platform_fee_cents ?? 0), 0)
+    const pendingPayoutPence = releasedFees.reduce((s: number, r) => s + (r.cleaner_payout_cents ?? 0), 0)
 
     metrics.value = {
       revenueYtdPence,
-      revenueYtdCount: captured.length,
+      revenueYtdCount: allPayments.length,
       platformFeeYtdPence,
       pendingPayoutPence,
-      pendingPayoutCleaners,
+      pendingPayoutCleaners: 0,
     }
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load financial metrics.'
@@ -295,17 +287,18 @@ async function loadChart() {
     const supabase = requireSupabase()
     const { data, error } = await supabase
       .from('payments')
-      .select('amount_cents, captured_at')
-      .eq('status', 'captured')
-      .gte('captured_at', `${currentYear}-01-01T00:00:00Z`)
-      .lt('captured_at', `${currentYear + 1}-01-01T00:00:00Z`)
+      .select('amount_cents, captured_at, created_at')
+      .in('status', ['captured', 'released'])
+      .gte('created_at', `${currentYear}-01-01T00:00:00Z`)
+      .lt('created_at', `${currentYear + 1}-01-01T00:00:00Z`)
 
     if (error) throw error
 
     const monthly = Array(12).fill(0) as number[]
     for (const row of data ?? []) {
-      if (row.captured_at) {
-        const month = new Date(row.captured_at).getMonth()
+      const dateStr = row.captured_at ?? row.created_at
+      if (dateStr) {
+        const month = new Date(dateStr).getMonth()
         monthly[month] += row.amount_cents ?? 0
       }
     }
@@ -348,7 +341,8 @@ function shortId(id: string): string {
 
 function txStatusLabel(status: string): string {
   const map: Record<string, string> = {
-    captured: 'Complete',
+    captured: 'Paid',
+    released: 'Released',
     authorized: 'Authorized',
     unpaid: 'Unpaid',
     refunded: 'Refunded',

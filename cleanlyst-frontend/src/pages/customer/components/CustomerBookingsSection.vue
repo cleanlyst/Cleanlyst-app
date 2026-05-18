@@ -56,12 +56,15 @@
             formatStatus(b.status)
           }}</span>
         </div>
-        <div
-          v-if="canCancel(b.status) || canConfirmComplete(b.status) || (b.status === 'completed' && !reviewedIds.has(b.id))"
-          class="card-actions"
-        >
+        <div class="card-actions">
+          <router-link
+            :to="{ name: 'CustomerBookingDetails', params: { bookingId: b.id } }"
+            class="btn-outline"
+          >
+            View Booking
+          </router-link>
           <button v-if="canCancel(b.status)" class="btn-danger" type="button" @click="props.cancelBooking(b.id)">
-            Cancel Booking
+            Cancel
           </button>
           <button v-if="canConfirmComplete(b.status)" class="btn-success" type="button" @click="props.confirmComplete(b.id)">
             Confirm Complete

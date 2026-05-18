@@ -4,6 +4,7 @@
       v-if="activeRouteName === 'CustomerDashboard'"
       :bookings="bookings"
       :loading="loading"
+      :actionLoadingId="actionLoadingId"
       :cancelBooking="cancelBooking"
       :confirmComplete="confirmComplete"
     />
@@ -22,7 +23,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
@@ -30,6 +32,7 @@ import { useCustomerBookings } from '@/composables/useCustomerBookings'
 import { transitionBookingState } from '@/services/bookingService'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { customerDashboardLinks } from '@/pages/dasboardLinks'
+import { subscribeToTable, unsubscribe } from '@/lib/realtime'
 import CustomerDashboardSection from './components/CustomerDashboardSection.vue'
 import CustomerBookingsSection from './components/CustomerBookingsSection.vue'
 import CustomerPreferencesSection from './components/CustomerPreferencesSection.vue'
@@ -45,19 +48,35 @@ const {
   load,
   cancel,
 } = useCustomerBookings()
+const actionLoadingId = ref<string | null>(null)
+const realtimeChannel = ref<RealtimeChannel | null>(null)
 
 const activeRouteName = computed(() =>
   typeof route.name === 'string' ? route.name : 'CustomerDashboard',
 )
 
-onMounted(loadBookings)
+onMounted(async () => {
+  await loadBookings()
+  if (auth.userId && !realtimeChannel.value) {
+    realtimeChannel.value = subscribeToTable('customer-dashboard-bookings', {
+      table: 'bookings',
+      filter: `customer_id=eq.${auth.userId}`,
+      onData: () => loadBookings(),
+    })
+  }
+})
+
+onBeforeUnmount(() => unsubscribe(realtimeChannel.value))
 
 async function cancelBooking(id: string) {
+  actionLoadingId.value = id
   try {
     await cancel(id)
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to cancel booking.'
+  } finally {
+    actionLoadingId.value = null
   }
 }
 
@@ -71,11 +90,14 @@ async function loadBookings() {
 }
 
 async function confirmComplete(id: string) {
+  actionLoadingId.value = id
   try {
     await transitionBookingState(id, 'completed')
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to confirm completion.'
+  } finally {
+    actionLoadingId.value = null
   }
 }
 

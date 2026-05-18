@@ -13,78 +13,12 @@
 
     <div class="content-grid">
       <section class="main-col">
-        <div class="section-header">
-          <h2 class="section-title">Upcoming Bookings</h2>
-          <span class="booking-count-badge">{{ upcomingBookings.length }} SCHEDULED</span>
-        </div>
-
-        <div v-if="props.loading" class="loading-state">
-          <div class="loading-spinner"></div>
-          <p class="loading-text">Loading bookings…</p>
-        </div>
-
-        <div v-else-if="upcomingBookings.length === 0" class="empty-state">
-          <span class="material-symbols-outlined empty-icon">event_busy</span>
-          <p class="empty-title">No upcoming bookings</p>
-          <p class="empty-copy">
-            <router-link :to="{ name: 'BookCleaner' }" class="empty-link">Book a cleaner</router-link>
-            to get started.
-          </p>
-        </div>
-
-        <div v-else class="bookings-list">
-          <div v-for="b in upcomingBookings" :key="b.id" class="booking-card">
-            <div class="booking-inner">
-              <div class="booking-media">
-                <div class="booking-img-placeholder">
-                  <span class="material-symbols-outlined placeholder-icon">cleaning_services</span>
-                </div>
-              </div>
-              <div class="booking-body">
-                <div class="booking-title-row">
-                  <div>
-                    <h3 class="booking-title">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h3>
-                    <p class="booking-provider">{{ b.cleaner_name ?? 'Your cleaner' }}</p>
-                  </div>
-                  <span class="booking-price">{{ formatPence(b.quote_cents) }}</span>
-                </div>
-                <div class="booking-meta">
-                  <div class="booking-meta-item">
-                    <span class="material-symbols-outlined booking-meta-icon">calendar_today</span>
-                    <span class="booking-meta-text">{{ formatDate(b.scheduled_start) }}</span>
-                  </div>
-                  <div class="booking-meta-item">
-                    <span class="material-symbols-outlined booking-meta-icon">location_on</span>
-                    <span class="booking-meta-text">{{ b.location_text }}</span>
-                  </div>
-                  <div class="booking-meta-item">
-                    <span class="booking-meta-text status-inline" :class="statusClass(b.status)">
-                      {{ formatStatus(b.status) }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div class="booking-actions">
-                <button
-                  v-if="b.status === 'completion_pending_customer'"
-                  class="btn-icon btn-icon--success"
-                  title="Confirm job complete"
-                  @click="props.confirmComplete(b.id)"
-                >
-                  <span class="material-symbols-outlined">check_circle</span>
-                </button>
-                <button
-                  v-if="canCancel(b.status)"
-                  class="btn-icon btn-icon--danger"
-                  title="Cancel booking"
-                  @click="props.cancelBooking(b.id)"
-                >
-                  <span class="material-symbols-outlined">cancel</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <CustomerBookingCarousel
+          :bookings="props.bookings"
+          :loading="props.loading"
+          :loading-id="props.actionLoadingId"
+          @confirm-complete="props.confirmComplete"
+        />
       </section>
 
       <!-- Sidebar / Insights -->
@@ -142,7 +76,13 @@
           </div>
           <div class="past-footer">
             <span class="past-price">{{ formatPence(b.quote_cents) }}</span>
-            <button class="rebook-btn" @click="rebook(b)">Re-book</button>
+            <div class="past-actions">
+              <router-link
+                :to="{ name: 'CustomerBookingDetails', params: { bookingId: b.id } }"
+                class="view-btn"
+              >View</router-link>
+              <button class="rebook-btn" @click="rebook(b)">Re-book</button>
+            </div>
           </div>
         </div>
       </div>
@@ -156,6 +96,7 @@ import type { PropType } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { formatDate, formatPence, formatStatus } from '@/utils/format'
+import CustomerBookingCarousel from './CustomerBookingCarousel.vue'
 
 export interface BookingWithCleaner {
   id: string
@@ -182,9 +123,14 @@ const UPCOMING_STATUSES = [
 
 const PAST_STATUSES = ['completed', 'cleaner_declined', 'cancelled', 'disputed', 'refunded']
 
+const upcomingBookings = computed(() =>
+  props.bookings.filter((b) => UPCOMING_STATUSES.includes(b.status)),
+)
+
 const props = defineProps({
   bookings: { type: Array as PropType<BookingWithCleaner[]>, default: () => [] },
   loading: { type: Boolean, default: false },
+  actionLoadingId: { type: String as PropType<string | null>, default: null },
   cancelBooking: {
     type: Function as PropType<(id: string) => Promise<void>>,
     default: () => Promise.resolve(),
@@ -194,10 +140,6 @@ const props = defineProps({
     default: () => Promise.resolve(),
   },
 })
-
-const upcomingBookings = computed(() =>
-  props.bookings.filter((b) => UPCOMING_STATUSES.includes(b.status)),
-)
 
 const pastBookings = computed(() =>
   props.bookings.filter((b) => PAST_STATUSES.includes(b.status)),
@@ -688,6 +630,24 @@ function rebook(booking: BookingWithCleaner) {
 }
 
 .rebook-btn:hover { text-decoration: none; }
+
+.past-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.view-btn {
+  font-family: var(--font-caption);
+  font-size: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  color: var(--secondary, #5e5e5e);
+}
+
+.view-btn:hover { color: var(--primary, #000000); }
 
 /* ── Status colours ── */
 .pill--pending { background: #fff8e1; color: #e65100; border: 1px solid #ffcc80; }

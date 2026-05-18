@@ -104,9 +104,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
+import { subscribeToTable, unsubscribe } from '@/lib/realtime'
 
 interface BookingRecord {
   id: string
@@ -122,6 +124,7 @@ const totalEarningsCents = ref(0)
 const thisMonthEarningsCents = ref(0)
 const pendingPayoutCents = ref(0)
 const recentBookings = ref<BookingRecord[]>([])
+const realtimeChannel = ref<RealtimeChannel | null>(null)
 
 const currency = computed(() => auth.cleanerProfile?.currency ?? 'GBP')
 
@@ -187,13 +190,9 @@ function txStatusLabel(status: string): string {
   return map[status] ?? status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-onMounted(async () => {
+async function loadFinancials() {
   if (!auth.initialized) await auth.init()
-
-  if (!auth.userId) {
-    loading.value = false
-    return
-  }
+  if (!auth.userId) { loading.value = false; return }
 
   const supabase = requireSupabase()
   const now = new Date()
@@ -253,9 +252,22 @@ onMounted(async () => {
     0,
   )
   recentBookings.value = (recentResult.data ?? []) as BookingRecord[]
-
   loading.value = false
+}
+
+onMounted(async () => {
+  await loadFinancials()
+  if (auth.userId && !realtimeChannel.value) {
+    realtimeChannel.value = subscribeToTable('cleaner-financials-bookings', {
+      table: 'bookings',
+      event: 'UPDATE',
+      filter: `cleaner_id=eq.${auth.userId}`,
+      onData: () => loadFinancials(),
+    })
+  }
 })
+
+onBeforeUnmount(() => unsubscribe(realtimeChannel.value))
 </script>
 
 <style scoped>

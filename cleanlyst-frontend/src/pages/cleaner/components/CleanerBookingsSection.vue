@@ -73,6 +73,12 @@
               <button class="btn-decline" type="button" @click="declineBooking(b.id)">
                 Decline
               </button>
+              <router-link
+                :to="{ name: 'CleanerBookingDetails', params: { bookingId: b.id } }"
+                class="btn-view"
+              >
+                View
+              </router-link>
             </div>
           </article>
         </div>
@@ -110,10 +116,21 @@
                 </div>
               </div>
             </div>
-            <div v-if="b.status === 'in_progress'" class="booking-ctas">
-              <button class="btn-start" type="button" @click="markCompleted(b.id)">
+            <div class="booking-ctas">
+              <button
+                v-if="b.status === 'in_progress'"
+                class="btn-start"
+                type="button"
+                @click="markCompleted(b.id)"
+              >
                 Mark Complete
               </button>
+              <router-link
+                :to="{ name: 'CleanerBookingDetails', params: { bookingId: b.id } }"
+                class="btn-view"
+              >
+                View Booking
+              </router-link>
             </div>
           </article>
         </div>
@@ -151,6 +168,14 @@
                   <span class="material-symbols-outlined">calendar_today</span>
                   {{ formatDate(b.scheduled_start) }}
                 </div>
+              </div>
+              <div class="booking-ctas">
+                <router-link
+                  :to="{ name: 'CleanerBookingDetails', params: { bookingId: b.id } }"
+                  class="btn-view"
+                >
+                  View Booking
+                </router-link>
               </div>
             </div>
           </article>
@@ -585,5 +610,23 @@ function statusClass(status: string): string {
 
 .btn-decline:hover {
   background-color: #ffebee;
+}
+
+.btn-view {
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  color: var(--primary, #000000);
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s;
+}
+
+.btn-view:hover {
+  background-color: var(--surface-variant, #e2e2e2);
 }
 </style>

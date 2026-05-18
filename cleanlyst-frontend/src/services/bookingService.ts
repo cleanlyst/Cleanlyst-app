@@ -6,10 +6,12 @@ export interface BookingListRow {
   service_title_snapshot: string | null
   location_text: string
   scheduled_start: string
+  scheduled_end?: string | null
   status: BookingStatus
   created_at: string
   quote_cents: number | null
   cleaner_id?: string | null
+  customer?: { id: string; full_name: string; avatar_url: string | null } | null
 }
 
 export interface BookingRequestInput {
@@ -29,7 +31,7 @@ export interface BookingRequestInput {
 }
 
 const BOOKING_LIST_SELECT =
-  'id, service_title_snapshot, scheduled_start, location_text, status, created_at, quote_cents, cleaner_id'
+  'id, service_title_snapshot, scheduled_start, scheduled_end, location_text, status, created_at, quote_cents, cleaner_id, customer:profiles!customer_id(id, full_name, avatar_url)'
 
 export async function getMyBookings() {
   const supabase = getSupabaseClient()
@@ -68,7 +70,9 @@ export async function getCleanerBookings(cleanerId: string): Promise<BookingList
 
 export async function getBookingRequestsForCleaner() {
   const supabase = getSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) return []
 
   return getCleanerBookings(user.id)
@@ -119,4 +123,58 @@ export async function transitionBookingState(
 
 export function cancelBooking(bookingId: string, note?: string) {
   return transitionBookingState(bookingId, 'cancelled', note)
+}
+
+export interface BookingDetailRow extends BookingListRow {
+  customer_id: string
+  scheduled_end: string | null
+  started_at?: string | null
+  notes: string | null
+  estimated_hours: number | null
+  cleaner_payout_cents: number | null
+  currency?: string | null
+  payments?: Array<{ status: string; amount_cents: number | null; captured_at: string | null }>
+  customer?: { id: string; full_name: string; avatar_url: string | null }
+  booking_financials?: { cleaner_payout_cents: number | null; currency: string | null }
+}
+
+export async function getBookingById(bookingId: string): Promise<BookingDetailRow | null> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(
+      `*,
+      customer:profiles!customer_id(id, full_name, avatar_url),
+      payments(status, amount_cents, captured_at),
+      booking_financials(cleaner_payout_cents, currency)`,
+    )
+    .eq('id', bookingId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data as BookingDetailRow | null
+}
+
+export async function updateBookingDetails(
+  bookingId: string,
+  updates: { notes?: string | null; estimated_hours?: number | null },
+) {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase
+    .from('bookings')
+    .update({
+      notes: updates.notes ?? null,
+      estimated_hours: updates.estimated_hours ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', bookingId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as BookingDetailRow
+}
+
+export async function completeBooking(bookingId: string) {
+  return transitionBookingState(bookingId, 'completed')
 }

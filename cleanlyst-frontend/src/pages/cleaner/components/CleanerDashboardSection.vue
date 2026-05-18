@@ -72,142 +72,22 @@
       </div>
     </section>
 
-    <section class="content-grid">
-      <div class="bookings-col">
-        <div class="section-header">
-          <h2 class="section-title">Upcoming Bookings</h2>
-          <router-link :to="{ name: 'CleanerBookings' }" class="section-link">
-            View all
-          </router-link>
-        </div>
-
-        <div v-if="props.loading" class="loading-state">
-          <div class="loading-spinner"></div>
-          <p class="loading-text">Loading bookings…</p>
-        </div>
-
-        <div v-else-if="upcomingBookings.length === 0" class="empty-state">
-          <span class="material-symbols-outlined empty-icon">event_available</span>
-          <p class="empty-label">No upcoming bookings</p>
-          <p class="empty-desc">Accepted jobs will appear here.</p>
-        </div>
-
-        <div v-else class="bookings-list">
-          <div v-for="b in upcomingBookings.slice(0, 3)" :key="b.id" class="booking-card">
-            <div class="booking-media">
-              <div class="booking-img-placeholder">
-                <span class="material-symbols-outlined placeholder-icon">home</span>
-              </div>
-            </div>
-            <div class="booking-body">
-              <div class="booking-title-row">
-                <div>
-                  <h3 class="booking-title">
-                    {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
-                  </h3>
-                  <p class="booking-address">{{ b.location_text }}</p>
-                </div>
-                <span class="booking-time-badge">{{ relativeTime(b.scheduled_start) }}</span>
-              </div>
-              <div class="booking-meta">
-                <div class="booking-meta-item">
-                  <span class="material-symbols-outlined">schedule</span>
-                  {{ formatDate(b.scheduled_start) }}
-                </div>
-                <div v-if="b.quote_cents" class="booking-meta-item">
-                  <span class="material-symbols-outlined">payments</span>
-                  {{ formatPence(b.quote_cents) }}
-                </div>
-              </div>
-            </div>
-            <div class="booking-ctas">
-              <button
-                v-if="b.status === 'payment_authorized'"
-                class="btn-start"
-                type="button"
-                @click="props.startBooking(b.id)"
-              >
-                Start
-              </button>
-              <button
-                v-if="b.status === 'in_progress'"
-                class="btn-start"
-                type="button"
-                @click="props.markCompleted(b.id)"
-              >
-                Complete
-              </button>
-              <router-link :to="{ name: 'CleanerBookings' }" class="btn-action">
-                Details
-              </router-link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="route-col">
-        <div class="section-header">
-          <h2 class="section-title">Incoming Bookings</h2>
-          <router-link :to="{ name: 'CleanerBookings' }" class="section-link">
-            View all
-          </router-link>
-        </div>
-
-        <div v-if="props.loading" class="loading-state">
-          <div class="loading-spinner"></div>
-          <p class="loading-text">Loading…</p>
-        </div>
-
-        <div v-else-if="pendingBookings.length === 0" class="empty-state">
-          <span class="material-symbols-outlined empty-icon">inbox</span>
-          <p class="empty-label">No incoming requests</p>
-          <p class="empty-desc">New booking requests will appear here.</p>
-        </div>
-
-        <div v-else class="bookings-list">
-          <div v-for="b in pendingBookings.slice(0, 3)" :key="b.id" class="booking-card">
-            <div class="booking-media">
-              <div class="booking-img-placeholder">
-                <span class="material-symbols-outlined placeholder-icon">home</span>
-              </div>
-            </div>
-            <div class="booking-body">
-              <div class="booking-title-row">
-                <div>
-                  <h3 class="booking-title">
-                    {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
-                  </h3>
-                  <p class="booking-address">{{ b.location_text }}</p>
-                </div>
-                <span class="booking-time-badge">{{ relativeTime(b.scheduled_start) }}</span>
-              </div>
-              <div class="booking-meta">
-                <div class="booking-meta-item">
-                  <span class="material-symbols-outlined">schedule</span>
-                  {{ formatDate(b.scheduled_start) }}
-                </div>
-              </div>
-            </div>
-            <div class="booking-ctas">
-              <button class="btn-start" type="button" @click="props.acceptBooking(b.id)">
-                Accept
-              </button>
-              <button class="btn-action" type="button" @click="props.declineBooking(b.id)">
-                Decline
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <BookingCarousel
+      :bookings="props.bookings"
+      :loading="props.loading"
+      :loading-id="props.actionLoadingId"
+      @accept="props.acceptBooking"
+      @decline="props.declineBooking"
+      @start="props.startBooking"
+      @end="props.markCompleted"
+    />
   </main>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { PropType } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { formatPence } from '@/utils/format'
+import BookingCarousel from './BookingCarousel.vue'
 
 interface BookingEntry {
   id: string
@@ -216,17 +96,10 @@ interface BookingEntry {
   location_text: string
   status: string
   quote_cents?: number | null
+  customer?: { id: string; full_name: string; avatar_url: string | null } | null
 }
 
 const auth = useAuthStore()
-
-const UPCOMING_STATUSES = [
-  'estimate_proposed',
-  'awaiting_customer_payment',
-  'payment_authorized',
-  'in_progress',
-  'completion_pending_customer',
-]
 
 const props = defineProps({
   earningsToDate: { type: String, default: '—' },
@@ -238,6 +111,7 @@ const props = defineProps({
   errorMessage: { type: String, default: '' },
   loading: { type: Boolean, default: false },
   bookings: { type: Array as PropType<BookingEntry[]>, default: () => [] },
+  actionLoadingId: { type: String as PropType<string | null>, default: null },
   isAvailable: { type: Boolean, default: true },
   toggleLoading: { type: Boolean, default: false },
   toggleAvailability: {
@@ -261,31 +135,6 @@ const props = defineProps({
     default: () => Promise.resolve(),
   },
 })
-
-const upcomingBookings = computed(() =>
-  props.bookings.filter((b) => UPCOMING_STATUSES.includes(b.status)),
-)
-
-const pendingBookings = computed(() => props.bookings.filter((b) => b.status === 'pending_request'))
-
-function formatDate(value: string): string {
-  const date = new Date(value)
-  if (Number.isNaN(date.valueOf())) return '—'
-  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
-}
-
-function relativeTime(value: string): string {
-  const date = new Date(value)
-  if (Number.isNaN(date.valueOf())) return '—'
-  const diffMs = date.getTime() - Date.now()
-  const diffH = Math.round(diffMs / (1000 * 60 * 60))
-  const diffD = Math.round(diffMs / (1000 * 60 * 60 * 24))
-  if (diffH < 0) return 'In progress'
-  if (diffH < 1) return 'Soon'
-  if (diffH < 24) return `In ${diffH}h`
-  if (diffD === 1) return 'Tomorrow'
-  return `In ${diffD} days`
-}
 </script>
 
 <style scoped>

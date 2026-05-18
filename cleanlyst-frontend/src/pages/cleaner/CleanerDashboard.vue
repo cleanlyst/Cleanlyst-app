@@ -8,6 +8,7 @@
       :errorMessage="errorMessage"
       :loading="loading"
       :bookings="bookings"
+      :actionLoadingId="actionLoadingId"
       :isAvailable="isAvailable"
       :toggleLoading="toggleLoading"
       :toggleAvailability="toggleAvailability"
@@ -44,12 +45,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useCleanerBookings } from '@/composables/useCleanerBookings'
 import { formatDateTime, formatStatus } from '@/utils/format'
+import { subscribeToTable, unsubscribe } from '@/lib/realtime'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { cleanerDashboardLinks } from '@/pages/dasboardLinks'
 import CleanerDashboardSection from './components/CleanerDashboardSection.vue'
@@ -72,6 +75,8 @@ const {
 } = useCleanerBookings()
 const isAvailable = ref(true)
 const toggleLoading = ref(false)
+const actionLoadingId = ref<string | null>(null)
+const realtimeChannel = ref<RealtimeChannel | null>(null)
 const calendarDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const activeRouteName = computed(() =>
@@ -86,7 +91,18 @@ const ratingLabel = computed(() => {
 
 const earningsToDate = ref('—')
 
-onMounted(loadBookings)
+onMounted(async () => {
+  await loadBookings()
+  if (auth.userId && !realtimeChannel.value) {
+    realtimeChannel.value = subscribeToTable('cleaner-dashboard-bookings', {
+      table: 'bookings',
+      filter: `cleaner_id=eq.${auth.userId}`,
+      onData: () => loadBookings(),
+    })
+  }
+})
+
+onBeforeUnmount(() => unsubscribe(realtimeChannel.value))
 
 async function loadBookings() {
   loading.value = true
@@ -152,6 +168,7 @@ async function toggleAvailability() {
 }
 
 async function acceptBooking(id: string) {
+  actionLoadingId.value = id
   try {
     const supabase = requireSupabase()
     const { error } = await supabase.rpc('accept_booking', { p_booking_id: id })
@@ -159,33 +176,44 @@ async function acceptBooking(id: string) {
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to accept booking.'
+  } finally {
+    actionLoadingId.value = null
   }
 }
 
 async function declineBooking(id: string) {
+  actionLoadingId.value = id
   try {
     await transition(id, 'cleaner_declined')
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to decline booking.'
+  } finally {
+    actionLoadingId.value = null
   }
 }
 
 async function startBooking(id: string) {
+  actionLoadingId.value = id
   try {
     await transition(id, 'in_progress')
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to start booking.'
+  } finally {
+    actionLoadingId.value = null
   }
 }
 
 async function markCompleted(id: string) {
+  actionLoadingId.value = id
   try {
     await transition(id, 'completion_pending_customer')
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to mark booking completed.'
+  } finally {
+    actionLoadingId.value = null
   }
 }
 

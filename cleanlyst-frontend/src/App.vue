@@ -561,6 +561,9 @@ async function handleSignOut() {
   .app-mobile-menu {
     display: none;
   }
+  .text-xl.font-bold.tracking-tighter.text-zinc-900.dark\:text-zinc-50 {
+    margin-right: 4rem;
+  }
 }
 
 @media (min-width: 1024px) {

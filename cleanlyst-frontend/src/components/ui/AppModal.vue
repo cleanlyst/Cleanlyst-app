@@ -22,23 +22,28 @@
 
         <!-- Panel -->
         <div
-          :class="['relative w-full bg-surface-container-lowest rounded-lg border shadow-lg flex flex-col max-h-[90vh]', widthClass]"
+          :class="[
+            'relative w-full bg-surface-container-lowest rounded-lg border shadow-lg flex flex-col max-h-[90vh]',
+            widthClass,
+          ]"
         >
           <!-- Header -->
           <div
             v-if="title || $slots.header"
             class="flex items-center justify-between px-6 py-4 border-b border-outline-variant shrink-0"
           >
-            <h2 :id="titleId" class="text-base font-semibold text-on-surface">
+            <h6 :id="titleId" class="text-base font-semibold text-on-surface">
               <slot name="header">{{ title }}</slot>
-            </h2>
+            </h6>
             <button
               v-if="showClose"
               type="button"
               class="material-symbols-outlined text-xl text-on-surface-variant hover:text-on-surface transition-colors"
               aria-label="Close dialog"
               @click="emit('update:modelValue', false)"
-            >close</button>
+            >
+              close
+            </button>
           </div>
 
           <!-- Body -->

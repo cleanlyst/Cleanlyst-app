@@ -154,6 +154,12 @@ const router = createRouter({
       component: () => import('../pages/customer/CustomerDashboard.vue'),
     },
     {
+      path: '/customer/bookings/:bookingId',
+      name: 'CustomerBookingDetails',
+      meta: { title: 'Booking Details', requiresAuth: true, requiresRole: 'customer' },
+      component: () => import('../pages/customer/CustomerBookingDetailsPage.vue'),
+    },
+    {
       path: '/cleaner/dashboard',
       name: 'CleanerDashboard',
       meta: {
@@ -172,6 +178,16 @@ const router = createRouter({
         requiresRole: ['cleaner_pending', 'cleaner_active'],
       },
       component: () => import('../pages/cleaner/CleanerDashboard.vue'),
+    },
+    {
+      path: '/cleaner/bookings/:bookingId',
+      name: 'CleanerBookingDetails',
+      meta: {
+        title: 'Booking Details',
+        requiresAuth: true,
+        requiresRole: ['cleaner_pending', 'cleaner_active'],
+      },
+      component: () => import('../pages/cleaner/CleanerBookingDetailsPage.vue'),
     },
     {
       path: '/cleaner/dashboard/availability',

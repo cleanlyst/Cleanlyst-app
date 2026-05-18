@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import type { RealtimeChannel } from '@supabase/supabase-js'
+import type { RealtimeSubscription } from '@/lib/realtime'
 import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
@@ -40,16 +40,9 @@ import CustomerSettingsSection from './components/CustomerSettingsSection.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
-const {
-  bookings,
-  loading,
-  errorMessage,
-  bookingTotals,
-  load,
-  cancel,
-} = useCustomerBookings()
+const { bookings, loading, errorMessage, bookingTotals, load, cancel } = useCustomerBookings()
 const actionLoadingId = ref<string | null>(null)
-const realtimeChannel = ref<RealtimeChannel | null>(null)
+const realtimeChannel = ref<RealtimeSubscription | null>(null)
 
 const activeRouteName = computed(() =>
   typeof route.name === 'string' ? route.name : 'CustomerDashboard',

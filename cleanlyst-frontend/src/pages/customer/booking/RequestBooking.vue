@@ -285,10 +285,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCleanerPublicProfile, type CleanerSearchResult } from '@/services/cleanerService'
 import { createBookingRequest } from '@/services/bookingService'
-import {
-  getCleanerAvailability,
-  getCleanerAvailabilityForDate,
-} from '@/services/availabilityService'
+import { getCleanerAvailabilityForDate } from '@/services/availabilityService'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'

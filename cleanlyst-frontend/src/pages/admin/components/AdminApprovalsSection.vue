@@ -11,7 +11,10 @@
       <!-- Search + Filters -->
       <section class="mb-8 flex flex-col md:flex-row gap-4 items-center justify-between">
         <div class="relative w-full md:w-96">
-          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+          <span
+            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
+            >search</span
+          >
           <input
             v-model="searchQuery"
             class="w-full pl-10 pr-4 h-12 bg-surface-container-lowest border border-outline-variant rounded font-body text-body focus:border-primary focus:ring-0 outline-none"
@@ -48,14 +51,26 @@
       <p v-if="errorMessage" class="mb-4 text-caption text-red-600">{{ errorMessage }}</p>
 
       <!-- Table -->
-      <div class="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden">
+      <div
+        class="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden"
+      >
         <table class="w-full text-left border-collapse">
           <thead class="bg-surface-container-low border-b border-outline-variant">
             <tr>
-              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Cleaner Profile</th>
-              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">Location & Date</th>
-              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant hidden md:table-cell">Status</th>
-              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant text-right">Actions</th>
+              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">
+                Cleaner Profile
+              </th>
+              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant">
+                Location & Date
+              </th>
+              <th
+                class="px-6 py-4 font-label-md text-label-md text-on-surface-variant hidden md:table-cell"
+              >
+                Status
+              </th>
+              <th class="px-6 py-4 font-label-md text-label-md text-on-surface-variant text-right">
+                Actions
+              </th>
             </tr>
           </thead>
 
@@ -78,18 +93,26 @@
             >
               <td class="px-6 py-6">
                 <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant flex items-center justify-center">
+                  <div
+                    class="w-12 h-12 rounded-full overflow-hidden bg-surface-container-high border border-outline-variant flex items-center justify-center"
+                  >
                     <img
                       v-if="app.avatar_url"
                       :src="app.avatar_url"
                       :alt="app.full_name ?? ''"
                       class="w-full h-full object-cover"
                     />
-                    <span v-else class="material-symbols-outlined text-on-surface-variant">person</span>
+                    <span v-else class="material-symbols-outlined text-on-surface-variant"
+                      >person</span
+                    >
                   </div>
                   <div>
-                    <div class="font-body text-body text-on-surface">{{ app.full_name ?? '—' }}</div>
-                    <div class="font-caption text-caption text-on-surface-variant">{{ app.email ?? '—' }}</div>
+                    <div class="font-body text-body text-on-surface">
+                      {{ app.full_name ?? '—' }}
+                    </div>
+                    <div class="font-caption text-caption text-on-surface-variant">
+                      {{ app.email ?? '—' }}
+                    </div>
                   </div>
                 </div>
               </td>
@@ -122,7 +145,9 @@
         </table>
 
         <!-- Pagination -->
-        <div class="px-6 py-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between">
+        <div
+          class="px-6 py-4 bg-surface-container-low border-t border-outline-variant flex items-center justify-between"
+        >
           <span class="font-caption text-caption text-on-surface-variant">
             Showing {{ applications.length }} of {{ totalCount }} applications
           </span>
@@ -149,7 +174,9 @@
 
       <!-- Summary Insights -->
       <section class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="p-padding-card bg-surface-container-lowest border border-outline-variant rounded-lg">
+        <div
+          class="p-padding-card bg-surface-container-lowest border border-outline-variant rounded-lg"
+        >
           <div class="font-caption text-caption text-on-surface-variant mb-2">Pending Total</div>
           <div class="font-h1 text-h1 text-on-surface">
             <span v-if="loading" class="animate-pulse">—</span>
@@ -157,12 +184,16 @@
           </div>
         </div>
 
-        <div class="p-padding-card bg-surface-container-lowest border border-outline-variant rounded-lg">
+        <div
+          class="p-padding-card bg-surface-container-lowest border border-outline-variant rounded-lg"
+        >
           <div class="font-caption text-caption text-on-surface-variant mb-2">Submitted</div>
           <div class="font-h1 text-h1 text-on-surface">{{ submittedCount }}</div>
         </div>
 
-        <div class="p-padding-card bg-surface-container-lowest border border-outline-variant rounded-lg">
+        <div
+          class="p-padding-card bg-surface-container-lowest border border-outline-variant rounded-lg"
+        >
           <div class="font-caption text-caption text-on-surface-variant mb-2">Under Review</div>
           <div class="font-h1 text-h1 text-on-surface">{{ underReviewCount }}</div>
         </div>
@@ -191,7 +222,9 @@
           <div class="mb-4">
             <label for="review-notes" class="block font-label-md text-label-md mb-1">
               Notes
-              <span class="font-caption text-on-surface-variant ml-1">(required for rejection — min 10 chars)</span>
+              <span class="font-caption text-on-surface-variant ml-1"
+                >(required for rejection — min 10 chars)</span
+              >
             </label>
             <textarea
               id="review-notes"
@@ -239,6 +272,18 @@ import { requireSupabase } from '@/lib/supabase'
 import { reviewCleanerApplication } from '@/services/adminService'
 import { formatDate, formatStatus } from '@/utils/format'
 
+interface CleanerApplicationQueryRow {
+  id: string
+  status: string
+  submitted_at: string | null
+  updated_at: string
+  profiles?: {
+    full_name?: string | null
+    avatar_url?: string | null
+    city?: string | null
+  } | null
+}
+
 interface ApplicationRow {
   id: string
   status: string
@@ -273,7 +318,10 @@ onMounted(() => loadApplications())
 
 function onSearchInput() {
   clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => { page.value = 1; loadApplications() }, 350)
+  searchTimeout = setTimeout(() => {
+    page.value = 1
+    loadApplications()
+  }, 350)
 }
 
 async function loadApplications() {
@@ -286,9 +334,10 @@ async function loadApplications() {
       ? [statusFilter.value]
       : ['submitted', 'under_review', 'needs_info']
 
-    let q = supabase
+    const q = supabase
       .from('cleaner_applications')
-      .select(`
+      .select(
+        `
         id,
         status,
         submitted_at,
@@ -298,7 +347,9 @@ async function loadApplications() {
           avatar_url,
           city
         )
-      `, { count: 'exact' })
+      `,
+        { count: 'exact' },
+      )
       .in('status', statuses)
       .order('updated_at', { ascending: sortOrder.value === 'asc' })
       .range((page.value - 1) * pageSize, page.value * pageSize - 1)
@@ -306,29 +357,35 @@ async function loadApplications() {
     const { data, error, count } = await q
     if (error) throw error
 
-    applications.value = (data ?? []).map((row: any) => ({
-      id: row.id,
-      status: row.status,
-      submitted_at: row.submitted_at ?? null,
-      updated_at: row.updated_at,
-      full_name: row.profiles?.full_name ?? null,
-      email: null,
-      avatar_url: row.profiles?.avatar_url ?? null,
-      city: row.profiles?.city ?? null,
-    })).filter((app: ApplicationRow) => {
-      if (!searchQuery.value) return true
-      const q = searchQuery.value.toLowerCase()
-      return (
-        app.full_name?.toLowerCase().includes(q) ||
-        app.city?.toLowerCase().includes(q)
-      )
-    })
+    const rows = (data ?? []) as CleanerApplicationQueryRow[]
+    applications.value = rows
+      .map((row) => ({
+        id: row.id,
+        status: row.status,
+        submitted_at: row.submitted_at ?? null,
+        updated_at: row.updated_at,
+        full_name: row.profiles?.full_name ?? null,
+        email: null,
+        avatar_url: row.profiles?.avatar_url ?? null,
+        city: row.profiles?.city ?? null,
+      }))
+      .filter((app: ApplicationRow) => {
+        if (!searchQuery.value) return true
+        const q = searchQuery.value.toLowerCase()
+        return app.full_name?.toLowerCase().includes(q) || app.city?.toLowerCase().includes(q)
+      })
 
     totalCount.value = count ?? 0
 
     const [sCount, urCount] = await Promise.all([
-      supabase.from('cleaner_applications').select('id', { count: 'exact', head: true }).eq('status', 'submitted'),
-      supabase.from('cleaner_applications').select('id', { count: 'exact', head: true }).eq('status', 'under_review'),
+      supabase
+        .from('cleaner_applications')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'submitted'),
+      supabase
+        .from('cleaner_applications')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'under_review'),
     ])
     submittedCount.value = sCount.count ?? 0
     underReviewCount.value = urCount.count ?? 0
@@ -384,11 +441,25 @@ async function submitReview(action: 'approved' | 'rejected' | 'needs_info') {
 
 <style scoped>
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 
-.animate-pulse { animation: pulse 1.5s ease-in-out infinite; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
 
 /* Status pills */
 .status-pill {
@@ -402,11 +473,31 @@ async function submitReview(action: 'approved' | 'rejected' | 'needs_info') {
   white-space: nowrap;
 }
 
-.pill--pending { background: #fff8e1; color: #e65100; border: 1px solid #ffcc80; }
-.pill--active { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
-.pill--warning { background: #fff3e0; color: #bf360c; border: 1px solid #ffcc02; }
-.pill--completed { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-.pill--cancelled { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+.pill--pending {
+  background: #fff8e1;
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+.pill--active {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+.pill--warning {
+  background: #fff3e0;
+  color: #bf360c;
+  border: 1px solid #ffcc02;
+}
+.pill--completed {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+.pill--cancelled {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
 
 /* Modal */
 .modal-backdrop {
@@ -444,5 +535,7 @@ async function submitReview(action: 'approved' | 'rejected' | 'needs_info') {
   display: flex;
 }
 
-.modal-body { padding: 1.5rem; }
+.modal-body {
+  padding: 1.5rem;
+}
 </style>

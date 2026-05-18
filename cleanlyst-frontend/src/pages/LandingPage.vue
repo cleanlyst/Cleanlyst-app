@@ -117,9 +117,8 @@ function slugify(value: string): string {
 async function createBooking() {
   success.value = false
 
-  let supabase
   try {
-    supabase = requireSupabase()
+    requireSupabase()
   } catch (error) {
     alert(error instanceof Error ? error.message : 'Supabase is not configured')
     return

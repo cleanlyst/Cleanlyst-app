@@ -26,7 +26,9 @@
           <div class="summary-block">
             <h2 class="summary-title">When</h2>
             <p class="summary-text">{{ formatDate(booking.scheduled_start) }}</p>
-            <p class="summary-sub">{{ timeRange(booking.scheduled_start, booking.scheduled_end) }}</p>
+            <p class="summary-sub">
+              {{ timeRange(booking.scheduled_start, booking.scheduled_end) }}
+            </p>
           </div>
 
           <div class="summary-block">
@@ -43,7 +45,11 @@
             <div>
               <span class="meta-label">Price</span>
               <p class="summary-text">
-                {{ booking.quote_cents != null ? formatPence(booking.quote_cents, booking.currency ?? 'GBP') : '—' }}
+                {{
+                  booking.quote_cents != null
+                    ? formatPence(booking.quote_cents, booking.currency ?? 'GBP')
+                    : '—'
+                }}
               </p>
             </div>
             <div>
@@ -69,7 +75,9 @@
               :disabled="actionLoading"
               @click="confirmComplete"
             >
-              {{ actionLoading && activeAction === 'complete' ? 'Completing…' : 'Confirm Complete' }}
+              {{
+                actionLoading && activeAction === 'complete' ? 'Completing…' : 'Confirm Complete'
+              }}
             </button>
 
             <button
@@ -83,7 +91,11 @@
             </button>
 
             <div
-              v-if="!canCancel && booking.status !== 'completion_pending_customer' && !isTerminal(booking.status)"
+              v-if="
+                !canCancel &&
+                booking.status !== 'completion_pending_customer' &&
+                !isTerminal(booking.status)
+              "
               class="status-info"
             >
               <span class="material-symbols-outlined status-info-icon">info</span>
@@ -124,8 +136,14 @@
               <p class="message-text">{{ msg.message }}</p>
               <div class="message-footer">
                 <time class="message-time">{{ formatDateTime(msg.created_at) }}</time>
-                <span v-if="msg.sender_id === auth.userId && msg.status" class="message-status" :class="`message-status--${msg.status}`">
-                  {{ msg.status === 'sending' ? 'Sending…' : msg.status === 'failed' ? 'Failed' : '' }}
+                <span
+                  v-if="msg.sender_id === auth.userId && msg.status"
+                  class="message-status"
+                  :class="`message-status--${msg.status}`"
+                >
+                  {{
+                    msg.status === 'sending' ? 'Sending…' : msg.status === 'failed' ? 'Failed' : ''
+                  }}
                 </span>
               </div>
             </div>
@@ -161,6 +179,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useMessagesStore } from '@/stores/messages'
+import type { RealtimeSubscription } from '@/lib/realtime'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { customerDashboardLinks } from '@/pages/dasboardLinks'
 import { getSupabaseClient } from '@/services/supabaseClient'
@@ -187,7 +206,7 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const messageError = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
-const statusChannel = ref<ReturnType<typeof getSupabaseClient>['channel'] | null>(null)
+const statusChannel = ref<RealtimeSubscription | null>(null)
 
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
@@ -332,24 +351,27 @@ onMounted(async () => {
     .on(
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'bookings', filter: `id=eq.${bookingId}` },
-      async () => { await refreshBooking() },
+      async () => {
+        await refreshBooking()
+      },
     )
     .subscribe()
-  statusChannel.value = ch as any
+  statusChannel.value = ch
 })
 
 onBeforeUnmount(() => {
-  if (statusChannel.value) {
-    const supabase = getSupabaseClient()
-    supabase.removeChannel(statusChannel.value as any)
-  }
+  statusChannel.value?.unsubscribe()
   messagesStore.unsubscribeFromBookingMessages(bookingId)
 })
 </script>
 
 <style scoped>
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -367,7 +389,10 @@ onBeforeUnmount(() => {
 }
 
 @media (min-width: 1024px) {
-  .page-main { padding-left: 3rem; padding-right: 3rem; }
+  .page-main {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
 }
 
 .error-msg {
@@ -398,7 +423,11 @@ onBeforeUnmount(() => {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .loading-text {
   font-size: 16px;
@@ -412,7 +441,9 @@ onBeforeUnmount(() => {
 }
 
 @media (min-width: 1024px) {
-  .details-grid { grid-template-columns: 2fr 1fr; }
+  .details-grid {
+    grid-template-columns: 2fr 1fr;
+  }
 }
 
 .summary-card,
@@ -464,7 +495,9 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid var(--surface-variant, #e2e2e2);
 }
 
-.summary-block:last-of-type { border-bottom: none; }
+.summary-block:last-of-type {
+  border-bottom: none;
+}
 
 .summary-title {
   font-size: 11px;
@@ -516,11 +549,31 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.status-pill--pending { background: #fff8e1; color: #e65100; border: 1px solid #ffcc80; }
-.status-pill--active { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
-.status-pill--warning { background: #fff3e0; color: #e65100; border: 1px solid #ffcc02; }
-.status-pill--completed { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-.status-pill--cancelled { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+.status-pill--pending {
+  background: #fff8e1;
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+.status-pill--active {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+.status-pill--warning {
+  background: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffcc02;
+}
+.status-pill--completed {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+.status-pill--cancelled {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
 
 /* Actions */
 .action-group {
@@ -558,7 +611,9 @@ onBeforeUnmount(() => {
   padding: 0.75rem 1rem;
 }
 
-.status-info-icon { font-size: 1rem; }
+.status-info-icon {
+  font-size: 1rem;
+}
 
 .back-link {
   display: inline-flex;
@@ -570,8 +625,12 @@ onBeforeUnmount(() => {
   margin-top: 1.5rem;
 }
 
-.back-link:hover { color: var(--primary, #000000); }
-.back-link .material-symbols-outlined { font-size: 1rem; }
+.back-link:hover {
+  color: var(--primary, #000000);
+}
+.back-link .material-symbols-outlined {
+  font-size: 1rem;
+}
 
 /* Buttons */
 .btn-primary {
@@ -587,8 +646,13 @@ onBeforeUnmount(() => {
   transition: opacity 0.15s;
 }
 
-.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-.btn-primary:not(:disabled):hover { opacity: 0.85; }
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn-primary:not(:disabled):hover {
+  opacity: 0.85;
+}
 
 .btn-danger {
   padding: 0.75rem 1.25rem;
@@ -602,8 +666,13 @@ onBeforeUnmount(() => {
   transition: background-color 0.15s;
 }
 
-.btn-danger:not(:disabled):hover { background: #ffebee; }
-.btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-danger:not(:disabled):hover {
+  background: #ffebee;
+}
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 /* Chat */
 .chat-panel {
@@ -622,7 +691,10 @@ onBeforeUnmount(() => {
   background: #f8fafc;
 }
 
-.message-item { margin-bottom: 0.75rem; display: flex; }
+.message-item {
+  margin-bottom: 0.75rem;
+  display: flex;
+}
 
 .message-bubble {
   display: inline-flex;
@@ -641,9 +713,15 @@ onBeforeUnmount(() => {
   border-color: var(--primary, #000000);
 }
 
-.message-bubble--theirs { margin-right: auto; }
+.message-bubble--theirs {
+  margin-right: auto;
+}
 
-.message-text { margin: 0; font-size: 14px; line-height: 1.5; }
+.message-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
 
 .message-footer {
   display: flex;
@@ -657,11 +735,20 @@ onBeforeUnmount(() => {
   color: var(--secondary, #5e5e5e);
 }
 
-.message-bubble--mine .message-time { color: rgba(255, 255, 255, 0.6); }
+.message-bubble--mine .message-time {
+  color: rgba(255, 255, 255, 0.6);
+}
 
-.message-status { font-size: 11px; }
-.message-status--sending { color: rgba(255, 255, 255, 0.6); }
-.message-status--failed { color: #ffcdd2; font-weight: 600; }
+.message-status {
+  font-size: 11px;
+}
+.message-status--sending {
+  color: rgba(255, 255, 255, 0.6);
+}
+.message-status--failed {
+  color: #ffcdd2;
+  font-weight: 600;
+}
 
 .empty-desc {
   font-size: 14px;
@@ -670,7 +757,10 @@ onBeforeUnmount(() => {
   padding: 2rem 0;
 }
 
-.message-form { display: grid; gap: 0.75rem; }
+.message-form {
+  display: grid;
+  gap: 0.75rem;
+}
 
 .message-input {
   width: 100%;
@@ -684,7 +774,10 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
-.message-input:focus { outline: none; border-color: var(--primary, #000000); }
+.message-input:focus {
+  outline: none;
+  border-color: var(--primary, #000000);
+}
 
 .message-actions {
   display: flex;
@@ -693,7 +786,11 @@ onBeforeUnmount(() => {
   gap: 1rem;
 }
 
-.error-text { color: #ba1a1a; font-size: 13px; margin: 0; }
+.error-text {
+  color: #ba1a1a;
+  font-size: 13px;
+  margin: 0;
+}
 
 .message-actions .btn-primary {
   width: auto;

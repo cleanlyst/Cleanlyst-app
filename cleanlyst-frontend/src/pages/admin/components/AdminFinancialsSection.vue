@@ -22,7 +22,10 @@
               <span v-if="metricsLoading" class="animate-pulse">—</span>
               <span v-else>{{ formatPence(metrics.revenueYtdPence) }}</span>
             </span>
-            <span v-if="!metricsLoading && metrics.revenueYtdCount > 0" class="font-caption text-caption text-secondary">
+            <span
+              v-if="!metricsLoading && metrics.revenueYtdCount > 0"
+              class="font-caption text-caption text-secondary"
+            >
               {{ metrics.revenueYtdCount }} payments
             </span>
           </div>
@@ -49,8 +52,13 @@
               <span v-if="metricsLoading" class="animate-pulse">—</span>
               <span v-else>{{ formatPence(metrics.pendingPayoutPence) }}</span>
             </span>
-            <span v-if="!metricsLoading && metrics.pendingPayoutCleaners > 0" class="font-caption text-caption text-secondary">
-              {{ metrics.pendingPayoutCleaners }} cleaner{{ metrics.pendingPayoutCleaners !== 1 ? 's' : '' }}
+            <span
+              v-if="!metricsLoading && metrics.pendingPayoutCleaners > 0"
+              class="font-caption text-caption text-secondary"
+            >
+              {{ metrics.pendingPayoutCleaners }} cleaner{{
+                metrics.pendingPayoutCleaners !== 1 ? 's' : ''
+              }}
             </span>
           </div>
         </div>
@@ -64,13 +72,22 @@
           <h2 class="font-h2 text-h2 text-primary">Revenue Performance ({{ currentYear }})</h2>
         </div>
 
-        <div v-if="chartLoading" class="h-[320px] flex items-center justify-center text-caption text-secondary">
+        <div
+          v-if="chartLoading"
+          class="h-[320px] flex items-center justify-center text-caption text-secondary"
+        >
           Loading chart…
         </div>
-        <div v-else-if="chartData.every(v => v === 0)" class="h-[320px] flex items-center justify-center text-caption text-secondary">
+        <div
+          v-else-if="chartData.every((v) => v === 0)"
+          class="h-[320px] flex items-center justify-center text-caption text-secondary"
+        >
           No revenue data for {{ currentYear }} yet.
         </div>
-        <div v-else class="h-[320px] w-full relative bg-surface-container-low flex items-end px-4 gap-4">
+        <div
+          v-else
+          class="h-[320px] w-full relative bg-surface-container-low flex items-end px-4 gap-4"
+        >
           <div
             v-for="(value, i) in chartData"
             :key="i"
@@ -134,7 +151,9 @@
                   {{ formatPence(tx.amount_cents) }}
                 </td>
                 <td class="px-6 py-4">
-                  <span class="px-2 py-1 bg-surface-container-high font-caption text-caption rounded">
+                  <span
+                    class="px-2 py-1 bg-surface-container-high font-caption text-caption rounded"
+                  >
                     {{ formatStatus(tx.status) }}
                   </span>
                 </td>
@@ -142,13 +161,21 @@
                   <span
                     :class="[
                       'flex items-center gap-1.5 font-caption text-caption',
-                      tx.status === 'captured' ? 'text-secondary' : tx.status === 'refunded' || tx.status === 'failed' ? 'text-red-600' : 'text-secondary',
+                      tx.status === 'captured'
+                        ? 'text-secondary'
+                        : tx.status === 'refunded' || tx.status === 'failed'
+                          ? 'text-red-600'
+                          : 'text-secondary',
                     ]"
                   >
                     <span
                       :class="[
                         'w-1.5 h-1.5 rounded-full',
-                        tx.status === 'captured' ? 'bg-secondary' : tx.status === 'refunded' || tx.status === 'failed' ? 'bg-error' : 'bg-outline',
+                        tx.status === 'captured'
+                          ? 'bg-secondary'
+                          : tx.status === 'refunded' || tx.status === 'failed'
+                            ? 'bg-error'
+                            : 'bg-outline',
                       ]"
                     ></span>
                     {{ txStatusLabel(tx.status) }}
@@ -177,6 +204,19 @@ interface FinancialMetrics {
   platformFeeYtdPence: number
   pendingPayoutPence: number
   pendingPayoutCleaners: number
+}
+
+interface AmountRow {
+  amount_cents: number | null
+}
+
+interface PlatformFeeRow {
+  platform_fee_cents: number | null
+}
+
+interface PayoutRow {
+  amount_cents: number | null
+  cleaner_id: string | null
 }
 
 interface Transaction {
@@ -218,25 +258,22 @@ async function loadMetrics() {
         .select('amount_cents')
         .eq('status', 'captured')
         .gte('captured_at', ytdStart),
-      supabase
-        .from('booking_financials')
-        .select('platform_fee_cents')
-        .gte('created_at', ytdStart),
+      supabase.from('booking_financials').select('platform_fee_cents').gte('created_at', ytdStart),
       supabase
         .from('payouts')
         .select('amount_cents, cleaner_id')
         .in('status', ['pending', 'processing', 'released']),
     ])
 
-    const captured = capturedResult.data ?? []
-    const revenueYtdPence = captured.reduce((s: number, r: any) => s + (r.amount_cents ?? 0), 0)
+    const captured = (capturedResult.data ?? []) as AmountRow[]
+    const revenueYtdPence = captured.reduce((s: number, r) => s + (r.amount_cents ?? 0), 0)
 
-    const fees = platformFeeResult.data ?? []
-    const platformFeeYtdPence = fees.reduce((s: number, r: any) => s + (r.platform_fee_cents ?? 0), 0)
+    const fees = (platformFeeResult.data ?? []) as PlatformFeeRow[]
+    const platformFeeYtdPence = fees.reduce((s: number, r) => s + (r.platform_fee_cents ?? 0), 0)
 
-    const payouts = payoutsResult.data ?? []
-    const pendingPayoutPence = payouts.reduce((s: number, r: any) => s + (r.amount_cents ?? 0), 0)
-    const pendingPayoutCleaners = new Set(payouts.map((r: any) => r.cleaner_id)).size
+    const payouts = (payoutsResult.data ?? []) as PayoutRow[]
+    const pendingPayoutPence = payouts.reduce((s: number, r) => s + (r.amount_cents ?? 0), 0)
+    const pendingPayoutCleaners = new Set(payouts.map((r) => r.cleaner_id)).size
 
     metrics.value = {
       revenueYtdPence,
@@ -334,7 +371,12 @@ function txStatusLabel(status: string): string {
   animation: pulse 1.5s ease-in-out infinite;
 }
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 </style>

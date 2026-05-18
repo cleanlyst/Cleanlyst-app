@@ -1,5 +1,8 @@
 <template>
-  <div :class="['rounded border bg-surface-container-lowest', paddingClass, $attrs.class]" v-bind="omitClass($attrs)">
+  <div
+    :class="['rounded border bg-surface-container-lowest', paddingClass, $attrs.class]"
+    v-bind="omitClass($attrs)"
+  >
     <div v-if="title || $slots.header" class="flex items-center justify-between mb-4">
       <h3 v-if="title" class="text-sm font-semibold text-on-surface">{{ title }}</h3>
       <slot name="header" />
@@ -30,7 +33,8 @@ const paddingClass = {
 }
 
 function omitClass(attrs: Record<string, unknown>) {
-  const { class: _, ...rest } = attrs
+  const rest = { ...attrs }
+  delete (rest as Record<string, unknown>)['class']
   return rest
 }
 </script>

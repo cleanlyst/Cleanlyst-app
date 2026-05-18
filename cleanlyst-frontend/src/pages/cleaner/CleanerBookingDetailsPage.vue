@@ -249,11 +249,11 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { cleanerDashboardLinks } from '@/pages/dasboardLinks'
 import AppModal from '@/components/ui/AppModal.vue'
 import { getSupabaseClient } from '@/services/supabaseClient'
+import type { RealtimeSubscription } from '@/lib/realtime'
 import {
   getBookingById,
   updateBookingDetails,
   transitionBookingState,
-  completeBooking,
   type BookingDetailRow,
 } from '@/services/bookingService'
 import { formatDate, formatDateTime, formatPence, formatStatus } from '@/utils/format'
@@ -276,8 +276,8 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const messageError = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
-const statusChannel = ref<any>(null)
-const paymentsChannel = ref<any>(null)
+const statusChannel = ref<RealtimeSubscription | null>(null)
+const paymentsChannel = ref<RealtimeSubscription | null>(null)
 
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
@@ -514,9 +514,8 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-  const supabase = getSupabaseClient()
-  if (statusChannel.value) supabase.removeChannel(statusChannel.value)
-  if (paymentsChannel.value) supabase.removeChannel(paymentsChannel.value)
+  statusChannel.value?.unsubscribe()
+  paymentsChannel.value?.unsubscribe()
   messagesStore.unsubscribeFromBookingMessages(bookingId)
 })
 </script>

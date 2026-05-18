@@ -105,7 +105,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import type { RealtimeChannel } from '@supabase/supabase-js'
+import type { RealtimeSubscription } from '@/lib/realtime'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { subscribeToTable, unsubscribe } from '@/lib/realtime'
@@ -124,7 +124,7 @@ const totalEarningsCents = ref(0)
 const thisMonthEarningsCents = ref(0)
 const pendingPayoutCents = ref(0)
 const recentBookings = ref<BookingRecord[]>([])
-const realtimeChannel = ref<RealtimeChannel | null>(null)
+const realtimeChannel = ref<RealtimeSubscription | null>(null)
 
 const currency = computed(() => auth.cleanerProfile?.currency ?? 'GBP')
 
@@ -192,14 +192,17 @@ function txStatusLabel(status: string): string {
 
 async function loadFinancials() {
   if (!auth.initialized) await auth.init()
-  if (!auth.userId) { loading.value = false; return }
+  if (!auth.userId) {
+    loading.value = false
+    return
+  }
 
   const supabase = requireSupabase()
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-  const [allCompletedResult, monthCompletedResult, pendingResult, recentResult] =
-    await Promise.all([
+  const [allCompletedResult, monthCompletedResult, pendingResult, recentResult] = await Promise.all(
+    [
       supabase
         .from('bookings')
         .select('cleaner_payout_cents')
@@ -237,7 +240,8 @@ async function loadFinancials() {
         ])
         .order('scheduled_start', { ascending: false })
         .limit(10),
-    ])
+    ],
+  )
 
   totalEarningsCents.value = (allCompletedResult.data ?? []).reduce(
     (sum, b) => sum + (b.cleaner_payout_cents ?? 0),

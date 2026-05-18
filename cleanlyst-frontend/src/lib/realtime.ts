@@ -1,4 +1,4 @@
-import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js'
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import { getSupabaseClient } from '@/services/supabaseClient'
 
 type ChangeEvent = '*' | 'INSERT' | 'UPDATE' | 'DELETE'
@@ -12,6 +12,10 @@ interface PostgresChangesFilter {
   filter?: string
 }
 
+export interface RealtimeSubscription {
+  unsubscribe(): void
+}
+
 export interface SubscribeOptions<T extends Record<string, unknown>> {
   table: string
   event?: ChangeEvent
@@ -23,25 +27,20 @@ export interface SubscribeOptions<T extends Record<string, unknown>> {
 export function subscribeToTable<T extends Record<string, unknown>>(
   channelName: string,
   options: SubscribeOptions<T>,
-): RealtimeChannel {
+): RealtimeSubscription {
   const supabase = getSupabaseClient()
   const { table, event = '*', filter, schema = 'public', onData } = options
 
-  // Build a strongly-typed filter so TypeScript can resolve the correct
-  // postgres_changes overload on .on() without Parameters<> tricks.
   const pgFilter: PostgresChangesFilter = { event, schema, table }
   if (filter !== undefined) pgFilter.filter = filter
 
-  return supabase
-    .channel(channelName)
-    .on('postgres_changes', pgFilter, onData)
-    .subscribe()
+  return supabase.channel(channelName).on('postgres_changes', pgFilter, onData).subscribe()
 }
 
 export function subscribeToBookingMessages(
   bookingId: string,
   onInsert: (row: Record<string, unknown>) => void,
-): RealtimeChannel {
+): RealtimeSubscription {
   return subscribeToTable(`messages:${bookingId}`, {
     table: 'messages',
     event: 'INSERT',
@@ -53,7 +52,7 @@ export function subscribeToBookingMessages(
 export function subscribeToBookingStatus(
   bookingId: string,
   onUpdate: (row: Record<string, unknown>) => void,
-): RealtimeChannel {
+): RealtimeSubscription {
   return subscribeToTable(`booking:${bookingId}`, {
     table: 'bookings',
     event: 'UPDATE',
@@ -62,6 +61,6 @@ export function subscribeToBookingStatus(
   })
 }
 
-export function unsubscribe(channel: RealtimeChannel | null): void {
+export function unsubscribe(channel: RealtimeSubscription | null): void {
   channel?.unsubscribe()
 }

@@ -219,6 +219,14 @@ interface PlatformStats {
   pendingPayoutPence: number
 }
 
+interface AmountRow {
+  amount_cents: number | null
+}
+interface PayoutRow {
+  amount_cents: number | null
+  cleaner_id: string | null
+}
+
 const statsLoading = ref(true)
 const approvalsLoading = ref(true)
 const recentLoading = ref(true)
@@ -253,7 +261,11 @@ async function loadStats() {
   try {
     const supabase = requireSupabase()
 
-    const thisMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()
+    const thisMonthStart = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1,
+    ).toISOString()
 
     const [
       cleanersResult,
@@ -273,10 +285,7 @@ async function loadStats() {
         .from('cleaner_applications')
         .select('id', { count: 'exact', head: true })
         .in('status', ['submitted', 'under_review', 'needs_info']),
-      supabase
-        .from('profiles')
-        .select('id', { count: 'exact', head: true })
-        .eq('role', 'customer'),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'customer'),
       supabase
         .from('profiles')
         .select('id', { count: 'exact', head: true })
@@ -288,7 +297,10 @@ async function loadStats() {
         .select('id', { count: 'exact', head: true })
         .in('status', ['payment_authorized', 'in_progress']),
       supabase.from('payments').select('amount_cents').eq('status', 'captured'),
-      supabase.from('payouts').select('amount_cents').in('status', ['pending', 'processing', 'released']),
+      supabase
+        .from('payouts')
+        .select('amount_cents')
+        .in('status', ['pending', 'processing', 'released']),
     ])
 
     stats.value = {
@@ -298,13 +310,13 @@ async function loadStats() {
       pendingCustomers: newCustomersResult.count ?? 0,
       totalBookings: bookingsResult.count ?? 0,
       activeBookings: activeResult.count ?? 0,
-      totalRevenuePence: (revenueResult.data ?? []).reduce(
-        (s: number, r: any) => s + (r.amount_cents ?? 0),
+      totalRevenuePence: ((revenueResult.data ?? []) as AmountRow[]).reduce(
+        (s: number, r) => s + (r.amount_cents ?? 0),
         0,
       ),
-      pendingPayoutPence: (payoutResult.data ?? []).reduce(
-        (s: number, r: any) => s + (r.amount_cents ?? 0),
-        0 as number,
+      pendingPayoutPence: ((payoutResult.data ?? []) as PayoutRow[]).reduce(
+        (s: number, r) => s + (r.amount_cents ?? 0),
+        0,
       ),
     }
   } catch (e) {
@@ -337,7 +349,16 @@ async function loadApprovals() {
 
     if (error) throw error
 
-    pendingApplications.value = (data ?? []).map((row: any) => ({
+    const rows = (data ?? []) as Array<{
+      id: string
+      submitted_at: string | null
+      updated_at: string
+      profiles?: {
+        full_name?: string | null
+        city?: string | null
+      } | null
+    }>
+    pendingApplications.value = rows.map((row) => ({
       id: row.id,
       full_name: row.profiles?.full_name ?? null,
       city: row.profiles?.city ?? null,

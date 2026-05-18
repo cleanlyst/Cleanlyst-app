@@ -33,12 +33,8 @@
       v-if="activeRouteName === 'CleanerAvailability'"
       :calendarDays="calendarDays"
     />
-    <CleanerServicesPricingSection
-      v-if="activeRouteName === 'CleanerServicesPricing'"
-    />
-    <CleanerFinancialsSection
-      v-if="activeRouteName === 'CleanerFinancials'"
-    />
+    <CleanerServicesPricingSection v-if="activeRouteName === 'CleanerServicesPricing'" />
+    <CleanerFinancialsSection v-if="activeRouteName === 'CleanerFinancials'" />
     <CleanerReviewsSection v-if="activeRouteName === 'CleanerReviews'" />
     <CleanerProfile v-if="activeRouteName === 'CleanerProfile'" />
   </DashboardLayout>
@@ -46,7 +42,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import type { RealtimeChannel } from '@supabase/supabase-js'
+import type { RealtimeSubscription } from '@/lib/realtime'
 import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
@@ -76,7 +72,7 @@ const {
 const isAvailable = ref(true)
 const toggleLoading = ref(false)
 const actionLoadingId = ref<string | null>(null)
-const realtimeChannel = ref<RealtimeChannel | null>(null)
+const realtimeChannel = ref<RealtimeSubscription | null>(null)
 const calendarDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const activeRouteName = computed(() =>
@@ -109,7 +105,10 @@ async function loadBookings() {
   errorMessage.value = ''
   try {
     if (!auth.initialized) await auth.init()
-    if (!auth.userId) { bookings.value = []; return }
+    if (!auth.userId) {
+      bookings.value = []
+      return
+    }
 
     const supabase = requireSupabase()
     const now = new Date()
@@ -131,15 +130,17 @@ async function loadBookings() {
     ])
 
     if (!profileResult.error && profileResult.data) {
-      isAvailable.value = (profileResult.data as any).is_available ?? true
+      isAvailable.value = profileResult.data.is_available ?? true
     }
 
-    const totalPence = (earningsResult.data ?? []).reduce(
-      (sum: number, row: any) => sum + (row.cleaner_payout_cents ?? 0),
-      0,
-    )
+    const earningsRows = (earningsResult.data ?? []) as Array<{
+      cleaner_payout_cents: number | null
+    }>
+    const totalPence = earningsRows.reduce((sum, row) => sum + (row.cleaner_payout_cents ?? 0), 0)
     const currency = auth.cleanerProfile?.currency ?? 'GBP'
-    earningsToDate.value = new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(totalPence / 100)
+    earningsToDate.value = new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(
+      totalPence / 100,
+    )
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load bookings.'
     bookings.value = []

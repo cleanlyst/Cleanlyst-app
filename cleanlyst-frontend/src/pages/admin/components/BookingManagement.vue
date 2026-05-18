@@ -4,9 +4,7 @@
     <div class="page-header">
       <div>
         <h1 class="header-title">Booking Management</h1>
-        <p class="header-copy">
-          Monitor and manage service transactions across the platform.
-        </p>
+        <p class="header-copy">Monitor and manage service transactions across the platform.</p>
       </div>
     </div>
 
@@ -39,14 +37,14 @@
 
     <!-- Bookings List -->
     <div class="bookings-list">
-      <div v-if="loading" class="booking-empty">
-        Loading bookings…
-      </div>
-      <div v-else-if="bookings.length === 0" class="booking-empty">
-        No bookings found.
-      </div>
+      <div v-if="loading" class="booking-empty">Loading bookings…</div>
+      <div v-else-if="bookings.length === 0" class="booking-empty">No bookings found.</div>
 
-      <div v-for="booking in bookings" :key="booking.id" :class="['booking-row', booking.status === 'cancelled' && 'booking-row--cancelled']">
+      <div
+        v-for="booking in bookings"
+        :key="booking.id"
+        :class="['booking-row', booking.status === 'cancelled' && 'booking-row--cancelled']"
+      >
         <div class="flex-shrink-0">
           <div class="booking-icon-box">
             <span class="material-symbols-outlined">{{ statusIcon(booking.status) }}</span>
@@ -55,7 +53,9 @@
         <div class="booking-grid">
           <div>
             <span class="col-label">BOOKING ID</span>
-            <span class="col-value font-mono text-sm">#{{ booking.id.slice(0, 8).toUpperCase() }}</span>
+            <span class="col-value font-mono text-sm"
+              >#{{ booking.id.slice(0, 8).toUpperCase() }}</span
+            >
           </div>
           <div>
             <span class="col-label">CLIENT / CLEANER</span>
@@ -65,7 +65,9 @@
           <div>
             <span class="col-label">SCHEDULE</span>
             <div class="col-value">{{ formatDate(booking.scheduled_start) }}</div>
-            <div class="col-sub">{{ formatTimeRange(booking.scheduled_start, booking.scheduled_end) }}</div>
+            <div class="col-sub">
+              {{ formatTimeRange(booking.scheduled_start, booking.scheduled_end) }}
+            </div>
           </div>
           <div>
             <span class="col-label">STATUS</span>
@@ -81,10 +83,11 @@
     </div>
 
     <!-- Pagination -->
-    <div v-if="!loading && (page > 1 || bookings.length === PAGE_SIZE)" class="flex items-center justify-between mt-6 pt-4 border-t border-outline-variant">
-      <span class="font-caption text-caption text-secondary">
-        Page {{ page }}
-      </span>
+    <div
+      v-if="!loading && (page > 1 || bookings.length === PAGE_SIZE)"
+      class="flex items-center justify-between mt-6 pt-4 border-t border-outline-variant"
+    >
+      <span class="font-caption text-caption text-secondary"> Page {{ page }} </span>
       <div class="flex gap-2">
         <button
           class="px-3 py-1.5 border border-outline-variant text-label-md disabled:opacity-40"
@@ -121,12 +124,16 @@
           <button class="override-card">
             <span class="material-symbols-outlined override-card__icon">payments</span>
             <span class="override-card__title">Force Refund</span>
-            <span class="override-card__desc">Issue full or partial refunds directly to client wallet.</span>
+            <span class="override-card__desc"
+              >Issue full or partial refunds directly to client wallet.</span
+            >
           </button>
           <button class="override-card">
             <span class="material-symbols-outlined override-card__icon">person_search</span>
             <span class="override-card__title">Reassign Cleaner</span>
-            <span class="override-card__desc">Manually switch service providers for active bookings.</span>
+            <span class="override-card__desc"
+              >Manually switch service providers for active bookings.</span
+            >
           </button>
         </div>
       </div>
@@ -134,13 +141,17 @@
       <div class="activity-sidebar">
         <h3 class="activity-sidebar__heading">Activity Monitor</h3>
         <div v-if="activityLoading" class="text-caption text-secondary">Loading…</div>
-        <div v-else-if="activityEvents.length === 0" class="text-caption text-secondary">No recent activity.</div>
+        <div v-else-if="activityEvents.length === 0" class="text-caption text-secondary">
+          No recent activity.
+        </div>
         <div v-else class="activity-list">
           <div v-for="event in activityEvents" :key="event.id" class="activity-item">
             <div :class="['activity-dot', event.isFirst ? '' : 'activity-dot--inactive']"></div>
             <div>
               <p class="activity-item__title">
-                #{{ event.booking_id.slice(0, 8).toUpperCase() }}: {{ formatStatus(event.from_status ?? '') }} → {{ formatStatus(event.to_status ?? '') }}
+                #{{ event.booking_id.slice(0, 8).toUpperCase() }}:
+                {{ formatStatus(event.from_status ?? '') }} →
+                {{ formatStatus(event.to_status ?? '') }}
               </p>
               <p class="activity-item__meta">{{ formatRelativeTime(event.created_at) }}</p>
             </div>
@@ -177,6 +188,29 @@ interface BookingRow {
   cleaner_name: string | null
 }
 
+interface BookingQueryRow {
+  id: string
+  status: string
+  scheduled_start: string | null
+  scheduled_end: string | null
+  service_title_snapshot: string | null
+  quote_cents: number | null
+  customer?: {
+    full_name?: string | null
+  } | null
+  cleaner?: {
+    full_name?: string | null
+  } | null
+}
+
+interface ActivityQueryRow {
+  id: string
+  booking_id: string
+  from_status: string | null
+  to_status: string | null
+  created_at: string
+}
+
 interface ActivityEvent {
   id: string
   booking_id: string
@@ -204,7 +238,10 @@ onMounted(async () => {
 
 function onSearchInput() {
   clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => { page.value = 1; loadBookings() }, 350)
+  searchTimeout = setTimeout(() => {
+    page.value = 1
+    loadBookings()
+  }, 350)
 }
 
 function setTab(value: string) {
@@ -226,7 +263,8 @@ async function loadBookings() {
 
     let q = supabase
       .from('bookings')
-      .select(`
+      .select(
+        `
         id,
         status,
         scheduled_start,
@@ -235,7 +273,8 @@ async function loadBookings() {
         quote_cents,
         customer:customer_id(full_name),
         cleaner:cleaner_id(full_name)
-      `)
+      `,
+      )
       .order('created_at', { ascending: false })
       .range((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE - 1)
 
@@ -254,7 +293,8 @@ async function loadBookings() {
     const { data, error } = await q
     if (error) throw error
 
-    bookings.value = (data ?? []).map((row: any) => ({
+    const rows = (data ?? []) as BookingQueryRow[]
+    bookings.value = rows.map((row) => ({
       id: row.id,
       status: row.status,
       scheduled_start: row.scheduled_start ?? null,
@@ -283,7 +323,8 @@ async function loadActivity() {
 
     if (error) throw error
 
-    activityEvents.value = (data ?? []).map((row: any, i: number) => ({
+    const activityRows = (data ?? []) as ActivityQueryRow[]
+    activityEvents.value = activityRows.map((row, i) => ({
       id: row.id,
       booking_id: row.booking_id,
       from_status: row.from_status ?? null,
@@ -291,7 +332,7 @@ async function loadActivity() {
       created_at: row.created_at,
       isFirst: i === 0,
     }))
-  } catch (e) {
+  } catch {
     // Activity feed is non-critical; silently ignore
   } finally {
     activityLoading.value = false
@@ -300,14 +341,17 @@ async function loadActivity() {
 
 function cleanerLabel(booking: BookingRow): string {
   if (booking.cleaner_name) return `assigned to ${booking.cleaner_name}`
-  if (['pending_request', 'awaiting_customer_payment'].includes(booking.status)) return 'Awaiting assignment'
+  if (['pending_request', 'awaiting_customer_payment'].includes(booking.status))
+    return 'Awaiting assignment'
   return '—'
 }
 
 function formatTimeRange(start: string | null, end: string | null): string {
   if (!start || !end) return '—'
   const fmt = (v: string) =>
-    new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(v))
+    new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true }).format(
+      new Date(v),
+    )
   return `${fmt(start)} – ${fmt(end)}`
 }
 
@@ -614,10 +658,18 @@ function statusBadgeClass(status: string): string {
   letter-spacing: 0.06em;
 }
 
-.status-badge--active { color: #27272a; }
-.status-badge--pending { color: #71717a; }
-.status-badge--completed { color: #27272a; }
-.status-badge--cancelled { color: #a1a1aa; }
+.status-badge--active {
+  color: #27272a;
+}
+.status-badge--pending {
+  color: #71717a;
+}
+.status-badge--completed {
+  color: #27272a;
+}
+.status-badge--cancelled {
+  color: #a1a1aa;
+}
 
 /* ── Row actions ──────────────────────────────────────────── */
 .row-actions {
@@ -672,9 +724,26 @@ function statusBadgeClass(status: string): string {
   gap: 1rem;
 }
 
-.info-banner__icon { color: var(--primary, #000000); padding-top: 0.125rem; flex-shrink: 0; }
-.info-banner__title { font-size: 14px; font-weight: 500; line-height: 1.4; letter-spacing: 0.01em; color: var(--primary, #000000); margin: 0 0 0.25rem; }
-.info-banner__body { font-size: 14px; font-weight: 400; line-height: 1.6; color: var(--secondary, #5e5e5e); margin: 0; }
+.info-banner__icon {
+  color: var(--primary, #000000);
+  padding-top: 0.125rem;
+  flex-shrink: 0;
+}
+.info-banner__title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: var(--primary, #000000);
+  margin: 0 0 0.25rem;
+}
+.info-banner__body {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
 
 /* ── Override grid ────────────────────────────────────────── */
 .override-grid {
@@ -702,10 +771,27 @@ function statusBadgeClass(status: string): string {
   transition: border-color 0.15s ease;
 }
 
-.override-card:hover { border-color: var(--primary, #000000); }
-.override-card__icon { margin-bottom: 1rem; color: var(--primary, #000000); }
-.override-card__title { font-size: 14px; font-weight: 500; line-height: 1.4; letter-spacing: 0.01em; color: var(--primary, #000000); margin-bottom: 0.25rem; }
-.override-card__desc { font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--secondary, #5e5e5e); }
+.override-card:hover {
+  border-color: var(--primary, #000000);
+}
+.override-card__icon {
+  margin-bottom: 1rem;
+  color: var(--primary, #000000);
+}
+.override-card__title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: var(--primary, #000000);
+  margin-bottom: 0.25rem;
+}
+.override-card__desc {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--secondary, #5e5e5e);
+}
 
 /* ── Activity sidebar ─────────────────────────────────────── */
 .activity-sidebar {
@@ -748,6 +834,18 @@ function statusBadgeClass(status: string): string {
   background: var(--outline-variant, #c4c7c7);
 }
 
-.activity-item__title { font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--primary, #000000); margin: 0 0 0.125rem; }
-.activity-item__meta { font-size: 11px; font-weight: 400; line-height: 1.4; color: var(--secondary, #5e5e5e); margin: 0; }
+.activity-item__title {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--primary, #000000);
+  margin: 0 0 0.125rem;
+}
+.activity-item__meta {
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
 </style>

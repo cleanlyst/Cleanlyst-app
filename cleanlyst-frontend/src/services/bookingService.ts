@@ -30,6 +30,58 @@ export interface BookingRequestInput {
   notes?: string | null
 }
 
+function normalizeCustomerRelationship(raw: unknown): BookingListRow['customer'] {
+  if (!raw) return null
+
+  const customerArray = Array.isArray(raw) ? raw : [raw]
+  if (customerArray.length === 0) return null
+
+  const firstCustomer = customerArray[0]
+  if (!firstCustomer || typeof firstCustomer !== 'object') return null
+
+  const customerRecord = firstCustomer as Record<string, unknown>
+  return {
+    id: String(customerRecord.id),
+    full_name: String(customerRecord.full_name ?? ''),
+    avatar_url:
+      customerRecord.avatar_url === null || customerRecord.avatar_url === undefined
+        ? null
+        : String(customerRecord.avatar_url),
+  }
+}
+
+function normalizeBookingListRows(data: unknown): BookingListRow[] {
+  if (!Array.isArray(data)) return []
+
+  return data.reduce<BookingListRow[]>((acc, item) => {
+    if (!item || typeof item !== 'object') return acc
+    const row = item as Record<string, unknown>
+    const normalized: BookingListRow = {
+      id: String(row.id),
+      service_title_snapshot:
+        row.service_title_snapshot === null || row.service_title_snapshot === undefined
+          ? null
+          : String(row.service_title_snapshot),
+      location_text: String(row.location_text ?? ''),
+      scheduled_start: String(row.scheduled_start ?? ''),
+      scheduled_end:
+        row.scheduled_end === null || row.scheduled_end === undefined
+          ? null
+          : String(row.scheduled_end),
+      status: row.status as BookingStatus,
+      created_at: String(row.created_at ?? ''),
+      quote_cents:
+        row.quote_cents === null || row.quote_cents === undefined ? null : Number(row.quote_cents),
+      cleaner_id:
+        row.cleaner_id === null || row.cleaner_id === undefined ? null : String(row.cleaner_id),
+      customer: normalizeCustomerRelationship(row.customer),
+    }
+
+    acc.push(normalized)
+    return acc
+  }, [])
+}
+
 const BOOKING_LIST_SELECT =
   'id, service_title_snapshot, scheduled_start, scheduled_end, location_text, status, created_at, quote_cents, cleaner_id, customer:profiles!customer_id(id, full_name, avatar_url)'
 
@@ -53,7 +105,7 @@ export async function getCustomerBookings(customerId: string): Promise<BookingLi
     .order('scheduled_start', { ascending: true })
 
   if (error) throw error
-  return (data ?? []) as BookingListRow[]
+  return normalizeBookingListRows(data)
 }
 
 export async function getCleanerBookings(cleanerId: string): Promise<BookingListRow[]> {
@@ -65,7 +117,7 @@ export async function getCleanerBookings(cleanerId: string): Promise<BookingList
     .order('scheduled_start', { ascending: true })
 
   if (error) throw error
-  return (data ?? []) as BookingListRow[]
+  return normalizeBookingListRows(data)
 }
 
 export async function getBookingRequestsForCleaner() {
@@ -134,8 +186,68 @@ export interface BookingDetailRow extends BookingListRow {
   cleaner_payout_cents: number | null
   currency?: string | null
   payments?: Array<{ status: string; amount_cents: number | null; captured_at: string | null }>
-  customer?: { id: string; full_name: string; avatar_url: string | null }
+  customer: { id: string; full_name: string; avatar_url: string | null } | null | undefined
   booking_financials?: { cleaner_payout_cents: number | null; currency: string | null }
+}
+
+function normalizePayments(raw: unknown): BookingDetailRow['payments'] {
+  if (!Array.isArray(raw)) return undefined
+
+  return raw
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map((row) => ({
+      status: String(row.status ?? ''),
+      amount_cents:
+        row.amount_cents === null || row.amount_cents === undefined
+          ? null
+          : Number(row.amount_cents),
+      captured_at:
+        row.captured_at === null || row.captured_at === undefined ? null : String(row.captured_at),
+    }))
+}
+
+function normalizeBookingFinancials(
+  raw: unknown,
+): BookingDetailRow['booking_financials'] | undefined {
+  if (!raw || typeof raw !== 'object') return undefined
+  const record = raw as Record<string, unknown>
+  return {
+    cleaner_payout_cents:
+      record.cleaner_payout_cents === null || record.cleaner_payout_cents === undefined
+        ? null
+        : Number(record.cleaner_payout_cents),
+    currency:
+      record.currency === null || record.currency === undefined ? null : String(record.currency),
+  }
+}
+
+function normalizeBookingDetailRow(raw: unknown): BookingDetailRow | null {
+  if (!raw || typeof raw !== 'object') return null
+  const row = raw as Record<string, unknown>
+
+  return {
+    ...normalizeBookingListRows([row])[0]!,
+    customer_id: String(row.customer_id ?? ''),
+    scheduled_end:
+      row.scheduled_end === null || row.scheduled_end === undefined
+        ? null
+        : String(row.scheduled_end),
+    started_at:
+      row.started_at === null || row.started_at === undefined ? null : String(row.started_at),
+    notes: row.notes === null || row.notes === undefined ? null : String(row.notes),
+    estimated_hours:
+      row.estimated_hours === null || row.estimated_hours === undefined
+        ? null
+        : Number(row.estimated_hours),
+    cleaner_payout_cents:
+      row.cleaner_payout_cents === null || row.cleaner_payout_cents === undefined
+        ? null
+        : Number(row.cleaner_payout_cents),
+    currency: row.currency === null || row.currency === undefined ? null : String(row.currency),
+    payments: normalizePayments(row.payments),
+    booking_financials: normalizeBookingFinancials(row.booking_financials),
+    customer: normalizeCustomerRelationship(row.customer),
+  }
 }
 
 export async function getBookingById(bookingId: string): Promise<BookingDetailRow | null> {
@@ -152,7 +264,7 @@ export async function getBookingById(bookingId: string): Promise<BookingDetailRo
     .maybeSingle()
 
   if (error) throw error
-  return data as BookingDetailRow | null
+  return normalizeBookingDetailRow(data)
 }
 
 export async function updateBookingDetails(
@@ -172,7 +284,9 @@ export async function updateBookingDetails(
     .single()
 
   if (error) throw error
-  return data as BookingDetailRow
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to update booking details.')
+  return booking
 }
 
 export async function completeBooking(bookingId: string) {

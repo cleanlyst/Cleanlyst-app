@@ -80,7 +80,8 @@
               <router-link
                 :to="{ name: 'CustomerBookingDetails', params: { bookingId: b.id } }"
                 class="view-btn"
-              >View</router-link>
+                >View</router-link
+              >
               <button class="rebook-btn" @click="rebook(b)">Re-book</button>
             </div>
           </div>
@@ -141,14 +142,14 @@ const props = defineProps({
   },
 })
 
-const pastBookings = computed(() =>
-  props.bookings.filter((b) => PAST_STATUSES.includes(b.status)),
-)
+const pastBookings = computed(() => props.bookings.filter((b) => PAST_STATUSES.includes(b.status)))
 
 const nextCleanLabel = computed(() => {
   const next = upcomingBookings.value
     .filter((b) => b.scheduled_start)
-    .sort((a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime())[0]
+    .sort(
+      (a, b) => new Date(a.scheduled_start).getTime() - new Date(b.scheduled_start).getTime(),
+    )[0]
   if (!next) return '—'
   const diff = Math.ceil(
     (new Date(next.scheduled_start).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
@@ -157,10 +158,6 @@ const nextCleanLabel = computed(() => {
   if (diff === 1) return 'Tomorrow'
   return `In ${diff} days`
 })
-
-function canCancel(status: string): boolean {
-  return ['pending_request', 'estimate_proposed'].includes(status)
-}
 
 function statusClass(status: string): string {
   if (['pending_request', 'estimate_proposed'].includes(status)) return 'pill--pending'
@@ -180,7 +177,11 @@ function rebook(booking: BookingWithCleaner) {
 
 <style scoped>
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
   display: inline-block;
   line-height: 1;
   text-transform: none;
@@ -224,7 +225,9 @@ function rebook(booking: BookingWithCleaner) {
   transition: opacity 200ms ease;
 }
 
-.button-secondary:hover { opacity: 0.85; }
+.button-secondary:hover {
+  opacity: 0.85;
+}
 
 .content-grid {
   display: grid;
@@ -232,7 +235,26 @@ function rebook(booking: BookingWithCleaner) {
   gap: 2rem;
 }
 
-.main-col { width: 100%; }
+.main-col {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .content-grid {
+    grid-template-columns: 1fr 20rem;
+    align-items: start;
+  }
+
+  .main-col {
+    width: auto;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 1.5rem;
+  }
+}
 
 .section-header {
   display: flex;
@@ -277,7 +299,11 @@ function rebook(booking: BookingWithCleaner) {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .loading-text {
   font-size: 16px;
@@ -331,7 +357,9 @@ function rebook(booking: BookingWithCleaner) {
   transition: border-color 200ms ease;
 }
 
-.booking-card:hover { border-color: var(--primary, #000000); }
+.booking-card:hover {
+  border-color: var(--primary, #000000);
+}
 
 .booking-inner {
   display: flex;
@@ -412,7 +440,9 @@ function rebook(booking: BookingWithCleaner) {
   color: var(--secondary, #5e5e5e);
 }
 
-.booking-meta-icon { font-size: 0.875rem; }
+.booking-meta-icon {
+  font-size: 0.875rem;
+}
 
 .booking-meta-text {
   font-family: var(--font-caption);
@@ -446,10 +476,16 @@ function rebook(booking: BookingWithCleaner) {
   transition: background-color 200ms ease;
 }
 
-.btn-icon:hover { background: var(--surface-container, #eeeeee); }
+.btn-icon:hover {
+  background: var(--surface-container, #eeeeee);
+}
 
-.btn-icon--danger { color: var(--error, #ba1a1a); }
-.btn-icon--success { color: #2e7d32; }
+.btn-icon--danger {
+  color: var(--error, #ba1a1a);
+}
+.btn-icon--success {
+  color: #2e7d32;
+}
 
 /* ── Sidebar ── */
 .sidebar {
@@ -472,7 +508,10 @@ function rebook(booking: BookingWithCleaner) {
   margin-bottom: 1rem;
 }
 
-.overview-rows { display: flex; flex-direction: column; }
+.overview-rows {
+  display: flex;
+  flex-direction: column;
+}
 
 .overview-row {
   display: flex;
@@ -482,7 +521,9 @@ function rebook(booking: BookingWithCleaner) {
   border-bottom: 1px solid var(--surface-container, #eeeeee);
 }
 
-.overview-row--last { border-bottom: none; }
+.overview-row--last {
+  border-bottom: none;
+}
 
 .overview-label {
   font-family: var(--font-caption);
@@ -497,7 +538,9 @@ function rebook(booking: BookingWithCleaner) {
 }
 
 /* ── Past Bookings ── */
-.past-section { margin-top: 6rem; }
+.past-section {
+  margin-top: 6rem;
+}
 
 .past-header {
   display: flex;
@@ -530,12 +573,21 @@ function rebook(booking: BookingWithCleaner) {
   transition: color 200ms ease;
 }
 
-.view-all-btn:hover { color: var(--primary, #000000); }
+.view-all-btn:hover {
+  color: var(--primary, #000000);
+}
 
-.view-all-icon { font-size: 0.875rem; }
+.view-all-icon {
+  font-size: 0.875rem;
+}
 
-.empty-past { padding: 2rem 0; }
-.empty-past-text { font-size: 14px; color: var(--secondary, #5e5e5e); }
+.empty-past {
+  padding: 2rem 0;
+}
+.empty-past-text {
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+}
 
 .past-grid {
   display: grid;
@@ -550,7 +602,9 @@ function rebook(booking: BookingWithCleaner) {
   transition: border-color 200ms ease;
 }
 
-.past-card:hover { border-color: #a1a1aa; }
+.past-card:hover {
+  border-color: #a1a1aa;
+}
 
 .past-card-header {
   display: flex;
@@ -598,7 +652,9 @@ function rebook(booking: BookingWithCleaner) {
   flex-shrink: 0;
 }
 
-.cleaner-avatar-icon { font-size: 0.875rem; }
+.cleaner-avatar-icon {
+  font-size: 0.875rem;
+}
 
 .cleaner-name {
   font-family: var(--font-caption);
@@ -629,7 +685,9 @@ function rebook(booking: BookingWithCleaner) {
   color: var(--primary, #000000);
 }
 
-.rebook-btn:hover { text-decoration: none; }
+.rebook-btn:hover {
+  text-decoration: none;
+}
 
 .past-actions {
   display: flex;
@@ -647,13 +705,31 @@ function rebook(booking: BookingWithCleaner) {
   color: var(--secondary, #5e5e5e);
 }
 
-.view-btn:hover { color: var(--primary, #000000); }
+.view-btn:hover {
+  color: var(--primary, #000000);
+}
 
 /* ── Status colours ── */
-.pill--pending { background: #fff8e1; color: #e65100; border: 1px solid #ffcc80; }
-.pill--active { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
-.pill--completed { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-.pill--cancelled { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+.pill--pending {
+  background: #fff8e1;
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+.pill--active {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+.pill--completed {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+.pill--cancelled {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
 
 @media (min-width: 768px) {
   .header-title {
@@ -664,15 +740,32 @@ function rebook(booking: BookingWithCleaner) {
     color: var(--primary, #000000);
     margin-bottom: 0.5rem;
   }
-  .booking-inner { flex-direction: row; }
-  .booking-media { width: 8rem; height: 8rem; }
-  .booking-actions { flex-direction: column; }
-  .past-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .booking-inner {
+    flex-direction: row;
+  }
+  .booking-media {
+    width: 8rem;
+    height: 8rem;
+  }
+  .booking-actions {
+    flex-direction: column;
+  }
+  .past-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 1024px) {
-  .page-main { padding-left: 3rem; padding-right: 3rem; }
-  .content-grid { grid-template-columns: 8fr 4fr; gap: 2rem; }
-  .past-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .page-main {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+  .content-grid {
+    grid-template-columns: 8fr 4fr;
+    gap: 2rem;
+  }
+  .past-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 </style>

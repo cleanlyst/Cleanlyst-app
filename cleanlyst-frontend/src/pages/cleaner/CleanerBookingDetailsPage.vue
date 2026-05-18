@@ -545,7 +545,7 @@ onBeforeUnmount(() => {
 .chat-panel {
   background: #ffffff;
   border: 1px solid var(--outline-variant, #c4c7c7);
-  border-radius: 0.5rem;
+  border-radius: 0; /* match customer view: no rounded containers */
   padding: 1.5rem;
 }
 
@@ -654,12 +654,13 @@ onBeforeUnmount(() => {
   overflow-y: auto;
   padding: 1rem;
   border: 1px solid var(--outline-variant, #c4c7c7);
-  border-radius: 0.5rem;
+  border-radius: 0; /* no radius */
   background: var(--surface-container, #f8fafc);
 }
 
 .message-item {
   margin-bottom: 0.75rem;
+  display: flex;
 }
 
 .message-bubble {
@@ -667,15 +668,23 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.9rem 1rem;
-  border-radius: 0.75rem;
   background: #ffffff;
-  max-width: min(100%, 90%);
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  max-width: min(85%, 28rem);
+  border-radius: 0; /* no rounded bubbles */
 }
 
+/* Cleaner (auth user) messages: align left */
 .message-bubble--mine {
-  margin-left: auto;
+  margin-right: auto;
   background: var(--primary, #000000);
   color: #ffffff;
+  border-color: var(--primary, #000000);
+}
+
+/* Customer messages: align right */
+.message-bubble:not(.message-bubble--mine) {
+  margin-left: auto;
 }
 
 .message-text {
@@ -683,9 +692,8 @@ onBeforeUnmount(() => {
 }
 
 .message-time {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--secondary, #5e5e5e);
-  align-self: flex-end;
 }
 
 .message-form {
@@ -698,7 +706,7 @@ onBeforeUnmount(() => {
 .modal-textarea {
   width: 100%;
   border: 1px solid var(--outline-variant, #c4c7c7);
-  border-radius: 0.5rem;
+  border-radius: 0; /* no radius on inputs */
   padding: 0.9rem 1rem;
   font-size: 14px;
   color: var(--primary, #000000);
@@ -723,27 +731,23 @@ onBeforeUnmount(() => {
 .btn-decline {
   padding: 0.75rem 1rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 0; /* CTAs with no radius */
   font-weight: 600;
   cursor: pointer;
 }
-
 .btn-start {
   background: var(--primary, #000000);
   color: #ffffff;
 }
-
 .btn-action {
   background: transparent;
   color: var(--primary, #000000);
   border: 1px solid var(--outline-variant, #c4c7c7);
 }
-
 .btn-secondary {
   background: var(--surface-container, #eeeeee);
   color: var(--primary, #000000);
 }
-
 .btn-decline {
   background: transparent;
   color: #ba1a1a;

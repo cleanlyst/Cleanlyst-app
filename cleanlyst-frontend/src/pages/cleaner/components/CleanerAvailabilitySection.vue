@@ -324,7 +324,7 @@ function discardChanges() {
     grid-template-columns: repeat(12, 1fr);
   }
   .right-col {
-    grid-column: span 9;
+    grid-column: span 10;
   }
 }
 

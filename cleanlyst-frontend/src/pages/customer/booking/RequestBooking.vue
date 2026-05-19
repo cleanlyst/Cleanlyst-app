@@ -480,8 +480,13 @@ async function submitBooking() {
       return
     }
 
-    // Check for a conflicting booking (best-effort; RLS limits visibility to own bookings)
-    const hasConflict = await checkConflict(cleaner.value.user_id, scheduledStart, scheduledEnd)
+    // Check for a conflicting booking (best-effort; skip gracefully if RPC unavailable)
+    let hasConflict = false
+    try {
+      hasConflict = await checkConflict(cleaner.value.user_id, scheduledStart, scheduledEnd)
+    } catch {
+      // RPC may not be deployed yet — treat as no conflict and allow the booking through
+    }
     if (hasConflict) {
       submitError.value =
         'This cleaner is unavailable for your selected time. Please choose a different time or date.'

@@ -274,6 +274,7 @@ async function confirmPayment() {
   payProcessing.value = true
   payError.value = ''
   try {
+    await new Promise((resolve) => setTimeout(resolve, 1500))
     await processBookingPayment(bookingId)
     optimisticPaidIds.value = new Set([...optimisticPaidIds.value, bookingId])
     paySuccess.value = true

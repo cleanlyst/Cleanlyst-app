@@ -80,10 +80,10 @@
 
           <div class="action-group">
             <button
-              v-if="booking.payment_status === 'unpaid'"
+              v-if="booking.status === 'estimate_proposed' && booking.payment_status === 'unpaid'"
               type="button"
               class="btn-primary"
-              @click="payModalOpen = true"
+              @click="openPayModal"
             >
               Make Payment
             </button>
@@ -139,41 +139,66 @@
       </div>
 
       <!-- Payment modal -->
-      <div v-if="payModalOpen" class="modal-backdrop" @click.self="payModalOpen = false">
+      <div v-if="payModalOpen" class="modal-backdrop" @click.self="closePayModal">
         <div class="modal-box">
-          <div class="modal-header">
-            <h2 class="modal-title">Confirm Payment</h2>
-            <button class="modal-close" type="button" @click="payModalOpen = false">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <p class="modal-desc">
-              You are about to pay
-              <strong>{{
-                booking && booking.quote_cents != null
-                  ? formatPence(booking.quote_cents, booking.currency ?? 'GBP')
-                  : '—'
-              }}</strong>
-              for <strong>{{ booking?.service_title_snapshot ?? 'Cleaning Booking' }}</strong
-              >.
-            </p>
-            <p v-if="booking?.booking_edit_note" class="modal-note">
-              {{ booking.booking_edit_note }}
-            </p>
-            <p v-if="errorMessage" class="modal-error">{{ errorMessage }}</p>
-            <div class="modal-actions">
+          <template v-if="!paySuccess">
+            <div class="modal-header">
+              <h2 class="modal-title">Confirm Payment</h2>
               <button
-                class="btn-primary modal-btn"
+                class="modal-close"
                 type="button"
                 :disabled="paymentProcessing"
-                @click="confirmPayment"
+                @click="closePayModal"
               >
-                {{ paymentProcessing ? 'Processing…' : 'Confirm & Pay' }}
+                <span class="material-symbols-outlined">close</span>
               </button>
-              <button class="btn-cancel" type="button" @click="payModalOpen = false">Cancel</button>
             </div>
-          </div>
+            <div class="modal-body">
+              <p class="modal-desc">
+                You are about to pay
+                <strong>{{
+                  booking && booking.quote_cents != null
+                    ? formatPence(booking.quote_cents, booking.currency ?? 'GBP')
+                    : '—'
+                }}</strong>
+                for <strong>{{ booking?.service_title_snapshot ?? 'Cleaning Booking' }}</strong
+                >.
+              </p>
+              <p v-if="booking?.booking_edit_note" class="modal-note">
+                {{ booking.booking_edit_note }}
+              </p>
+              <p v-if="payModalError" class="modal-error">{{ payModalError }}</p>
+              <div class="modal-actions">
+                <button
+                  class="btn-primary modal-btn"
+                  type="button"
+                  :disabled="paymentProcessing"
+                  @click="confirmPayment"
+                >
+                  <span v-if="paymentProcessing" class="btn-spinner"></span>
+                  <span v-else>Confirm & Pay</span>
+                </button>
+                <button
+                  class="btn-cancel"
+                  type="button"
+                  :disabled="paymentProcessing"
+                  @click="closePayModal"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="modal-success">
+              <span class="material-symbols-outlined success-check">check_circle</span>
+              <p class="success-title">Payment Successful!</p>
+              <p class="success-sub">Your cleaner will start soon.</p>
+              <button class="btn-primary modal-btn" type="button" @click="closePayModal">
+                Done
+              </button>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -266,6 +291,8 @@ const actionLoading = ref(false)
 const activeAction = ref<string | null>(null)
 const payModalOpen = ref(false)
 const paymentProcessing = ref(false)
+const paySuccess = ref(false)
+const payModalError = ref('')
 const messageDraft = ref('')
 const messageSending = ref(false)
 const errorMessage = ref('')
@@ -370,18 +397,31 @@ async function cancelBooking() {
   }
 }
 
+function openPayModal() {
+  payModalOpen.value = true
+  paySuccess.value = false
+  payModalError.value = ''
+}
+
+function closePayModal() {
+  if (paymentProcessing.value) return
+  payModalOpen.value = false
+  paySuccess.value = false
+  payModalError.value = ''
+}
+
 async function confirmPayment() {
-  if (!booking.value) return
+  if (!booking.value || paymentProcessing.value) return
   paymentProcessing.value = true
-  errorMessage.value = ''
+  payModalError.value = ''
   successMessage.value = ''
   try {
+    await new Promise((resolve) => setTimeout(resolve, 1500))
     await processBookingPayment(bookingId)
-    payModalOpen.value = false
-    successMessage.value = '✓ Payment successful! Your cleaner will start soon.'
+    paySuccess.value = true
     await refreshBooking()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to process payment.'
+    payModalError.value = e instanceof Error ? e.message : 'Failed to process payment.'
   } finally {
     paymentProcessing.value = false
   }
@@ -984,5 +1024,46 @@ onBeforeUnmount(() => {
 
 .btn-cancel:hover {
   background: var(--surface-container, #eeeeee);
+}
+
+.modal-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5rem 1.5rem;
+  gap: 1rem;
+  text-align: center;
+}
+
+.success-check {
+  font-size: 3rem;
+  color: #2e7d32;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+.success-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.success-sub {
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
+
+.btn-spinner {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
 }
 </style>

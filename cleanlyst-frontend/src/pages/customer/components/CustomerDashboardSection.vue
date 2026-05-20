@@ -174,12 +174,8 @@ function statusClass(status: string): string {
   return 'pill--cancelled'
 }
 
-function rebook(booking: BookingWithCleaner) {
-  if (booking.cleaner_id) {
-    router.push({ name: 'RequestBooking', query: { cleanerId: booking.cleaner_id } })
-  } else {
-    router.push({ name: 'BookCleaner' })
-  }
+function rebook(_booking: BookingWithCleaner) {
+  router.push({ name: 'BookCleaner' })
 }
 </script>
 

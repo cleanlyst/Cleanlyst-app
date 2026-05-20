@@ -1,30 +1,72 @@
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, FlatList, StyleSheet, TextInput, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import CleanerCard from "@/components/cleaner/CleanerCard";
-import { Cleaner } from "@/types/cleaner";
-
-const demoCleaners: Cleaner[] = [
-  { id: "cleaner-1", name: "Maya", hourlyRate: 24, rating: 4.9 },
-  { id: "cleaner-2", name: "Arjun", hourlyRate: 28, rating: 4.8 },
-];
+import { searchCleaners } from "@/features/cleaners/cleanerService";
+import type { Cleaner } from "@/types/cleaner";
 
 export default function CleanersScreen() {
   const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [cleaners, setCleaners] = useState<Cleaner[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function loadCleaners(search = "") {
+    setLoading(true);
+    setError(null);
+    try {
+      const results = await searchCleaners(search);
+      setCleaners(results);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to load cleaners.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadCleaners();
+  }, []);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Available cleaners</Text>
-      <FlatList
-        data={demoCleaners}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <CleanerCard
-            cleaner={item}
-            onPress={() => router.push("/(booking)/service-select")}
-          />
-        )}
-        contentContainerStyle={styles.list}
-      />
+      <Text style={styles.title}>Cleanlyst cleaners</Text>
+      <Text style={styles.subtitle}>Search approved cleaners and begin your booking request.</Text>
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by cleaner or business"
+          value={query}
+          onChangeText={setQuery}
+          returnKeyType="search"
+          onSubmitEditing={() => loadCleaners(query)}
+        />
+        <Pressable style={styles.searchButton} onPress={() => loadCleaners(query)}>
+          <Text style={styles.searchButtonText}>Search</Text>
+        </Pressable>
+      </View>
+      {loading ? (
+        <Text style={styles.statusText}>Loading cleaners…</Text>
+      ) : error ? (
+        <Text style={[styles.statusText, styles.errorText]}>{error}</Text>
+      ) : cleaners.length === 0 ? (
+        <Text style={styles.statusText}>No cleaners found. Try a different search term.</Text>
+      ) : (
+        <FlatList
+          data={cleaners}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <CleanerCard
+              cleaner={item}
+              onPress={() =>
+                router.push(`/(booking)/service-select?cleanerId=${encodeURIComponent(item.id)}`)
+              }
+            />
+          )}
+          contentContainerStyle={styles.list}
+        />
+      )}
     </View>
   );
 }
@@ -36,9 +78,47 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "700",
-    marginBottom: 16,
+    marginBottom: 6,
+  },
+  subtitle: {
+    color: "#6b7280",
+    marginBottom: 18,
+    fontSize: 15,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 18,
+  },
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginRight: 10,
+    backgroundColor: "#f8fafc",
+  },
+  searchButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: "#2563eb",
+  },
+  searchButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  statusText: {
+    color: "#6b7280",
+    marginTop: 12,
+    fontSize: 15,
+  },
+  errorText: {
+    color: "#dc2626",
   },
   list: {
     gap: 12,

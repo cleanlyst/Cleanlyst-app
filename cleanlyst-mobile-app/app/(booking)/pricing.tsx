@@ -8,22 +8,25 @@ export default function PricingScreen() {
   const router = useRouter();
   const { draft } = useBooking();
 
+  const totalCents = draft.quoteCents ?? 0;
+  const serviceTitle = draft.serviceTitleSnapshot ?? "Selected service";
+  const date = draft.scheduledStart ?? draft.date ?? "Not scheduled";
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Pricing</Text>
-      <Text style={styles.body}>
-        Review your estimated price before confirming the request.
-      </Text>
+      <Text style={styles.title}>Review pricing</Text>
+      <Text style={styles.body}>Confirm the booking details before sending your request.</Text>
       <View style={styles.summary}>
+        <Text style={styles.sectionTitle}>Cleaner</Text>
+        <Text>{draft.cleanerName ?? "Cleaner selected"}</Text>
         <Text style={styles.sectionTitle}>Service</Text>
-        <Text>{draft.serviceId ?? "Select a service"}</Text>
-        <Text style={styles.sectionTitle}>Estimated total</Text>
-        <Text style={styles.total}>{formatCents(4500)}</Text>
+        <Text>{serviceTitle}</Text>
+        <Text style={styles.sectionTitle}>Date</Text>
+        <Text>{date}</Text>
+        <Text style={styles.sectionTitle}>Total</Text>
+        <Text style={styles.total}>{formatCents(totalCents)}</Text>
       </View>
-      <Button
-        title="Confirm request"
-        onPress={() => router.push("/(booking)/confirm")}
-      />
+      <Button title="Continue to confirmation" onPress={() => router.push("/(booking)/confirm")} />
     </View>
   );
 }

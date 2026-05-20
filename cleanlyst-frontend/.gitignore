@@ -14,6 +14,16 @@ dist-ssr
 coverage
 *.local
 
+# Environment variables
+.env
+.env.*
+.env.local
+.env.*.local
+.env.create-users.local
+
+# Markdown docs
+*.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -37,4 +47,6 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
-.env.create-users.local
+
+# OS
+Thumbs.db

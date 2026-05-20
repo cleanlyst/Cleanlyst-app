@@ -1,30 +1,59 @@
-import { View, Text, StyleSheet } from "react-native";
+import { useState } from "react";
+import { View, Text, StyleSheet, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import Button from "@/components/ui/Button";
 import { useBooking } from "@/hooks/useBooking";
+import { useAuthStore } from "@/features/auth/authStore";
+import { createBookingRequest } from "@/features/bookings/bookingService";
 
 export default function BookingConfirmScreen() {
   const router = useRouter();
   const { draft, resetDraft } = useBooking();
+  const userId = useAuthStore((state) => state.user?.id);
+  const [saving, setSaving] = useState(false);
 
-  const handleConfirm = () => {
-    resetDraft();
-    router.replace("/booking/booking-id/status");
+  const handleConfirm = async () => {
+    if (!userId) {
+      Alert.alert("Authentication required", "Please sign in before confirming a booking.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await createBookingRequest(userId, draft);
+      resetDraft();
+      router.replace("/(tabs)/bookings");
+    } catch (error) {
+      Alert.alert(
+        "Booking failed",
+        error instanceof Error ? error.message : "Unable to create booking request.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Confirm booking</Text>
       <Text style={styles.body}>
-        You will only create the booking request after tapping confirm.
+        Review the final details before sending your booking request to the cleaner.
       </Text>
       <View style={styles.summary}>
-        <Text style={styles.sectionTitle}>Address</Text>
+        <Text style={styles.sectionTitle}>Cleaner</Text>
+        <Text>{draft.cleanerName ?? "Not selected"}</Text>
+        <Text style={styles.sectionTitle}>Service</Text>
+        <Text>{draft.serviceTitleSnapshot ?? "Not selected"}</Text>
+        <Text style={styles.sectionTitle}>Location</Text>
         <Text>{draft.address ?? "Not set"}</Text>
         <Text style={styles.sectionTitle}>Notes</Text>
         <Text>{draft.notes ?? "None"}</Text>
       </View>
-      <Button title="Confirm request" onPress={handleConfirm} />
+      <Button
+        title={saving ? "Sending request…" : "Confirm request"}
+        onPress={handleConfirm}
+        disabled={saving}
+      />
     </View>
   );
 }

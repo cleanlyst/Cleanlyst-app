@@ -1,160 +1,274 @@
 <template>
-  <main class="pt-24 pb-20 px-6 lg:px-12 max-w-7xl mx-auto">
-    <div class="flex flex-col lg:flex-row gap-gutter">
-      <!-- Left Sidebar Filters -->
-      <aside class="w-full lg:w-72 shrink-0">
-        <div class="sticky top-24 space-y-8">
-          <div>
-            <h2 class="font-h2 text-h2 mb-4">Filters</h2>
-            <div class="h-px bg-outline-variant w-full mb-6"></div>
-          </div>
+  <main class="pt-24 pb-24 px-6 max-w-7xl mx-auto">
 
-          <!-- City filter -->
-          <div class="space-y-4">
-            <label
-              for="city-filter"
-              class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-              >City</label
-            >
-            <select
-              id="city-filter"
-              v-model="filters.city"
-              class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
-            >
-              <option value="">All Cities</option>
-              <option v-for="city in UK_CITIES" :key="city" :value="city">{{ city }}</option>
-            </select>
-          </div>
+    <!-- Payment Success -->
+    <div v-if="paymentSuccess" class="max-w-lg mx-auto text-center py-24 space-y-6">
+      <span class="material-symbols-outlined text-6xl text-green-600 block success-icon">check_circle</span>
+      <h1 class="font-h1 text-h1 text-primary">Payment Successful</h1>
+      <p class="font-body text-body text-secondary">Your booking has been successfully placed.</p>
+      <button
+        class="inline-block px-8 py-3 bg-primary text-white font-label-md"
+        @click="router.push({ name: 'CustomerBookings' })"
+      >
+        Continue
+      </button>
+    </div>
 
-          <!-- Booking Date filter -->
-          <div class="space-y-4">
-            <label
-              for="booking-date"
-              class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-              >Booking Date</label
+    <!-- Wizard -->
+    <div v-else>
+
+      <!-- Header + Progress -->
+      <section class="mb-10">
+        <h1 class="font-h1 text-h1 text-primary mb-1">Book Cleaner</h1>
+        <div class="flex items-center gap-2 mt-4">
+          <template v-for="(label, i) in STEP_LABELS" :key="i">
+            <div
+              :class="[
+                'flex items-center gap-1.5 text-xs font-medium',
+                step === i + 1 ? 'text-primary' : step > i + 1 ? 'text-green-700' : 'text-on-surface-variant',
+              ]"
             >
+              <span
+                :class="[
+                  'w-5 h-5 flex items-center justify-center text-[10px] font-bold',
+                  step === i + 1
+                    ? 'bg-primary text-white'
+                    : step > i + 1
+                      ? 'bg-green-600 text-white'
+                      : 'bg-surface-variant text-on-surface-variant',
+                ]"
+              >
+                <span v-if="step > i + 1" class="material-symbols-outlined text-[12px]">check</span>
+                <span v-else>{{ i + 1 }}</span>
+              </span>
+              <span class="hidden sm:inline">{{ label }}</span>
+            </div>
+            <div v-if="i < STEP_LABELS.length - 1" class="flex-1 h-px bg-outline-variant max-w-8"></div>
+          </template>
+        </div>
+      </section>
+
+      <!-- Step 1: Service + Add-ons -->
+      <section v-if="step === 1" class="max-w-2xl space-y-8">
+        <h2 class="font-h2 text-h2 text-primary">Choose the service you need</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button
+            v-for="svc in CORE_SERVICE_CATEGORY.subServices"
+            :key="svc.slug"
+            type="button"
+            :class="[
+              'text-left p-5 border transition-colors space-y-2',
+              selectedServiceSlug === svc.slug
+                ? 'border-primary bg-surface-variant'
+                : 'border-outline-variant bg-white hover:border-primary',
+            ]"
+            @click="selectedServiceSlug = svc.slug"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <span class="material-symbols-outlined text-2xl text-primary">{{
+                svc.icon ?? 'cleaning_services'
+              }}</span>
+              <span
+                v-if="selectedServiceSlug === svc.slug"
+                class="material-symbols-outlined text-primary filled-icon"
+                >check_circle</span
+              >
+            </div>
+            <p class="font-label-md text-label-md text-primary">{{ svc.name }}</p>
+            <p class="text-caption font-caption text-secondary line-clamp-2">{{ svc.description }}</p>
+          </button>
+        </div>
+
+        <div class="space-y-3">
+          <h3 class="font-label-md text-label-md text-primary">Optional Add-ons</h3>
+          <label
+            v-for="addon in ADDON_CATEGORY.subServices"
+            :key="addon.slug"
+            :class="[
+              'flex items-center gap-4 p-4 border cursor-pointer transition-colors',
+              selectedAddOns.includes(addon.slug)
+                ? 'border-primary bg-surface-variant'
+                : 'border-outline-variant bg-white hover:border-primary',
+            ]"
+          >
             <input
-              id="booking-date"
-              v-model="filters.bookingDate"
+              type="checkbox"
+              :value="addon.slug"
+              v-model="selectedAddOns"
+              class="w-4 h-4 accent-zinc-900"
+            />
+            <span class="material-symbols-outlined text-xl text-primary">{{
+              addon.icon ?? 'add'
+            }}</span>
+            <div class="flex-1">
+              <p class="font-label-md text-label-md text-primary">{{ addon.name }}</p>
+              <p class="text-caption font-caption text-secondary">{{ addon.description }}</p>
+            </div>
+            <span class="font-label-md text-label-md text-primary">
+              + {{ formatPence(ADD_ON_PRICES_PENCE[addon.slug] ?? 0) }}
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Step 2: Schedule -->
+      <section v-else-if="step === 2" class="max-w-lg space-y-6">
+        <h2 class="font-h2 text-h2 text-primary">Schedule</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-label-md text-label-md text-primary mb-2">Date</label>
+            <input
+              v-model="bookingDate"
               type="date"
               :min="minDate"
-              class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
+              class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
             />
-            <p v-if="filters.bookingDate" class="text-xs text-on-surface-variant">
-              {{ formatDateDisplay(filters.bookingDate) }}
-            </p>
           </div>
-
-          <!-- Booking Time filter (only meaningful when a date is set) -->
-          <div v-if="filters.bookingDate" class="space-y-4">
-            <label
-              for="booking-time"
-              class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-              >Start Time <span class="normal-case text-xs">(optional)</span></label
-            >
-            <input
-              id="booking-time"
-              v-model="filters.bookingTime"
-              type="time"
-              class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
-            />
-            <p class="text-xs text-on-surface-variant">
-              Only show cleaners available at this time.
-            </p>
-          </div>
-
-          <button
-            class="w-full py-4 bg-primary text-on-primary font-label-md hover:bg-zinc-800 transition-colors"
-            @click="applyFilters"
-          >
-            Apply Filters
-          </button>
-          <button
-            class="w-full py-4 bg-transparent border border-outline-variant text-primary font-label-md hover:bg-surface-container transition-colors"
-            @click="clearFilters"
-          >
-            Clear All
-          </button>
-        </div>
-      </aside>
-
-      <!-- Main Content: Cleaner List Cards -->
-      <section class="flex-1 space-y-gutter">
-        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
-            <h1 class="font-h1 text-h1">Available Cleaners</h1>
-            <p class="text-secondary font-body mt-2">
-              <span v-if="loading">Searching…</span>
-              <span v-else-if="errorMessage" class="text-red-600">{{ errorMessage }}</span>
-              <span v-else
-                >Showing {{ cleaners.length }} professional{{
-                  cleaners.length !== 1 ? 's' : ''
-                }}</span
-              >
-            </p>
+            <label class="block font-label-md text-label-md text-primary mb-2">Start Time</label>
+            <input
+              v-model="bookingTime"
+              type="time"
+              class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
+            />
           </div>
-          <div class="flex items-center gap-4 border-b border-outline-variant pb-2">
-            <span class="font-label-md text-label-md text-secondary">Sort by:</span>
+        </div>
+      </section>
+
+      <!-- Step 3: Property Details -->
+      <section v-else-if="step === 3" class="max-w-lg space-y-6">
+        <h2 class="font-h2 text-h2 text-primary">Property Details</h2>
+        <div class="space-y-4">
+          <div>
+            <label class="block font-label-md text-label-md text-primary mb-2">Property Type</label>
             <select
-              v-model="sortBy"
-              class="bg-transparent border-none font-label-md focus:ring-0 p-0 cursor-pointer"
-              @change="applyFilters"
+              v-model="propertyType"
+              class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
             >
-              <option value="rating">Highest Rated</option>
-              <option value="price_asc">Lowest Price</option>
+              <option value="" disabled>Select type</option>
+              <option value="flat">Flat</option>
+              <option value="house">House</option>
+              <option value="airbnb">Airbnb</option>
             </select>
           </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block font-label-md text-label-md text-primary mb-2">Bedrooms</label>
+              <select
+                v-model="bedrooms"
+                class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
+              >
+                <option value="" disabled>Select</option>
+                <option value="studio">Studio</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4+</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-label-md text-label-md text-primary mb-2">Bathrooms</label>
+              <select
+                v-model="bathrooms"
+                class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
+              >
+                <option value="" disabled>Select</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4+</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block font-label-md text-label-md text-primary mb-2">Address</label>
+            <input
+              v-model="addressLine1"
+              type="text"
+              placeholder="Address line"
+              class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none mb-2"
+            />
+            <div class="grid grid-cols-2 gap-2">
+              <input
+                v-model="addressCity"
+                type="text"
+                placeholder="City"
+                class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
+              />
+              <input
+                v-model="addressPostcode"
+                type="text"
+                placeholder="Postcode"
+                class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
+              />
+            </div>
+          </div>
+          <div>
+            <label class="block font-label-md text-label-md text-primary mb-2"
+              >Notes (Optional)</label
+            >
+            <textarea
+              v-model="notes"
+              rows="3"
+              placeholder="Any specific instructions…"
+              class="w-full p-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none resize-none"
+            ></textarea>
+          </div>
         </div>
+      </section>
+
+      <!-- Step 4: Available Cleaners -->
+      <section v-else-if="step === 4" class="space-y-6">
+        <h2 class="font-h2 text-h2 text-primary">Available Cleaners</h2>
 
         <!-- Loading skeleton -->
-        <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+        <div v-if="loadingCleaners" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div
-            v-for="n in 4"
+            v-for="n in 3"
             :key="n"
-            class="bg-surface-container-lowest border border-outline-variant overflow-hidden animate-pulse"
+            class="border border-outline-variant overflow-hidden animate-pulse"
           >
-            <div class="aspect-[16/9] w-full bg-surface-container"></div>
-            <div class="p-padding-card space-y-3">
+            <div class="aspect-[16/9] bg-surface-container"></div>
+            <div class="p-4 space-y-3">
               <div class="h-5 bg-surface-container rounded w-2/3"></div>
               <div class="h-4 bg-surface-container rounded w-1/2"></div>
-              <div class="h-4 bg-surface-container rounded w-1/3"></div>
             </div>
           </div>
         </div>
 
-        <!-- Empty state -->
+        <!-- Empty -->
         <div
-          v-else-if="cleaners.length === 0 && !errorMessage"
+          v-else-if="cleaners.length === 0"
           class="border border-dashed border-outline-variant p-16 text-center"
         >
-          <span class="material-symbols-outlined text-outline-variant text-5xl block mb-4"
+          <span class="material-symbols-outlined text-5xl text-outline-variant block mb-4"
             >search_off</span
           >
-          <p class="font-label-md text-label-md text-on-surface">No cleaners found</p>
-          <p class="text-caption text-on-surface-variant mt-1">Try adjusting your filters.</p>
+          <p class="font-label-md text-label-md text-on-surface">No cleaners available</p>
+          <p class="text-caption text-on-surface-variant mt-1">Try a different date or time.</p>
         </div>
 
-        <!-- Results Grid -->
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+        <!-- Cleaner cards -->
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div
             v-for="c in cleaners"
             :key="c.user_id"
-            class="bg-surface-container-lowest border border-outline-variant overflow-hidden group hover:border-primary transition-colors"
+            class="bg-white border border-outline-variant overflow-hidden group hover:border-primary transition-colors cursor-pointer"
+            @click="selectCleaner(c)"
           >
             <div class="aspect-[16/9] w-full relative overflow-hidden bg-surface-variant">
               <img
                 v-if="c.profiles?.avatar_url"
-                :alt="displayName(c)"
                 :src="c.profiles.avatar_url"
+                :alt="displayName(c)"
                 class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
               />
               <div
                 v-else
                 class="w-full h-full flex items-center justify-center bg-surface-container"
               >
-                <span class="material-symbols-outlined text-5xl text-on-surface-variant"
-                  >person</span
-                >
+                <span class="material-symbols-outlined text-5xl text-on-surface-variant">person</span>
               </div>
               <div
                 v-if="c.average_rating >= 4.9"
@@ -163,19 +277,15 @@
                 Top Rated
               </div>
             </div>
-            <div class="p-padding-card space-y-4">
+            <div class="p-4 space-y-3">
               <div class="flex justify-between items-start">
                 <div>
-                  <h2 class="font-h2 text-h2 text-primary">{{ displayName(c) }}</h2>
+                  <h3 class="font-h2 text-h2 text-primary">{{ displayName(c) }}</h3>
                   <div class="flex items-center gap-1 mt-1">
-                    <span class="material-symbols-outlined text-[18px] text-zinc-900 star-filled"
-                      >star</span
-                    >
-                    <span class="font-label-md text-label-md">{{
-                      c.average_rating.toFixed(1)
-                    }}</span>
+                    <span class="material-symbols-outlined text-[16px] star-filled">star</span>
+                    <span class="font-label-md text-label-md">{{ c.average_rating.toFixed(1) }}</span>
                     <span class="text-secondary font-caption text-caption"
-                      >({{ c.review_count }} reviews)</span
+                      >({{ c.review_count }})</span
                     >
                   </div>
                 </div>
@@ -183,167 +293,481 @@
                   <div class="font-h2 text-h2">
                     {{ c.hourly_rate_cents ? formatPence(c.hourly_rate_cents) : '—' }}
                   </div>
-                  <div class="text-secondary font-caption text-caption">per hour</div>
+                  <div class="text-secondary text-caption font-caption">per hour</div>
                 </div>
               </div>
-              <p
-                v-if="c.bio"
-                class="font-body text-body text-on-surface-variant text-sm line-clamp-2"
-              >
-                {{ c.bio }}
-              </p>
-              <div v-if="c.profiles?.city" class="flex items-center gap-1 text-secondary text-sm">
-                <span class="material-symbols-outlined text-[16px]">location_on</span>
-                {{ c.profiles.city }}
-              </div>
-              <div class="pt-4 border-t border-outline-variant space-y-3">
-                <div class="flex items-center gap-2">
+              <p v-if="c.bio" class="text-sm text-on-surface-variant line-clamp-2">{{ c.bio }}</p>
+              <div class="pt-3 border-t border-outline-variant">
+                <div class="flex items-center gap-2 mb-3">
                   <span class="material-symbols-outlined text-secondary text-sm">verified</span>
                   <span class="font-caption text-caption text-secondary">Verified cleaner</span>
                 </div>
-                <div class="flex gap-2">
-                  <button
-                    class="flex-1 py-2 bg-primary text-on-primary font-label-md active:scale-95 transition-all text-sm"
-                    @click="bookInstant(c.user_id)"
-                  >
-                    Instant Book
-                  </button>
-                  <button
-                    class="flex-1 py-2 border border-outline-variant text-primary font-label-md active:scale-95 transition-all text-sm hover:bg-surface-container"
-                    @click="bookCustom(c.user_id)"
-                  >
-                    Custom Request
-                  </button>
-                </div>
+                <button
+                  class="w-full py-2.5 bg-primary text-on-primary font-label-md text-sm active:scale-95 transition-all"
+                >
+                  Book
+                </button>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Pagination -->
-        <div v-if="cleaners.length > 0" class="flex justify-center items-center gap-4 pt-12">
-          <button
-            class="w-10 h-10 flex items-center justify-center border border-outline-variant hover:border-primary transition-colors disabled:opacity-40"
-            :disabled="page === 1 || loading"
-            @click="goToPage(page - 1)"
-          >
-            <span class="material-symbols-outlined">chevron_left</span>
-          </button>
-          <span class="font-label-md text-label-md text-on-surface">Page {{ page }}</span>
-          <button
-            class="w-10 h-10 flex items-center justify-center border border-outline-variant hover:border-primary transition-colors disabled:opacity-40"
-            :disabled="cleaners.length < pageSize || loading"
-            @click="goToPage(page + 1)"
-          >
-            <span class="material-symbols-outlined">chevron_right</span>
-          </button>
-        </div>
       </section>
+
+      <!-- Step 5: Booking Summary + Payment -->
+      <section v-else-if="step === 5" class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div class="lg:col-span-7 space-y-6">
+          <h2 class="font-h2 text-h2 text-primary">Booking Summary</h2>
+
+          <!-- Selected cleaner -->
+          <div class="border border-outline-variant p-5 flex items-center gap-4">
+            <div
+              class="h-14 w-14 rounded-full overflow-hidden bg-surface-container border border-outline-variant flex items-center justify-center flex-shrink-0"
+            >
+              <img
+                v-if="selectedCleaner?.profiles?.avatar_url"
+                :src="selectedCleaner.profiles.avatar_url"
+                :alt="displayName(selectedCleaner!)"
+                class="w-full h-full object-cover"
+              />
+              <span v-else class="material-symbols-outlined text-on-surface-variant text-2xl"
+                >person</span
+              >
+            </div>
+            <div>
+              <p class="font-label-md text-label-md text-primary">{{ displayName(selectedCleaner!) }}</p>
+              <div class="flex items-center gap-1 mt-0.5">
+                <span class="material-symbols-outlined text-[14px] star-filled">star</span>
+                <span class="text-caption font-caption text-secondary">
+                  {{ selectedCleaner!.average_rating.toFixed(1) }} ({{
+                    selectedCleaner!.review_count
+                  }}
+                  reviews)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Booking details -->
+          <div class="border border-outline-variant p-5 space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="text-secondary">Service</span>
+              <span class="text-primary font-medium">{{ selectedServiceLabel }}</span>
+            </div>
+            <div v-if="selectedAddOns.length > 0" class="flex justify-between text-sm">
+              <span class="text-secondary">Add-ons</span>
+              <span class="text-primary font-medium">{{ selectedAddOns.map(addonName).join(', ') }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-secondary">Date</span>
+              <span class="text-primary font-medium">{{ formatDateDisplay(bookingDate) }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-secondary">Time</span>
+              <span class="text-primary font-medium">{{ bookingTime }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-secondary">Property</span>
+              <span class="text-primary font-medium">{{ propertyLabel }}</span>
+            </div>
+            <div v-if="locationText" class="flex justify-between text-sm">
+              <span class="text-secondary">Address</span>
+              <span class="text-primary font-medium text-right max-w-[60%]">{{ locationText }}</span>
+            </div>
+          </div>
+
+          <!-- Pricing breakdown -->
+          <div class="border border-outline-variant p-5 space-y-3">
+            <div class="flex justify-between text-sm">
+              <span class="text-secondary">{{ selectedServiceLabel }}</span>
+              <span class="text-primary font-medium">{{ formatPence(basePricePence) }}</span>
+            </div>
+            <div
+              v-for="slug in selectedAddOns"
+              :key="slug"
+              class="flex justify-between text-sm"
+            >
+              <span class="text-secondary">{{ addonName(slug) }}</span>
+              <span class="text-primary font-medium">+ {{ formatPence(ADD_ON_PRICES_PENCE[slug] ?? 0) }}</span>
+            </div>
+            <div class="pt-3 border-t border-outline-variant space-y-2">
+              <div class="flex justify-between text-sm">
+                <span class="text-secondary">Subtotal</span>
+                <span class="text-primary">{{ formatPence(subtotalPence) }}</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-secondary">Booking fee (7%)</span>
+                <span class="text-primary">{{ formatPence(bookingFeePence) }}</span>
+              </div>
+              <div class="flex justify-between pt-2 border-t border-outline-variant">
+                <span class="font-h2 text-h2 text-primary">Total</span>
+                <span class="font-h2 text-h2 text-primary">{{ formatPence(totalPence) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <p v-if="payError" class="text-caption text-red-600">{{ payError }}</p>
+
+          <button
+            class="w-full py-4 bg-primary text-white font-label-md disabled:opacity-50 flex items-center justify-center gap-2"
+            :disabled="paying"
+            @click="confirmAndPay"
+          >
+            <span v-if="paying" class="loading-spinner-sm"></span>
+            {{ paying ? 'Processing…' : 'Confirm and Pay' }}
+          </button>
+          <p class="text-center text-caption font-caption text-secondary">
+            Payment held securely. Released to cleaner after job completion.
+          </p>
+        </div>
+
+        <aside class="lg:col-span-5">
+          <div
+            class="sticky top-24 bg-surface-container-low border border-outline-variant p-5 flex items-start gap-3"
+          >
+            <span class="material-symbols-outlined text-primary mt-0.5">shield</span>
+            <div>
+              <p class="font-label-md text-label-md text-primary text-sm">Cleanlyst Guarantee</p>
+              <p class="text-caption font-caption text-secondary text-xs mt-1">
+                Your payment is held securely and only released after the job is completed.
+              </p>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- Navigation buttons -->
+      <div v-if="step >= 1 && step <= 3" class="flex items-center justify-between pt-8 max-w-2xl">
+        <button
+          v-if="step > 1"
+          type="button"
+          class="px-6 py-3 border border-outline-variant text-primary font-label-md hover:bg-surface-container"
+          @click="prevStep"
+        >
+          ← Back
+        </button>
+        <span v-else></span>
+        <button
+          type="button"
+          class="px-8 py-3 bg-primary text-white font-label-md disabled:opacity-40"
+          :disabled="!canNext"
+          @click="nextStep"
+        >
+          Continue →
+        </button>
+      </div>
+
+      <div v-else-if="step === 4" class="flex pt-8 max-w-2xl">
+        <button
+          type="button"
+          class="px-6 py-3 border border-outline-variant text-primary font-label-md hover:bg-surface-container"
+          @click="prevStep"
+        >
+          ← Back
+        </button>
+      </div>
+
+      <div v-else-if="step === 5" class="flex pt-4 max-w-2xl">
+        <button
+          type="button"
+          class="px-6 py-3 border border-outline-variant text-primary font-label-md hover:bg-surface-container"
+          @click="prevStep"
+        >
+          ← Back
+        </button>
+      </div>
     </div>
   </main>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
+import { createBookingRequest, processPaymentDirect } from '@/services/bookingService'
+import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
+import { useAuthStore } from '@/stores/auth'
+import { requireSupabase } from '@/lib/supabase'
 import { formatPence } from '@/utils/format'
-import { UK_CITIES } from '@/utils/ukCities'
+import {
+  ADDON_CATEGORY,
+  ADD_ON_PRICES_PENCE,
+  CORE_SERVICE_CATEGORY,
+  CORE_SERVICE_MATCH_KEYWORDS,
+  PROPERTY_SIZE_OPTIONS,
+} from '@/utils/serviceCatalog'
+
+interface BookableService {
+  id: string
+  cleaner_id: string
+  title: string
+  category: string | null
+  description: string | null
+  duration_minutes: number | null
+  base_price_cents: number
+}
+
+const STEP_LABELS = ['Service', 'Schedule', 'Property', 'Cleaners', 'Summary']
+
+const BEDROOMS_HOURS: Record<string, number> = {
+  studio: 1.5,
+  '1': 2,
+  '2': 3,
+  '3': 4,
+  '4': 5,
+}
+
+const BEDROOMS_SIZE_SLUG: Record<string, string> = {
+  studio: 'studio',
+  '1': '1bed',
+  '2': '2bed',
+  '3': '3bed',
+  '4': '4bed',
+}
 
 const router = useRouter()
+const auth = useAuthStore()
+const prefsStore = useCustomerPreferencesStore()
 
-const pageSize = 12
-const page = ref(1)
-const loading = ref(false)
-const errorMessage = ref('')
+const step = ref(1)
+const paymentSuccess = ref(false)
+
+// Step 1
+const selectedServiceSlug = ref('')
+const selectedAddOns = ref<string[]>([])
+
+// Step 2
+const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+const bookingDate = ref('')
+const bookingTime = ref('09:00')
+
+// Step 3
+const propertyType = ref('')
+const bedrooms = ref('')
+const bathrooms = ref('')
+const notes = ref('')
+const addressLine1 = ref('')
+const addressCity = ref('')
+const addressPostcode = ref('')
+
+// Step 4
+const loadingCleaners = ref(false)
 const cleaners = ref<CleanerSearchResult[]>([])
-const sortBy = ref<'rating' | 'price_asc'>('rating')
+const selectedCleaner = ref<CleanerSearchResult | null>(null)
 
-const filters = reactive({
-  city: '',
-  service: '',
-  bookingDate: '',
-  bookingTime: '',
-  minRating: 0,
+// Step 5
+const cleanerServices = ref<BookableService[]>([])
+const paying = ref(false)
+const payError = ref('')
+
+// --- Computed ---
+
+const selectedServiceLabel = computed(
+  () => CORE_SERVICE_CATEGORY.subServices.find((s) => s.slug === selectedServiceSlug.value)?.name ?? '',
+)
+
+const locationText = computed(() =>
+  [addressLine1.value, addressCity.value, addressPostcode.value].filter(Boolean).join(', '),
+)
+
+const propertyLabel = computed(() => {
+  const typeMap: Record<string, string> = { flat: 'Flat', house: 'House', airbnb: 'Airbnb' }
+  const type = typeMap[propertyType.value] ?? ''
+  const bed = bedrooms.value === 'studio' ? 'Studio' : bedrooms.value ? `${bedrooms.value} bed` : ''
+  const bath = bathrooms.value ? `${bathrooms.value} bath` : ''
+  return [type, bed, bath].filter(Boolean).join(', ')
 })
 
-// Calculate min date as tomorrow
-const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+function findMatchingService(slug: string): BookableService | null {
+  const keywords = CORE_SERVICE_MATCH_KEYWORDS[slug]
+  if (!keywords) return null
+  const normalize = (v: string | null | undefined) => (v ?? '').toLowerCase()
+  return (
+    cleanerServices.value.find((s) => {
+      const title = normalize(s.title)
+      const category = normalize(s.category)
+      const description = normalize(s.description)
+      return keywords.some((kw) => {
+        const keyword = kw.toLowerCase()
+        return title.includes(keyword) || category.includes(keyword) || description.includes(keyword)
+      })
+    }) ?? null
+  )
+}
 
-onMounted(() => loadCleaners())
+const matchedService = computed(() =>
+  selectedServiceSlug.value ? findMatchingService(selectedServiceSlug.value) : null,
+)
 
-async function loadCleaners() {
-  loading.value = true
-  errorMessage.value = ''
-  try {
-    const params: Parameters<typeof searchCleaners>[0] = {
-      limit: pageSize,
-      offset: (page.value - 1) * pageSize,
-    }
-    if (filters.city.trim()) params.city = filters.city.trim()
-    if (filters.service) params.serviceCategory = filters.service
-    if (filters.bookingDate) params.availabilityDate = filters.bookingDate
-    if (filters.bookingDate && filters.bookingTime) params.availabilityTime = filters.bookingTime
-    if (filters.minRating > 0) params.minRating = filters.minRating
-
-    const results = await searchCleaners(params)
-
-    if (sortBy.value === 'price_asc') {
-      results.sort((a, b) => (a.hourly_rate_cents ?? 0) - (b.hourly_rate_cents ?? 0))
-    }
-
-    cleaners.value = results
-  } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load cleaners.'
-    cleaners.value = []
-  } finally {
-    loading.value = false
+const basePricePence = computed(() => {
+  if (matchedService.value) {
+    const sizeSlug = BEDROOMS_SIZE_SLUG[bedrooms.value] ?? '2bed'
+    const multiplier = PROPERTY_SIZE_OPTIONS.find((o) => o.value === sizeSlug)?.multiplier ?? 1.0
+    return Math.round(matchedService.value.base_price_cents * multiplier)
   }
-}
+  const hours = BEDROOMS_HOURS[bedrooms.value] ?? 2
+  return Math.round((selectedCleaner.value?.hourly_rate_cents ?? 0) * hours)
+})
 
-function applyFilters() {
-  page.value = 1
-  loadCleaners()
-}
+const addOnsTotalPence = computed(() =>
+  selectedAddOns.value.reduce((sum, slug) => sum + (ADD_ON_PRICES_PENCE[slug] ?? 0), 0),
+)
 
-function clearFilters() {
-  filters.city = ''
-  filters.service = ''
-  filters.bookingDate = ''
-  filters.bookingTime = ''
-  filters.minRating = 0
-  sortBy.value = 'rating'
-  page.value = 1
-  loadCleaners()
-}
+const subtotalPence = computed(() => basePricePence.value + addOnsTotalPence.value)
+const bookingFeePence = computed(() => Math.round(subtotalPence.value * 0.07))
+const totalPence = computed(() => subtotalPence.value + bookingFeePence.value)
 
-function goToPage(n: number) {
-  page.value = n
-  loadCleaners()
-}
+const canNext = computed(() => {
+  if (step.value === 1) return !!selectedServiceSlug.value
+  if (step.value === 2) return !!bookingDate.value && !!bookingTime.value
+  if (step.value === 3) return !!propertyType.value && !!bedrooms.value && !!bathrooms.value
+  return true
+})
+
+// --- Helpers ---
 
 function displayName(c: CleanerSearchResult): string {
   return c.business_name ?? c.profiles?.full_name ?? 'Cleaner'
 }
 
+function addonName(slug: string): string {
+  return ADDON_CATEGORY.subServices.find((s) => s.slug === slug)?.name ?? slug
+}
+
 function formatDateDisplay(date: string): string {
-  if (!date) return ''
-  const d = new Date(date + 'T00:00:00')
-  return d.toLocaleDateString('en-GB', {
+  if (!date) return '—'
+  return new Date(date + 'T00:00:00').toLocaleDateString('en-GB', {
     weekday: 'short',
-    year: 'numeric',
-    month: 'short',
     day: 'numeric',
+    month: 'short',
   })
 }
 
-function bookInstant(userId: string) {
-  router.push({ name: 'InstantBooking', query: { cleanerId: userId } })
+// --- Navigation ---
+
+function nextStep() {
+  if (!canNext.value) return
+  if (step.value === 3) {
+    step.value = 4
+    loadAvailableCleaners()
+    return
+  }
+  step.value++
 }
 
-function bookCustom(userId: string) {
-  router.push({ name: 'RequestBooking', query: { cleanerId: userId } })
+function prevStep() {
+  if (step.value === 5) {
+    selectedCleaner.value = null
+    cleanerServices.value = []
+  }
+  if (step.value > 1) step.value--
 }
+
+// --- Step 4 ---
+
+async function loadAvailableCleaners() {
+  loadingCleaners.value = true
+  cleaners.value = []
+  try {
+    const params: Parameters<typeof searchCleaners>[0] = { limit: 15 }
+    if (bookingDate.value) params.availabilityDate = bookingDate.value
+    if (bookingDate.value && bookingTime.value) params.availabilityTime = bookingTime.value
+    cleaners.value = await searchCleaners(params)
+  } catch {
+    cleaners.value = []
+  } finally {
+    loadingCleaners.value = false
+  }
+}
+
+async function selectCleaner(c: CleanerSearchResult) {
+  selectedCleaner.value = c
+  step.value = 5
+  await loadCleanerServices(c.user_id)
+}
+
+async function loadCleanerServices(cleanerId: string) {
+  try {
+    const supabase = requireSupabase()
+    const { data } = await supabase
+      .from('services')
+      .select('id, cleaner_id, title, category, description, duration_minutes, base_price_cents')
+      .eq('cleaner_id', cleanerId)
+      .eq('active', true)
+      .order('title')
+    cleanerServices.value = (data ?? []) as BookableService[]
+  } catch {
+    cleanerServices.value = []
+  }
+}
+
+// --- Step 5: Payment ---
+
+async function confirmAndPay() {
+  if (paying.value || !selectedCleaner.value || !auth.userId) return
+  paying.value = true
+  payError.value = ''
+
+  try {
+    const serviceId = matchedService.value?.id ?? cleanerServices.value[0]?.id
+    if (!serviceId) throw new Error('No matching service found for this cleaner.')
+
+    const durationMinutes = Math.round((BEDROOMS_HOURS[bedrooms.value] ?? 3) * 60)
+    const scheduledStart = new Date(`${bookingDate.value}T${bookingTime.value}:00`)
+    const scheduledEnd = new Date(scheduledStart.getTime() + durationMinutes * 60_000)
+
+    const addOnNote =
+      selectedAddOns.value.length > 0
+        ? `Add-ons: ${selectedAddOns.value.map(addonName).join(', ')}`
+        : null
+    const fullNotes = [notes.value, addOnNote].filter(Boolean).join('\n') || null
+
+    const titleSnapshot =
+      selectedServiceLabel.value +
+      (selectedAddOns.value.length > 0
+        ? ' + ' + selectedAddOns.value.map(addonName).join(', ')
+        : '')
+
+    const { id: bookingId } = await createBookingRequest({
+      customerId: auth.userId,
+      cleanerId: selectedCleaner.value.user_id,
+      serviceId,
+      serviceTitleSnapshot: titleSnapshot,
+      categorySnapshot: matchedService.value?.category ?? null,
+      descriptionSnapshot: matchedService.value?.description ?? null,
+      locationText: locationText.value || 'Address not provided',
+      scheduledStart: scheduledStart.toISOString(),
+      scheduledEnd: scheduledEnd.toISOString(),
+      quoteCents: totalPence.value,
+      cleanerPayoutCents: subtotalPence.value,
+      currency: selectedCleaner.value.currency,
+      notes: fullNotes,
+      durationMinutes,
+      hourlyRateCents: selectedCleaner.value.hourly_rate_cents,
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    await processPaymentDirect(bookingId)
+
+    paymentSuccess.value = true
+  } catch (e) {
+    payError.value = e instanceof Error ? e.message : 'Failed to process payment.'
+  } finally {
+    paying.value = false
+  }
+}
+
+// --- Mount ---
+
+onMounted(async () => {
+  if (!auth.initialized) await auth.init()
+  await prefsStore.load()
+  const p = prefsStore.preferences
+  if (p) {
+    addressLine1.value = p.address_line_1 ?? ''
+    addressCity.value = p.city ?? ''
+    addressPostcode.value = p.postcode ?? ''
+  }
+})
 </script>
 
 <style scoped>
@@ -355,7 +779,13 @@ function bookCustom(userId: string) {
     'opsz' 24;
   vertical-align: middle;
 }
-
+.filled-icon {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
 .star-filled {
   font-variation-settings:
     'FILL' 1,
@@ -363,30 +793,37 @@ function bookCustom(userId: string) {
     'GRAD' 0,
     'opsz' 24;
 }
-
+.success-icon {
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
 .animate-pulse {
   animation: pulse 1.5s ease-in-out infinite;
 }
 @keyframes pulse {
   0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
+  100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
-
-@media (min-width: 1024px) {
-  .lg\:w-72 {
-    width: 18rem;
-  }
+.loading-spinner-sm {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

@@ -51,7 +51,7 @@ export function getBookingDisplayStatus(
   }
 
   return (
-    labels[booking.status] ??
+    labels[booking.status as BookingStatus] ??
     booking.status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
   )
 }

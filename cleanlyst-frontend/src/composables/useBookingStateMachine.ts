@@ -2,6 +2,10 @@ import type { BookingStatus } from '@/types/domain'
 
 const transitions: Record<BookingStatus, BookingStatus[]> = {
   pending_request: ['estimate_proposed', 'cleaner_declined', 'cancelled'],
+  accepted: ['in_progress', 'cancelled'],
+  declined: [],
+  paid_pending_start: ['in_progress', 'cancelled'],
+  scheduled: ['in_progress', 'cancelled'],
   estimate_proposed: ['awaiting_customer_payment', 'cancelled'],
   awaiting_customer_payment: ['payment_authorized', 'cancelled'],
   payment_authorized: ['in_progress'],

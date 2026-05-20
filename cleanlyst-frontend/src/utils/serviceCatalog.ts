@@ -21,25 +21,29 @@ export const SERVICE_CATALOG: ServiceCategory[] = [
       {
         slug: 'standard-cleaning',
         name: 'Standard Cleaning',
-        description: 'Regular home cleaning including vacuuming, mopping, dusting, and bathroom sanitation.',
+        description:
+          'Regular home cleaning including vacuuming, mopping, dusting, and bathroom sanitation.',
         icon: 'cleaning_services',
       },
       {
         slug: 'deep-cleaning',
         name: 'Deep Cleaning',
-        description: 'Thorough top-to-bottom clean including inside appliances, skirting boards, and hard-to-reach areas.',
+        description:
+          'Thorough top-to-bottom clean including inside appliances, skirting boards, and hard-to-reach areas.',
         icon: 'sanitizer',
       },
       {
         slug: 'airbnb-turnover',
         name: 'Airbnb / Holiday Let Turnover',
-        description: 'Fast, efficient changeover cleaning between guests. Includes linen change, restocking, and inspection.',
+        description:
+          'Fast, efficient changeover cleaning between guests. Includes linen change, restocking, and inspection.',
         icon: 'bed',
       },
       {
         slug: 'end-of-tenancy',
         name: 'End of Tenancy Cleaning',
-        description: 'Comprehensive move-out clean to meet landlord and agency standards. Deposit protection standard.',
+        description:
+          'Comprehensive move-out clean to meet landlord and agency standards. Deposit protection standard.',
         icon: 'key',
       },
     ],
@@ -89,10 +93,19 @@ export const PROPERTY_SIZE_OPTIONS = [
 ] as const
 
 export const CORE_SERVICE_MATCH_KEYWORDS: Record<string, string[]> = {
-  'standard-cleaning': ['standard'],
-  'deep-cleaning': ['deep'],
-  'airbnb-turnover': ['airbnb', 'holiday let', 'turnover'],
-  'end-of-tenancy': ['end of tenancy', 'move-in', 'move-out', 'moveout', 'movein'],
+  'standard-cleaning': ['standard', 'regular', 'maintenance'],
+  'deep-cleaning': ['deep', 'deep clean', 'deep-cleaning', 'deep cleaning'],
+  'airbnb-turnover': ['airbnb', 'holiday let', 'turnover', 'changeover', 'vacation rental'],
+  'end-of-tenancy': [
+    'end of tenancy',
+    'move-in',
+    'move-out',
+    'moveout',
+    'movein',
+    'tenancy',
+    'move in',
+    'move out',
+  ],
 }
 
 export const DURATION_OPTIONS: { label: string; minutes: number }[] = [

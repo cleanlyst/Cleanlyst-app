@@ -26,25 +26,6 @@
             </select>
           </div>
 
-          <!-- Service filter -->
-          <div class="space-y-4">
-            <label
-              for="service-filter"
-              class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider"
-              >Service</label
-            >
-            <select
-              id="service-filter"
-              v-model="filters.service"
-              class="w-full h-12 px-3 border border-outline-variant bg-surface-container-lowest font-body focus:border-primary focus:ring-0 outline-none"
-            >
-              <option value="">All Services</option>
-              <option v-for="cat in SERVICE_CATALOG" :key="cat.slug" :value="cat.name">
-                {{ cat.name }}
-              </option>
-            </select>
-          </div>
-
           <!-- Booking Date filter -->
           <div class="space-y-4">
             <label
@@ -268,7 +249,6 @@ import { useRouter } from 'vue-router'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import { formatPence } from '@/utils/format'
 import { UK_CITIES } from '@/utils/ukCities'
-import { SERVICE_CATALOG } from '@/utils/serviceCatalog'
 
 const router = useRouter()
 

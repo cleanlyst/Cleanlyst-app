@@ -16,7 +16,9 @@
 
     <!-- No instant-bookable services -->
     <div v-else-if="availableCoreServices.length === 0 && !pageLoading" class="text-center py-24">
-      <span class="material-symbols-outlined text-5xl text-outline-variant block mb-4">event_busy</span>
+      <span class="material-symbols-outlined text-5xl text-outline-variant block mb-4"
+        >event_busy</span
+      >
       <p class="font-label-md text-label-md text-on-surface mb-2">Instant booking unavailable</p>
       <p class="text-caption text-on-surface-variant mb-6">
         This cleaner hasn't listed any standard services yet. Send them a custom request instead.
@@ -31,7 +33,9 @@
 
     <!-- Confirmed -->
     <div v-else-if="confirmed" class="max-w-lg mx-auto text-center py-24 space-y-6">
-      <span class="material-symbols-outlined text-6xl text-green-600 block confirmed-icon">check_circle</span>
+      <span class="material-symbols-outlined text-6xl text-green-600 block confirmed-icon"
+        >check_circle</span
+      >
       <h1 class="font-h1 text-h1 text-primary">Booking Confirmed!</h1>
       <p class="font-body text-body text-secondary">
         Payment received. Your cleaner will review and confirm shortly.
@@ -59,7 +63,11 @@
               <div
                 :class="[
                   'flex items-center gap-1.5 text-xs font-medium',
-                  step === i + 1 ? 'text-primary' : step > i + 1 ? 'text-green-700' : 'text-on-surface-variant',
+                  step === i + 1
+                    ? 'text-primary'
+                    : step > i + 1
+                      ? 'text-green-700'
+                      : 'text-on-surface-variant',
                 ]"
               >
                 <span
@@ -72,12 +80,17 @@
                         : 'bg-surface-variant text-on-surface-variant',
                   ]"
                 >
-                  <span v-if="step > i + 1" class="material-symbols-outlined text-[12px]">check</span>
+                  <span v-if="step > i + 1" class="material-symbols-outlined text-[12px]"
+                    >check</span
+                  >
                   <span v-else>{{ i + 1 }}</span>
                 </span>
                 <span class="hidden sm:inline">{{ label }}</span>
               </div>
-              <div v-if="i < STEP_LABELS.length - 1" class="flex-1 h-px bg-outline-variant max-w-8"></div>
+              <div
+                v-if="i < STEP_LABELS.length - 1"
+                class="flex-1 h-px bg-outline-variant max-w-8"
+              ></div>
             </template>
           </div>
         </section>
@@ -99,15 +112,23 @@
               @click="selectedServiceSlug = svc.slug"
             >
               <div class="flex items-start justify-between gap-2">
-                <span class="material-symbols-outlined text-2xl text-primary">{{ svc.icon ?? 'cleaning_services' }}</span>
+                <span class="material-symbols-outlined text-2xl text-primary">{{
+                  svc.icon ?? 'cleaning_services'
+                }}</span>
                 <span
                   v-if="selectedServiceSlug === svc.slug"
                   class="material-symbols-outlined text-primary filled-icon"
-                >check_circle</span>
+                  >check_circle</span
+                >
               </div>
               <p class="font-label-md text-label-md text-primary">{{ svc.name }}</p>
-              <p class="text-caption font-caption text-secondary line-clamp-2">{{ svc.description }}</p>
-              <p v-if="cleanerServicePrice(svc.slug) > 0" class="font-label-md text-label-md text-primary">
+              <p class="text-caption font-caption text-secondary line-clamp-2">
+                {{ svc.description }}
+              </p>
+              <p
+                v-if="cleanerServicePrice(svc.slug) > 0"
+                class="font-label-md text-label-md text-primary"
+              >
                 from {{ formatPence(cleanerServicePrice(svc.slug)) }}
               </p>
             </button>
@@ -156,7 +177,9 @@
         <!-- Step 3: Property size -->
         <section v-else-if="step === 3" class="space-y-6">
           <h2 class="font-h2 text-h2 text-primary">Property Size</h2>
-          <p class="font-body text-body text-secondary">Select your property type to get the right price.</p>
+          <p class="font-body text-body text-secondary">
+            Select your property type to get the right price.
+          </p>
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
             <button
               v-for="opt in PROPERTY_SIZE_OPTIONS"
@@ -199,7 +222,9 @@
                 v-model="selectedAddOns"
                 class="w-4 h-4 accent-zinc-900"
               />
-              <span class="material-symbols-outlined text-xl text-primary">{{ addon.icon ?? 'add' }}</span>
+              <span class="material-symbols-outlined text-xl text-primary">{{
+                addon.icon ?? 'add'
+              }}</span>
               <div class="flex-1">
                 <p class="font-label-md text-label-md text-primary">{{ addon.name }}</p>
                 <p class="text-caption font-caption text-secondary">{{ addon.description }}</p>
@@ -220,7 +245,9 @@
           <div class="border border-outline-variant bg-white p-6 space-y-4">
             <div class="flex justify-between items-center">
               <span class="font-body text-body text-secondary">{{ selectedServiceName }}</span>
-              <span class="font-label-md text-label-md text-primary">{{ formatPence(propertySizeBasePrice(propertySize)) }}</span>
+              <span class="font-label-md text-label-md text-primary">{{
+                formatPence(propertySizeBasePrice(propertySize))
+              }}</span>
             </div>
             <div
               v-for="slug in selectedAddOns"
@@ -228,16 +255,22 @@
               class="flex justify-between items-center"
             >
               <span class="font-body text-body text-secondary">{{ addonName(slug) }}</span>
-              <span class="font-label-md text-label-md text-primary">+ {{ formatPence(ADD_ON_PRICES_PENCE[slug] ?? 0) }}</span>
+              <span class="font-label-md text-label-md text-primary"
+                >+ {{ formatPence(ADD_ON_PRICES_PENCE[slug] ?? 0) }}</span
+              >
             </div>
             <div class="pt-4 border-t border-outline-variant space-y-2">
               <div class="flex justify-between items-center">
                 <span class="font-body text-body text-secondary">Subtotal</span>
-                <span class="font-body text-body text-primary">{{ formatPence(subtotalPence) }}</span>
+                <span class="font-body text-body text-primary">{{
+                  formatPence(subtotalPence)
+                }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="font-body text-body text-secondary">Service Fee (7%)</span>
-                <span class="font-body text-body text-primary">{{ formatPence(serviceFeePence) }}</span>
+                <span class="font-body text-body text-primary">{{
+                  formatPence(serviceFeePence)
+                }}</span>
               </div>
               <div class="flex justify-between items-center pt-2 border-t border-outline-variant">
                 <span class="font-h2 text-h2 text-primary">Total</span>
@@ -297,7 +330,9 @@
                   :src="cleaner.profiles.avatar_url"
                   :alt="cleanerName"
                 />
-                <span v-else class="material-symbols-outlined text-on-surface-variant text-2xl">person</span>
+                <span v-else class="material-symbols-outlined text-on-surface-variant text-2xl"
+                  >person</span
+                >
               </div>
               <div>
                 <p class="font-label-md text-label-md text-primary">{{ cleanerName }}</p>
@@ -318,7 +353,9 @@
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-secondary">Date</span>
-                <span class="text-primary font-medium">{{ bookingDate ? formatDateDisplay(bookingDate) : '—' }}</span>
+                <span class="text-primary font-medium">{{
+                  bookingDate ? formatDateDisplay(bookingDate) : '—'
+                }}</span>
               </div>
               <div class="flex justify-between text-sm">
                 <span class="text-secondary">Time</span>
@@ -344,14 +381,18 @@
                 <span class="text-secondary">Service Fee</span>
                 <span class="text-primary">{{ formatPence(serviceFeePence) }}</span>
               </div>
-              <div class="flex justify-between font-h2 text-h2 pt-2 border-t border-outline-variant">
+              <div
+                class="flex justify-between font-h2 text-h2 pt-2 border-t border-outline-variant"
+              >
                 <span>Total</span>
                 <span>{{ formatPence(totalPence) }}</span>
               </div>
             </div>
           </div>
 
-          <div class="bg-surface-container-low p-5 border border-outline-variant flex items-start gap-3">
+          <div
+            class="bg-surface-container-low p-5 border border-outline-variant flex items-start gap-3"
+          >
             <span class="material-symbols-outlined text-primary mt-0.5">shield</span>
             <div>
               <p class="font-label-md text-label-md text-primary text-sm">Cleanlyst Guarantee</p>
@@ -429,10 +470,22 @@ const cleanerName = computed(
 function findMatchingService(slug: string): BookableService | null {
   const keywords = CORE_SERVICE_MATCH_KEYWORDS[slug]
   if (!keywords) return null
+
+  const normalize = (value: string | null | undefined) => (value ?? '').toLowerCase()
+
   return (
-    cleanerServices.value.find((s) =>
-      keywords.some((kw) => s.title.toLowerCase().includes(kw.toLowerCase())),
-    ) ?? null
+    cleanerServices.value.find((s) => {
+      const title = normalize(s.title)
+      const category = normalize(s.category)
+      const description = normalize(s.description)
+
+      return keywords.some((kw) => {
+        const keyword = kw.toLowerCase()
+        return (
+          title.includes(keyword) || category.includes(keyword) || description.includes(keyword)
+        )
+      })
+    }) ?? null
   )
 }
 
@@ -461,8 +514,7 @@ function cleanerServicePrice(slug: string): number {
 
 function propertySizeBasePrice(sizeValue: string): number {
   const base = cleanerServicePrice(selectedServiceSlug.value)
-  const multiplier =
-    PROPERTY_SIZE_OPTIONS.find((o) => o.value === sizeValue)?.multiplier ?? 1.0
+  const multiplier = PROPERTY_SIZE_OPTIONS.find((o) => o.value === sizeValue)?.multiplier ?? 1.0
   return Math.round(base * multiplier)
 }
 
@@ -470,7 +522,9 @@ const addOnTotalPence = computed(() =>
   selectedAddOns.value.reduce((sum, slug) => sum + (ADD_ON_PRICES_PENCE[slug] ?? 0), 0),
 )
 
-const subtotalPence = computed(() => propertySizeBasePrice(propertySize.value) + addOnTotalPence.value)
+const subtotalPence = computed(
+  () => propertySizeBasePrice(propertySize.value) + addOnTotalPence.value,
+)
 const serviceFeePence = computed(() => Math.round(subtotalPence.value * 0.07))
 const totalPence = computed(() => subtotalPence.value + serviceFeePence.value)
 
@@ -529,9 +583,10 @@ async function checkout() {
       quoteCents: totalPence.value,
       cleanerPayoutCents,
       currency: cleaner.value.currency,
-      notes: selectedAddOns.value.length > 0
-        ? `Add-ons requested: ${selectedAddOns.value.map(addonName).join(', ')}`
-        : null,
+      notes:
+        selectedAddOns.value.length > 0
+          ? `Add-ons requested: ${selectedAddOns.value.map(addonName).join(', ')}`
+          : null,
       durationMinutes,
       hourlyRateCents: cleaner.value.hourly_rate_cents ?? null,
     })
@@ -589,17 +644,33 @@ onMounted(async () => {
 
 <style scoped>
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
   vertical-align: middle;
 }
 .filled-icon {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 .star-filled {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 .confirmed-icon {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    'FILL' 1,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
 }
 .line-clamp-2 {
   display: -webkit-box;
@@ -624,5 +695,9 @@ onMounted(async () => {
   animation: spin 0.7s linear infinite;
   display: inline-block;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>

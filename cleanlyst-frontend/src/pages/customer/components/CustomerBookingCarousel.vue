@@ -78,13 +78,19 @@
                 </div>
               </div>
 
-              <div v-if="b.status === 'accepted'" class="action-banner action-banner--pay">
+              <div
+                v-if="b.status === 'accepted' && b.payment_status !== 'paid'"
+                class="action-banner action-banner--pay"
+              >
                 <span class="material-symbols-outlined">payments</span>
                 Your booking was accepted — complete payment to confirm.
               </div>
 
               <div
-                v-if="b.status === 'paid_pending_start'"
+                v-if="
+                  b.status === 'paid_pending_start' ||
+                  (b.status === 'accepted' && b.payment_status === 'paid')
+                "
                 class="action-banner action-banner--info"
               >
                 <span class="material-symbols-outlined">check_circle</span>
@@ -205,7 +211,7 @@ import { computed, ref } from 'vue'
 import type { PropType } from 'vue'
 import { formatDate, formatPence } from '@/utils/format'
 import { getBookingDisplayStatus, isCustomerPaymentRequired } from '@/utils/bookingStatus'
-import { processBookingPayment } from '@/services/bookingService'
+import { processPaymentDirect } from '@/services/bookingService'
 
 interface CarouselBooking {
   id: string
@@ -275,7 +281,7 @@ async function confirmPayment() {
   payError.value = ''
   try {
     await new Promise((resolve) => setTimeout(resolve, 1500))
-    await processBookingPayment(bookingId)
+    await processPaymentDirect(bookingId)
     optimisticPaidIds.value = new Set([...optimisticPaidIds.value, bookingId])
     paySuccess.value = true
     emit('paymentDone', bookingId)

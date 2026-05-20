@@ -1,7 +1,7 @@
-export const SERVICES_HERO_TITLE = 'Our Cleaning Services'
+export const SERVICES_HERO_TITLE = 'Professional Cleaning Services'
 
 export const SERVICES_HERO_COPY =
-  'Professional, reliable cleaning solutions tailored to your needs. From routine home upkeep to specialized industrial deep cleans, our marketplace connects you with vetted professionals for every surface.'
+  'Vetted, insured cleaners for every home. Book instantly with upfront pricing, or send a custom request and chat directly with your cleaner.'
 
 export interface ServiceItem {
   slug: string
@@ -13,68 +13,65 @@ export interface ServiceItem {
 
 export const SERVICES: ServiceItem[] = [
   {
-    slug: 'home-cleaning',
-    title: 'Home Cleaning',
+    slug: 'standard-cleaning',
+    title: 'Standard Cleaning',
     description:
-      'Routine cleaning for apartments, houses, and everyday household upkeep. Includes dusting, vacuuming, and kitchen sanitation.',
-    icon: 'home',
+      'Regular maintenance cleaning for apartments and houses. Includes vacuuming, mopping, dusting, and kitchen and bathroom sanitation.',
+    icon: 'cleaning_services',
   },
   {
-    slug: 'commercial-office-cleaning',
-    title: 'Commercial & Office Cleaning',
+    slug: 'deep-cleaning',
+    title: 'Deep Cleaning',
     description:
-      'Reliable cleaning for offices, shops, studios, and shared workspaces. Custom schedules to fit your business hours.',
-    icon: 'corporate_fare',
-  },
-  {
-    slug: 'windows-glass',
-    title: 'Windows & Glass',
-    description:
-      'Cleaning for windows, mirrors, partitions, and glass surfaces inside and out. Streak-free finishes for maximum clarity.',
-    icon: 'window',
-  },
-  {
-    slug: 'vehicle-mobility-cleaning',
-    title: 'Vehicle & Mobility Cleaning',
-    description:
-      'Interior and surface cleaning for cars, vans, and mobility equipment. Specialized care for leather and hard surfaces.',
-    icon: 'directions_car',
-  },
-  {
-    slug: 'specialist-interior-cleaning',
-    title: 'Specialist Interior Cleaning',
-    description:
-      'Focused cleaning for carpets, upholstery, mattresses, and delicate interior finishes. Advanced stain removal techniques.',
-    icon: 'texture',
+      'A thorough top-to-bottom clean for homes that need extra attention. Inside appliances, skirting boards, hard-to-reach areas, and more.',
+    icon: 'sanitizer',
     span: 'wide',
   },
   {
-    slug: 'exterior-outdoor-cleaning',
-    title: 'Exterior & Outdoor Cleaning',
+    slug: 'airbnb-turnover',
+    title: 'Airbnb / Holiday Let Turnover',
     description:
-      'Practical cleaning for patios, driveways, garden areas, and outdoor surfaces. Power washing and seasonal maintenance.',
-    icon: 'deck',
+      'Fast, reliable changeover cleaning between guests. Linen change, restocking essentials, and a quick property inspection report.',
+    icon: 'bed',
   },
   {
-    slug: 'bin-waste-cleaning',
-    title: 'Bin & Waste Cleaning',
+    slug: 'end-of-tenancy',
+    title: 'End of Tenancy Cleaning',
     description:
-      'Sanitising and refreshing bins, waste storage areas, and high-use disposal spaces. Odor elimination and hygiene focus.',
-    icon: 'delete_outline',
-  },
-  {
-    slug: 'specialist-high-level-services',
-    title: 'Specialist & High-Level Services',
-    description:
-      'Support for deep cleans, post-build work, and harder-to-reach areas. Professional equipment for industrial standards.',
-    icon: 'architecture',
-  },
-  {
-    slug: 'personal-item-cleaning',
-    title: 'Personal Item Cleaning',
-    description:
-      'Care for selected personal items such as trainers, bags, curtains, and more. Detailed restoration for items that require a professional touch.',
-    icon: 'apparel',
+      'Comprehensive move-out clean to landlord and letting agency standards. Designed to protect your deposit and satisfy checkout reports.',
+    icon: 'key',
     span: 'full',
+  },
+]
+
+export interface AddOnItem {
+  slug: string
+  title: string
+  description: string
+  icon: string
+  pricePence: number
+}
+
+export const ADD_ONS: AddOnItem[] = [
+  {
+    slug: 'oven-cleaning',
+    title: 'Oven Cleaning',
+    description: 'Full interior oven clean including racks, glass door, and grill pan.',
+    icon: 'microwave',
+    pricePence: 2500,
+  },
+  {
+    slug: 'fridge-cleaning',
+    title: 'Fridge Cleaning',
+    description: 'Complete interior fridge and freezer clean including shelves and drawers.',
+    icon: 'kitchen',
+    pricePence: 1500,
+  },
+  {
+    slug: 'laundry',
+    title: 'Laundry',
+    description: 'Washing and drying one load of laundry during the clean.',
+    icon: 'local_laundry_service',
+    pricePence: 2000,
   },
 ]

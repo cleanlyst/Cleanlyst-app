@@ -191,7 +191,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
 import { formatPence, formatDate, formatStatus } from '@/utils/format'
 
@@ -237,8 +237,24 @@ const metrics = ref<FinancialMetrics>({
 const chartData = ref<number[]>(Array(12).fill(0))
 const transactions = ref<Transaction[]>([])
 
+let paymentsChannel: ReturnType<ReturnType<typeof requireSupabase>['channel']> | null = null
+
 onMounted(async () => {
   await Promise.all([loadMetrics(), loadChart(), loadTransactions()])
+
+  const supabase = requireSupabase()
+  paymentsChannel = supabase
+    .channel('admin-financials-payments')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => {
+      loadMetrics()
+      loadChart()
+      loadTransactions()
+    })
+    .subscribe()
+})
+
+onBeforeUnmount(() => {
+  paymentsChannel?.unsubscribe()
 })
 
 async function loadMetrics() {

@@ -80,13 +80,27 @@
 
           <div class="action-group">
             <button
-              v-if="booking.status === 'estimate_proposed' && booking.payment_status === 'unpaid'"
+              v-if="booking.status === 'accepted' && booking.payment_status === 'unpaid'"
               type="button"
               class="btn-primary"
               @click="openPayModal"
             >
               Make Payment
             </button>
+
+            <!-- Custom booking: cleaner has proposed an estimate -->
+            <div v-if="booking.status === 'estimate_proposed'" class="estimate-card">
+              <p class="estimate-label">Your cleaner has proposed a revised quote</p>
+              <p class="estimate-price">
+                {{ formatPence(booking.quote_cents ?? 0, booking.currency ?? 'GBP') }}
+              </p>
+              <p v-if="booking.booking_edit_note" class="estimate-note">
+                "{{ booking.booking_edit_note }}"
+              </p>
+              <button type="button" class="btn-primary" @click="openPayModal">
+                Accept Quote &amp; Pay
+              </button>
+            </div>
 
             <!-- Legacy: pre-new-flow bookings that still require customer confirmation -->
             <button
@@ -273,7 +287,7 @@ import { getSupabaseClient } from '@/services/supabaseClient'
 import {
   getBookingById,
   transitionBookingState,
-  processBookingPayment,
+  processPaymentDirect,
   type BookingDetailRow,
 } from '@/services/bookingService'
 import { formatDate, formatDateTime, formatPence } from '@/utils/format'
@@ -320,6 +334,8 @@ function isTerminal(status: string): boolean {
 
 function statusInfo(status: string): string {
   const map: Record<string, string> = {
+    pending_request: 'Your request has been sent. Waiting for the cleaner to respond.',
+    accepted: 'Your cleaner has accepted. Complete payment to confirm the booking.',
     paid_pending_start: 'Payment confirmed. Your cleaner will start soon.',
     scheduled: 'Your cleaner will start soon.',
     payment_authorized: 'Your cleaner will start soon.',
@@ -417,9 +433,9 @@ async function confirmPayment() {
   successMessage.value = ''
   try {
     await new Promise((resolve) => setTimeout(resolve, 1500))
-    await processBookingPayment(bookingId)
+    const updated = await processPaymentDirect(bookingId)
+    booking.value = updated
     paySuccess.value = true
-    await refreshBooking()
   } catch (e) {
     payModalError.value = e instanceof Error ? e.message : 'Failed to process payment.'
   } finally {
@@ -789,6 +805,40 @@ onBeforeUnmount(() => {
 .btn-danger:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Estimate card */
+.estimate-card {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: var(--surface-container-lowest, #ffffff);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.estimate-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--secondary, #5e5e5e);
+  margin: 0;
+}
+
+.estimate-price {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary, #000000);
+  margin: 0;
+}
+
+.estimate-note {
+  font-size: 13px;
+  color: var(--secondary, #5e5e5e);
+  font-style: italic;
+  margin: 0 0 0.25rem;
 }
 
 /* Chat */

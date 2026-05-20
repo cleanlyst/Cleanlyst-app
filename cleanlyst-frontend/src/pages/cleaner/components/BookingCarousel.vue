@@ -75,14 +75,17 @@
                 </div>
               </div>
 
-              <div v-if="b.status === 'accepted'" class="countdown-banner">
+              <div
+                v-if="b.status === 'accepted' && b.payment_status !== 'paid'"
+                class="countdown-banner"
+              >
                 <span class="material-symbols-outlined">payments</span>
                 Waiting for customer payment
               </div>
 
               <div
                 v-if="
-                  (b.status === 'paid_pending_start' || b.status === 'payment_authorized') &&
+                  isPaidAndStartable(b) &&
                   !isWithinStartWindow(b)
                 "
                 class="countdown-banner"
@@ -92,10 +95,7 @@
               </div>
 
               <div
-                v-if="
-                  (b.status === 'paid_pending_start' || b.status === 'payment_authorized') &&
-                  isWithinStartWindow(b)
-                "
+                v-if="isPaidAndStartable(b) && isWithinStartWindow(b)"
                 class="in-progress-banner"
                 style="background: #1565c0"
               >
@@ -130,12 +130,7 @@
                 </button>
               </template>
 
-              <template
-                v-else-if="
-                  (b.status === 'paid_pending_start' || b.status === 'payment_authorized') &&
-                  isWithinStartWindow(b)
-                "
-              >
+              <template v-else-if="isPaidAndStartable(b) && isWithinStartWindow(b)">
                 <button
                   class="btn-primary"
                   type="button"
@@ -231,9 +226,16 @@ function next() {
   if (currentIdx.value < slides.value.length - 1) currentIdx.value++
 }
 
+function isPaidAndStartable(b: CarouselBooking): boolean {
+  return (
+    b.status === 'paid_pending_start' ||
+    b.status === 'payment_authorized' ||
+    (b.status === 'accepted' && b.payment_status === 'paid')
+  )
+}
+
 function isWithinStartWindow(b: CarouselBooking): boolean {
-  const isStartableStatus = b.status === 'paid_pending_start' || b.status === 'payment_authorized'
-  if (!isStartableStatus) return false
+  if (!isPaidAndStartable(b)) return false
   const start = new Date(b.scheduled_start)
   const now = new Date()
   const isToday = start.toDateString() === now.toDateString()

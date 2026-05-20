@@ -215,17 +215,25 @@
                 <span class="material-symbols-outlined text-[16px]">location_on</span>
                 {{ c.profiles.city }}
               </div>
-              <div class="pt-4 flex items-center justify-between border-t border-outline-variant">
+              <div class="pt-4 border-t border-outline-variant space-y-3">
                 <div class="flex items-center gap-2">
                   <span class="material-symbols-outlined text-secondary text-sm">verified</span>
                   <span class="font-caption text-caption text-secondary">Verified cleaner</span>
                 </div>
-                <button
-                  class="px-6 py-2 bg-primary text-on-primary font-label-md active:scale-95 transition-all"
-                  @click="bookCleaner(c.user_id)"
-                >
-                  Book Cleaner
-                </button>
+                <div class="flex gap-2">
+                  <button
+                    class="flex-1 py-2 bg-primary text-on-primary font-label-md active:scale-95 transition-all text-sm"
+                    @click="bookInstant(c.user_id)"
+                  >
+                    Instant Book
+                  </button>
+                  <button
+                    class="flex-1 py-2 border border-outline-variant text-primary font-label-md active:scale-95 transition-all text-sm hover:bg-surface-container"
+                    @click="bookCustom(c.user_id)"
+                  >
+                    Custom Request
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -349,7 +357,11 @@ function formatDateDisplay(date: string): string {
   })
 }
 
-function bookCleaner(userId: string) {
+function bookInstant(userId: string) {
+  router.push({ name: 'InstantBooking', query: { cleanerId: userId } })
+}
+
+function bookCustom(userId: string) {
   router.push({ name: 'RequestBooking', query: { cleanerId: userId } })
 }
 </script>

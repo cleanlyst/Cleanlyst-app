@@ -19,12 +19,16 @@ export function getBookingDisplayStatus(
     return role === 'cleaner' ? 'Awaiting Customer Payment' : 'Accepted'
   }
 
+  if (booking.status === 'accepted' && booking.payment_status === 'paid') {
+    return role === 'cleaner' ? 'Ready to Start' : 'Paid'
+  }
+
   if (booking.status === 'awaiting_customer_payment') {
     return role === 'cleaner' ? 'Awaiting Customer Payment' : 'Awaiting Payment'
   }
 
   if (booking.status === 'estimate_proposed') {
-    return 'Estimate Proposed'
+    return role === 'customer' ? 'Quote Received – Action Required' : 'Estimate Proposed'
   }
 
   const labels: Record<BookingStatus, string> = {

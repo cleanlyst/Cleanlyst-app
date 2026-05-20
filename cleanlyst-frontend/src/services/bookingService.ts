@@ -356,3 +356,136 @@ export async function processBookingPayment(bookingId: string): Promise<BookingD
   if (!booking) throw new Error('Failed to process payment.')
   return booking
 }
+
+export async function processPaymentDirect(bookingId: string): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const now = new Date().toISOString()
+
+  const current = await getBookingById(bookingId)
+  if (!current) throw new Error('Booking not found.')
+
+  const quoteCents = current.quote_cents ?? 0
+  const currency = current.currency ?? 'GBP'
+  const cleanerPayoutCents = current.cleaner_payout_cents ?? Math.round(quoteCents * 0.93)
+  const platformFeeCents = quoteCents - cleanerPayoutCents
+
+  // Upsert payment row
+  const { data: existingPayment } = await supabase
+    .from('payments')
+    .select('id')
+    .eq('booking_id', bookingId)
+    .maybeSingle()
+
+  const paymentFields = {
+    booking_id: bookingId,
+    status: 'captured',
+    amount_cents: quoteCents,
+    currency,
+    authorized_at: now,
+    captured_at: now,
+    platform_fee_cents: platformFeeCents,
+    cleaner_payout_cents: cleanerPayoutCents,
+    metadata: { type: 'dummy_payment', processed: true },
+  }
+
+  let paymentId: string | null = existingPayment?.id ?? null
+
+  if (existingPayment?.id) {
+    const { error } = await supabase
+      .from('payments')
+      .update({ ...paymentFields, updated_at: now })
+      .eq('booking_id', bookingId)
+    if (error) throw error
+  } else {
+    const { data: newPayment, error } = await supabase
+      .from('payments')
+      .insert(paymentFields)
+      .select('id')
+      .single()
+    if (error) throw error
+    paymentId = newPayment?.id ?? null
+  }
+
+  // Upsert booking_financials
+  const { error: finError } = await supabase.from('booking_financials').upsert(
+    {
+      booking_id: bookingId,
+      quote_cents: quoteCents,
+      platform_fee_cents: platformFeeCents,
+      booking_fee_cents: 0,
+      cleaner_payout_cents: cleanerPayoutCents,
+      currency,
+    },
+    { onConflict: 'booking_id' },
+  )
+  if (finError) console.warn('booking_financials upsert failed:', finError)
+
+  // Insert transaction record (skip if already exists)
+  if (paymentId) {
+    const { data: existingTx } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('booking_id', bookingId)
+      .maybeSingle()
+
+    if (!existingTx) {
+      const { error: txError } = await supabase.from('transactions').insert({
+        booking_id: bookingId,
+        payment_id: paymentId,
+        stripe_payment_intent_id: null,
+        amount: quoteCents,
+        currency,
+        payment_status: 'paid',
+      })
+      if (txError) console.warn('transactions insert failed:', txError)
+    }
+  }
+
+  // Mark booking as paid; advance estimate_proposed/awaiting_customer_payment → accepted
+  const needsStatusAdvance = ['estimate_proposed', 'awaiting_customer_payment'].includes(
+    current.status ?? '',
+  )
+  const bookingPatch: Record<string, unknown> = {
+    payment_status: 'paid',
+    paid_at: now,
+    updated_at: now,
+  }
+  if (needsStatusAdvance) bookingPatch.status = 'accepted'
+  const { error: bookingError } = await supabase
+    .from('bookings')
+    .update(bookingPatch)
+    .eq('id', bookingId)
+  if (bookingError) throw bookingError
+
+  // Notify cleaner (non-fatal)
+  if (current.cleaner_id) {
+    const { error: notifError } = await supabase.rpc('create_notification', {
+      p_user_id: current.cleaner_id,
+      p_type: 'payment_received',
+      p_title: 'Payment received',
+      p_body: 'Customer payment has been confirmed. You can now start the job.',
+    })
+    if (notifError) console.warn('Notification failed:', notifError)
+  }
+
+  const updated = await getBookingById(bookingId)
+  if (!updated) throw new Error('Payment recorded but failed to fetch updated booking.')
+  return updated
+}
+
+export async function proposeEstimate(
+  bookingId: string,
+  quoteCents: number,
+  note?: string,
+): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('propose_estimate', {
+    p_booking_id: bookingId,
+    p_quote_cents: quoteCents,
+    p_note: note ?? null,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to propose estimate.')
+  return booking
+}

@@ -214,7 +214,7 @@
 import { ref } from 'vue'
 import type { PropType } from 'vue'
 import { createReview } from '@/services/reviewService'
-import { processBookingPayment } from '@/services/bookingService'
+import { processPaymentDirect } from '@/services/bookingService'
 import { formatPence } from '@/utils/format'
 import { getBookingDisplayStatus, isCustomerPaymentRequired } from '@/utils/bookingStatus'
 
@@ -293,7 +293,7 @@ async function confirmPayment() {
   payError.value = ''
   try {
     await new Promise((resolve) => setTimeout(resolve, 1500))
-    await processBookingPayment(bookingId)
+    await processPaymentDirect(bookingId)
     optimisticPaidIds.value = new Set([...optimisticPaidIds.value, bookingId])
     paySuccess.value = true
   } catch (e) {

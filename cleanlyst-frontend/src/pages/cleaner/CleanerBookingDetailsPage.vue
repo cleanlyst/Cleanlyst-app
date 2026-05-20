@@ -107,7 +107,17 @@
             </button>
 
             <button
-              v-if="booking.status === 'accepted'"
+              v-if="booking.status === 'pending_request' || booking.status === 'accepted'"
+              type="button"
+              class="btn-action"
+              :disabled="actionLoading"
+              @click="estimateModalOpen = true"
+            >
+              Propose Estimate
+            </button>
+
+            <button
+              v-if="booking.status === 'accepted' && booking.payment_status !== 'paid'"
               type="button"
               class="btn-secondary"
               disabled
@@ -116,11 +126,7 @@
             </button>
 
             <button
-              v-if="
-                (booking.status === 'paid_pending_start' ||
-                  booking.status === 'payment_authorized') &&
-                !isWithinStartWindow(booking)
-              "
+              v-if="isPaidAndStartable(booking) && !isWithinStartWindow(booking)"
               type="button"
               class="btn-secondary"
               disabled
@@ -128,11 +134,7 @@
               Available in {{ countdownText(booking.scheduled_start) }}
             </button>
             <button
-              v-if="
-                (booking.status === 'paid_pending_start' ||
-                  booking.status === 'payment_authorized') &&
-                isWithinStartWindow(booking)
-              "
+              v-if="isPaidAndStartable(booking) && isWithinStartWindow(booking)"
               type="button"
               class="btn-start"
               :disabled="actionLoading"
@@ -272,6 +274,48 @@
         </template>
       </AppModal>
 
+      <AppModal v-model="estimateModalOpen" title="Propose Estimate" size="md">
+        <p class="modal-hint">
+          Set a revised quote for this job. The customer will be notified and can accept or
+          cancel.
+        </p>
+        <div class="modal-field">
+          <label class="modal-label" for="estimateAmount">New Quote (£)</label>
+          <input
+            id="estimateAmount"
+            v-model.number="estimateAmount"
+            type="number"
+            min="1"
+            step="0.01"
+            class="modal-input"
+            placeholder="0.00"
+          />
+        </div>
+        <div class="modal-field">
+          <label class="modal-label" for="estimateNote">Note to Customer (optional)</label>
+          <textarea
+            id="estimateNote"
+            rows="3"
+            class="modal-textarea"
+            v-model="estimateNote"
+            placeholder="e.g. 'The property is larger than described, so I've adjusted the price.'"
+          />
+        </div>
+        <template #footer>
+          <button type="button" class="btn-action" @click="estimateModalOpen = false">Cancel</button>
+          <button
+            type="button"
+            class="btn-start"
+            :disabled="actionLoading || !estimateAmount || estimateAmount <= 0"
+            @click="confirmProposeEstimate"
+          >
+            {{
+              actionLoading && activeAction === 'estimate' ? 'Sending…' : 'Send Estimate'
+            }}
+          </button>
+        </template>
+      </AppModal>
+
       <AppModal v-model="declineModalOpen" title="Decline booking" size="md">
         <p class="modal-hint">Optionally provide a reason for the customer.</p>
         <div class="modal-field">
@@ -316,6 +360,7 @@ import {
   updateBookingDuration,
   transitionBookingState,
   completeBooking,
+  proposeEstimate,
   type BookingDetailRow,
 } from '@/services/bookingService'
 import { formatDate, formatDateTime, formatPence } from '@/utils/format'
@@ -336,6 +381,9 @@ const editDurationHours = ref<number>(1)
 const editNotes = ref<string | null>(null)
 const declineModalOpen = ref(false)
 const declineReason = ref('')
+const estimateModalOpen = ref(false)
+const estimateAmount = ref<number | null>(null)
+const estimateNote = ref('')
 const messageDraft = ref('')
 const messageSending = ref(false)
 const errorMessage = ref('')
@@ -382,10 +430,16 @@ function countdownText(startValue: string) {
   return `${remainingMinutes}m`
 }
 
+function isPaidAndStartable(currentBooking: BookingDetailRow): boolean {
+  return (
+    currentBooking.status === 'paid_pending_start' ||
+    currentBooking.status === 'payment_authorized' ||
+    (currentBooking.status === 'accepted' && currentBooking.payment_status === 'paid')
+  )
+}
+
 function isWithinStartWindow(currentBooking: BookingDetailRow): boolean {
-  const isStartableStatus =
-    currentBooking.status === 'paid_pending_start' || currentBooking.status === 'payment_authorized'
-  if (!isStartableStatus) return false
+  if (!isPaidAndStartable(currentBooking)) return false
   const start = new Date(currentBooking.scheduled_start)
   const now = new Date()
   const isToday = start.toDateString() === now.toDateString()
@@ -447,6 +501,28 @@ async function confirmDecline() {
     await refreshBooking()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to decline booking.'
+  } finally {
+    actionLoading.value = false
+    activeAction.value = null
+  }
+}
+
+async function confirmProposeEstimate() {
+  if (!booking.value || !estimateAmount.value || estimateAmount.value <= 0) return
+  actionLoading.value = true
+  activeAction.value = 'estimate'
+  errorMessage.value = ''
+  successMessage.value = ''
+  try {
+    const quoteCents = Math.round(estimateAmount.value * 100)
+    const updated = await proposeEstimate(bookingId, quoteCents, estimateNote.value || undefined)
+    booking.value = updated
+    estimateModalOpen.value = false
+    estimateAmount.value = null
+    estimateNote.value = ''
+    successMessage.value = 'Estimate sent to customer'
+  } catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : 'Failed to propose estimate.'
   } finally {
     actionLoading.value = false
     activeAction.value = null

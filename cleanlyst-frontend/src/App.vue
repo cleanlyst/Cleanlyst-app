@@ -22,6 +22,13 @@
           >
             Book a cleaner
           </router-link>
+          <router-link
+            v-if="auth.isAuthenticated && auth.hasRole('customer')"
+            :to="{ name: 'CustomerBookings' }"
+            :class="navLinkClass('CustomerBookings')"
+          >
+            My bookings
+          </router-link>
           <router-link :to="{ name: 'About' }" :class="navLinkClass('About')">
             About Us
           </router-link>
@@ -100,12 +107,8 @@
 
       <div v-if="open" class="app-mobile-menu">
         <nav class="app-mobile-menu__nav" aria-label="Mobile navigation">
-          <router-link
-            v-if="auth.isAuthenticated"
-            :to="dashboardRoute"
-            :class="['app-nav__link', { 'app-nav__link--active': isDashboardRoute }]"
-          >
-            Dashboard
+          <router-link :to="{ name: 'Home' }" :class="navLinkClass('Home')">
+            Home
           </router-link>
           <router-link
             v-if="auth.isAuthenticated && auth.hasRole('customer')"
@@ -113,6 +116,20 @@
             :class="navLinkClass('BookCleaner')"
           >
             Book a cleaner
+          </router-link>
+          <router-link
+            v-if="auth.isAuthenticated && auth.hasRole('customer')"
+            :to="{ name: 'CustomerBookings' }"
+            :class="navLinkClass('CustomerBookings')"
+          >
+            My bookings
+          </router-link>
+          <router-link
+            v-if="auth.isAuthenticated"
+            :to="dashboardRoute"
+            :class="['app-nav__link', { 'app-nav__link--active': isDashboardRoute }]"
+          >
+            Dashboard
           </router-link>
           <router-link :to="{ name: 'About' }" :class="navLinkClass('About')">
             About Us
@@ -188,6 +205,16 @@ onMounted(async () => {
     subscribeToNotificationUpdates()
   }
 })
+
+watch(
+  () => route.fullPath,
+  () => {
+    if (open.value) {
+      open.value = false
+      document.body.classList.remove('mobile-nav-open')
+    }
+  },
+)
 
 watch(
   () => auth.userId,

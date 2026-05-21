@@ -229,24 +229,7 @@
       </section>
 
       <AppModal v-model="editModalOpen" title="Edit booking details" size="md">
-        <div v-if="booking && booking.hourly_rate_cents != null">
-          <div class="modal-field">
-            <label class="modal-label" for="durationHours">Duration (hours)</label>
-            <input
-              id="durationHours"
-              type="number"
-              min="0.5"
-              step="0.5"
-              class="modal-input"
-              v-model.number="editDurationHours"
-            />
-          </div>
-          <p class="modal-hint">
-            New total:
-            {{ formatPence(Math.round(editDurationHours * booking.hourly_rate_cents * 1.07)) }}
-          </p>
-        </div>
-        <div v-else class="modal-field">
+        <div class="modal-field">
           <label class="modal-label" for="estimatedHours">Duration (hours)</label>
           <input
             id="estimatedHours"
@@ -377,7 +360,6 @@ const savingBooking = ref(false)
 const activeAction = ref<string | null>(null)
 const editModalOpen = ref(false)
 const editEstimatedHours = ref<number | null>(null)
-const editDurationHours = ref<number>(1)
 const editNotes = ref<string | null>(null)
 const declineModalOpen = ref(false)
 const declineReason = ref('')
@@ -458,9 +440,6 @@ async function refreshBooking() {
     }
     booking.value = data
     editEstimatedHours.value = booking.value.estimated_hours
-    editDurationHours.value = booking.value.duration_minutes
-      ? booking.value.duration_minutes / 60
-      : 1
     editNotes.value = booking.value.notes
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load booking.'
@@ -571,14 +550,10 @@ async function saveBookingDetails() {
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    if (booking.value.hourly_rate_cents != null) {
-      await updateBookingDuration(bookingId, Math.round(editDurationHours.value * 60))
-    } else {
-      await updateBookingDetails(bookingId, {
-        notes: editNotes.value ?? null,
-        estimated_hours: editEstimatedHours.value ?? null,
-      })
-    }
+    await updateBookingDetails(bookingId, {
+      notes: editNotes.value ?? null,
+      estimated_hours: editEstimatedHours.value ?? null,
+    })
     editModalOpen.value = false
     successMessage.value = 'Changes saved'
     await refreshBooking()

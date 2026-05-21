@@ -58,7 +58,9 @@
         <div class="transaction-list-header">
           <span class="th-label">Service</span>
           <span class="th-label">Date</span>
-          <span class="th-label th-label--right">Amount</span>
+          <span class="th-label th-label--right">Service price</span>
+          <span class="th-label th-label--right">Commission</span>
+          <span class="th-label th-label--right">Net payout</span>
           <span class="th-label">Status</span>
         </div>
         <div v-for="b in recentBookings" :key="b.id" class="transaction-row">
@@ -67,7 +69,9 @@
             {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
           </div>
           <div class="tx-date">{{ formatDate(b.scheduled_start) }}</div>
-          <div class="tx-amount">{{ jobAmount(b) }}</div>
+          <div class="tx-amount">{{ b.booking_financials ? formatCurrencyVal(b.booking_financials.service_price_cents) : '—' }}</div>
+          <div class="tx-amount tx-amount--deducted">{{ b.booking_financials ? '− ' + formatCurrencyVal(b.booking_financials.cleaner_commission_cents) : '—' }}</div>
+          <div class="tx-amount">{{ jobNetPayout(b) }}</div>
           <div class="tx-status">
             <span class="status-pill" :class="txStatusClass(b.status)">
               {{ txStatusLabel(b.status) }}
@@ -110,12 +114,19 @@ import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { subscribeToTable, unsubscribe } from '@/lib/realtime'
 
+interface BookingFinancialSnapshot {
+  service_price_cents: number | null
+  cleaner_commission_cents: number | null
+  cleaner_payout_cents: number | null
+}
+
 interface BookingRecord {
   id: string
   service_title_snapshot: string | null
   scheduled_start: string
   status: string
   cleaner_payout_cents: number | null
+  booking_financials: BookingFinancialSnapshot | null
 }
 
 const auth = useAuthStore()
@@ -159,8 +170,14 @@ const avgPerJob = computed(() => {
   return formatCurrency(Math.round(total / paid.length))
 })
 
-function jobAmount(b: BookingRecord): string {
-  return b.cleaner_payout_cents != null ? formatCurrency(b.cleaner_payout_cents) : '—'
+function formatCurrencyVal(cents: number | null | undefined): string {
+  return cents != null ? formatCurrency(cents) : '—'
+}
+
+function jobNetPayout(b: BookingRecord): string {
+  const payout =
+    b.booking_financials?.cleaner_payout_cents ?? b.cleaner_payout_cents
+  return payout != null ? formatCurrency(payout) : '—'
 }
 
 function formatDate(value: string): string {
@@ -230,7 +247,7 @@ async function loadFinancials() {
 
       supabase
         .from('bookings')
-        .select('id, service_title_snapshot, scheduled_start, status, cleaner_payout_cents')
+        .select('id, service_title_snapshot, scheduled_start, status, cleaner_payout_cents, booking_financials(service_price_cents, cleaner_commission_cents, cleaner_payout_cents)')
         .eq('cleaner_id', auth.userId)
         .in('status', [
           'completed',
@@ -255,7 +272,13 @@ async function loadFinancials() {
     (sum, b) => sum + (b.cleaner_payout_cents ?? 0),
     0,
   )
-  recentBookings.value = (recentResult.data ?? []) as BookingRecord[]
+  recentBookings.value = ((recentResult.data ?? []) as unknown[]).map((raw) => {
+    const row = raw as Record<string, unknown>
+    const bf = Array.isArray(row.booking_financials)
+      ? (row.booking_financials[0] as BookingFinancialSnapshot | undefined) ?? null
+      : (row.booking_financials as BookingFinancialSnapshot | null) ?? null
+    return { ...(row as Omit<BookingRecord, 'booking_financials'>), booking_financials: bf }
+  })
   loading.value = false
 }
 
@@ -504,7 +527,7 @@ onBeforeUnmount(() => unsubscribe(realtimeChannel.value))
 
 .transaction-list-header {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1fr;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1fr;
   gap: 1rem;
   padding: 0.75rem 1.5rem;
   background-color: var(--surface-container, #eeeeee);
@@ -525,7 +548,7 @@ onBeforeUnmount(() => unsubscribe(realtimeChannel.value))
 
 .transaction-row {
   display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1fr;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1fr;
   gap: 1rem;
   padding: 1rem 1.5rem;
   align-items: center;
@@ -566,6 +589,10 @@ onBeforeUnmount(() => unsubscribe(realtimeChannel.value))
   font-weight: 600;
   color: var(--primary, #000000);
   text-align: right;
+}
+
+.tx-amount--deducted {
+  color: #c62828;
 }
 
 .tx-status {
@@ -665,11 +692,13 @@ onBeforeUnmount(() => unsubscribe(realtimeChannel.value))
 @media (max-width: 640px) {
   .transaction-list-header,
   .transaction-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
   }
 
   .th-label:nth-child(2),
-  .tx-date {
+  .th-label:nth-child(3),
+  .tx-date,
+  .transaction-row > .tx-amount:first-of-type {
     display: none;
   }
 }

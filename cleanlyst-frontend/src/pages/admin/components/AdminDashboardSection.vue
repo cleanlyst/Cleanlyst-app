@@ -163,7 +163,7 @@
               No recent bookings.
             </div>
             <div v-else class="p-6 space-y-6">
-              <div v-for="b in recentBookings" :key="b.id" class="flex gap-4">
+              <div v-for="b in recentBookings.slice(0,3)" :key="b.id" class="flex gap-4">
                 <div class="relative">
                   <div class="w-2 h-2 rounded-full bg-primary mt-2"></div>
                 </div>
@@ -172,7 +172,7 @@
                     {{ b.service_title_snapshot ?? 'Booking' }}
                   </p>
                   <p class="text-caption text-secondary">Status: {{ formatStatus(b.status) }}</p>
-                  <p class="text-[10px] text-outline mt-1 uppercase font-bold tracking-tighter">
+                  <p class="text-[10px] text-outline uppercase font-bold tracking-tighter">
                     {{ formatRelative(b.created_at) }}
                   </p>
                 </div>

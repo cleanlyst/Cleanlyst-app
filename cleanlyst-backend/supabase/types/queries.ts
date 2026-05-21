@@ -53,7 +53,6 @@ export const searchCleaners = (
   filters: {
     city?: string
     minRating?: number
-    maxHourlyRate?: number
     serviceCategory?: string
   },
   page = 0,
@@ -65,7 +64,6 @@ export const searchCleaners = (
       `
       user_id,
       bio,
-      hourly_rate,
       years_experience,
       service_radius_km,
       average_rating,
@@ -80,9 +78,6 @@ export const searchCleaners = (
 
   if (filters.minRating) {
     query = query.gte('average_rating', filters.minRating)
-  }
-  if (filters.maxHourlyRate) {
-    query = query.lte('hourly_rate', filters.maxHourlyRate)
   }
 
   return query

@@ -98,7 +98,7 @@
           </div>
           <div class="listing-card__content">
             <h3 class="listing-card__title">Home Cleaning</h3>
-            <p class="listing-card__price">From £19/hr</p>
+            <p class="listing-card__price">Fixed pricing</p>
           </div>
         </article>
 
@@ -111,7 +111,7 @@
           </div>
           <div class="listing-card__content">
             <h3 class="listing-card__title">Commercial & Office Cleaning</h3>
-            <p class="listing-card__price">From £19/hr</p>
+            <p class="listing-card__price">Fixed pricing</p>
           </div>
         </article>
 
@@ -124,7 +124,7 @@
           </div>
           <div class="listing-card__content">
             <h3 class="listing-card__title">Window & Glass</h3>
-            <p class="listing-card__price">From £19/hr</p>
+            <p class="listing-card__price">Fixed pricing</p>
           </div>
         </article>
 

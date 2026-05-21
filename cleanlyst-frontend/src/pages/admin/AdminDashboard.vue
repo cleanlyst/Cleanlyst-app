@@ -2,7 +2,7 @@
   <DashboardLayout :links="adminDashboardLinks" main-label="Admin dashboard">
     <AdminDashboardSection v-if="activeRouteName === 'AdminDashboard'" />
     <AdminApprovalsSection v-if="activeRouteName === 'AdminApprovals'" />
-    <AdminSubscriptionSection v-if="activeRouteName === 'AdminSubscription'" />
+    <AdminPlatformFeesSection v-if="activeRouteName === 'AdminSubscription'" />
     <AdminFinancialsSection v-if="activeRouteName === 'AdminFinancials'" />
     <BookingManagement v-if="activeRouteName === 'BookingManagement'" />
   </DashboardLayout>
@@ -15,7 +15,7 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { adminDashboardLinks } from '@/pages/dasboardLinks'
 import AdminDashboardSection from './components/AdminDashboardSection.vue'
 import AdminApprovalsSection from './components/AdminApprovalsSection.vue'
-import AdminSubscriptionSection from './components/AdminSubscriptionSection.vue'
+import AdminPlatformFeesSection from './components/AdminPlatformFeesSection.vue'
 import AdminFinancialsSection from './components/AdminFinancialsSection.vue'
 import BookingManagement from './components/BookingManagement.vue'
 

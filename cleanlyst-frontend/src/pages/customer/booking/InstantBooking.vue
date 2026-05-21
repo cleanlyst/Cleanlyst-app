@@ -267,7 +267,7 @@
                 }}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="font-body text-body text-secondary">Service Fee (7%)</span>
+                <span class="font-body text-body text-secondary">{{ bookingFeeLabel }}</span>
                 <span class="font-body text-body text-primary">{{
                   formatPence(serviceFeePence)
                 }}</span>
@@ -378,7 +378,7 @@
                 <span class="text-primary">{{ formatPence(subtotalPence) }}</span>
               </div>
               <div class="flex justify-between text-sm">
-                <span class="text-secondary">Service Fee</span>
+                <span class="text-secondary">{{ bookingFeeLabel }}</span>
                 <span class="text-primary">{{ formatPence(serviceFeePence) }}</span>
               </div>
               <div
@@ -408,11 +408,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCleanerPublicProfile, type CleanerSearchResult } from '@/services/cleanerService'
-import { createBookingRequest } from '@/services/bookingService'
-import { processPaymentDirect } from '@/services/bookingService'
+import { createBookingRequest, processPaymentDirect } from '@/services/bookingService'
+import { getPricing, type PricingResult } from '@/services/pricingEngine'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
@@ -508,8 +508,7 @@ const selectedPropertyLabel = computed(
 
 function cleanerServicePrice(slug: string): number {
   const svc = findMatchingService(slug)
-  if (svc) return svc.base_price_cents
-  return (cleaner.value?.hourly_rate_cents ?? 0) * 2
+  return svc?.base_price_cents ?? 0
 }
 
 function propertySizeBasePrice(sizeValue: string): number {
@@ -525,8 +524,23 @@ const addOnTotalPence = computed(() =>
 const subtotalPence = computed(
   () => propertySizeBasePrice(propertySize.value) + addOnTotalPence.value,
 )
-const serviceFeePence = computed(() => Math.round(subtotalPence.value * 0.07))
-const totalPence = computed(() => subtotalPence.value + serviceFeePence.value)
+const currentPricing = ref<PricingResult | null>(null)
+
+const serviceFeePence = computed(
+  () => currentPricing.value?.bookingFeeCents ?? Math.round(subtotalPence.value * 0.07),
+)
+const totalPence = computed(
+  () => currentPricing.value?.totalCustomerCents ?? (subtotalPence.value + serviceFeePence.value),
+)
+const bookingFeeLabel = computed(
+  () => `Platform fee (${currentPricing.value?.bookingFeePercent ?? 7}%)`,
+)
+
+async function loadPricing() {
+  if (subtotalPence.value > 0) currentPricing.value = await getPricing(subtotalPence.value)
+}
+
+watch(subtotalPence, loadPricing)
 
 function addonName(slug: string): string {
   return ADDON_CATEGORY.subServices.find((s) => s.slug === slug)?.name ?? slug
@@ -567,7 +581,9 @@ async function checkout() {
       [prefs?.address_line_1, prefs?.city, prefs?.postcode].filter(Boolean).join(', ') ||
       'Address not provided'
 
-    const cleanerPayoutCents = subtotalPence.value
+    if (!currentPricing.value) await loadPricing()
+    const pricing = currentPricing.value
+
     const serviceTitleSnapshot = `${selectedServiceName.value}${selectedAddOns.value.length > 0 ? ' + ' + selectedAddOns.value.map(addonName).join(', ') : ''}`
 
     const { id: bookingId } = await createBookingRequest({
@@ -580,15 +596,25 @@ async function checkout() {
       locationText: location,
       scheduledStart: scheduledStart.toISOString(),
       scheduledEnd: scheduledEnd.toISOString(),
-      quoteCents: totalPence.value,
-      cleanerPayoutCents,
+      quoteCents: pricing?.totalCustomerCents ?? totalPence.value,
+      cleanerPayoutCents: pricing?.cleanerPayoutCents ?? subtotalPence.value,
       currency: cleaner.value.currency,
       notes:
         selectedAddOns.value.length > 0
           ? `Add-ons requested: ${selectedAddOns.value.map(addonName).join(', ')}`
           : null,
       durationMinutes,
-      hourlyRateCents: cleaner.value.hourly_rate_cents ?? null,
+      financials: pricing
+        ? {
+            servicePriceCents: pricing.servicePriceCents,
+            bookingFeeCents: pricing.bookingFeeCents,
+            cleanerCommissionCents: pricing.cleanerCommissionCents,
+            cleanerPayoutCents: pricing.cleanerPayoutCents,
+            platformRevenueCents: pricing.platformRevenueCents,
+            bookingFeePercent: pricing.bookingFeePercent,
+            cleanerCommissionPercent: pricing.cleanerCommissionPercent,
+          }
+        : null,
     })
 
     // Dummy payment delay

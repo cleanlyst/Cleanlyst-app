@@ -21,7 +21,6 @@ export interface CleanerProfile {
   business_name: string | null
   bio: string | null
   service_radius_km: number | null
-  hourly_rate_cents: number | null
   currency: string
   status: 'pending' | 'approved' | 'rejected' | 'suspended'
   onboarding_complete: boolean

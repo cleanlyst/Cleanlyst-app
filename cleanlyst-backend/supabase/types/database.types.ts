@@ -52,7 +52,6 @@ export interface CleanerProfile {
   cleaner_type: CleanerType | null
   business_name: string | null
   bio: string | null
-  hourly_rate: number | null
   years_experience: number | null
   service_radius_km: number | null
   stripe_account_id: string | null
@@ -135,10 +134,17 @@ export interface Booking {
 
 export interface BookingFinancials {
   booking_id: string
-  quote_cents: number
-  platform_fee_cents: number
+  service_price_cents: number
   booking_fee_cents: number
+  cleaner_commission_cents: number
   cleaner_payout_cents: number
+  platform_revenue_cents: number
+  booking_fee_percent: number
+  cleaner_commission_percent: number
+  /** @deprecated use platform_revenue_cents */
+  platform_fee_cents: number
+  /** @deprecated use service_price_cents */
+  quote_cents: number
   currency: string
   created_at: string
   updated_at: string
@@ -251,6 +257,7 @@ export interface CleanerSubscription {
 export interface PlatformSettings {
   id: string
   booking_fee_percent: number
+  cleaner_commission_percent: number
   booking_fee_fixed_cents: number
   support_email: string | null
   created_at: string
@@ -277,7 +284,7 @@ export interface Database {
       cleaner_applications: { Row: CleanerApplication; Insert: Omit<CleanerApplication, 'id' | 'created_at' | 'updated_at'>; Update: Partial<CleanerApplication> }
       cleaner_application_documents: { Row: CleanerApplicationDocument; Insert: Omit<CleanerApplicationDocument, 'id' | 'uploaded_at'>; Update: Partial<CleanerApplicationDocument> }
       cleaner_subscriptions: { Row: CleanerSubscription; Insert: Omit<CleanerSubscription, 'trial_started_at' | 'created_at' | 'updated_at'>; Update: Partial<CleanerSubscription> }
-      platform_settings: { Row: PlatformSettings; Insert: Omit<PlatformSettings, 'id' | 'created_at' | 'updated_at'>; Update: Partial<PlatformSettings> }
+      platform_settings: { Row: PlatformSettings; Insert: Omit<PlatformSettings, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Omit<PlatformSettings, 'id' | 'created_at'>> }
     }
     Functions: {
       get_my_profile: { Args: Record<never, never>; Returns: Profile }

@@ -47,18 +47,6 @@
           ></textarea>
         </div>
         <div class="edit-group">
-          <label class="edit-label" for="ep-hourly">Hourly Rate (£)</label>
-          <input
-            id="ep-hourly"
-            v-model.number="editForm.hourly_rate"
-            class="edit-input"
-            type="number"
-            min="0"
-            step="0.50"
-            placeholder="e.g. 25"
-          />
-        </div>
-        <div class="edit-group">
           <label class="edit-label" for="ep-radius">Service Radius (km)</label>
           <input
             id="ep-radius"
@@ -131,12 +119,6 @@
             <div class="stats-grid">
               <div class="stat-cell">
                 <span class="stat-value">
-                  {{ hourlyRateFormatted }}
-                </span>
-                <span class="stat-caption">Hourly Rate</span>
-              </div>
-              <div class="stat-cell">
-                <span class="stat-value">
                   {{ auth.cleanerProfile?.service_radius_km ?? '—' }}km
                 </span>
                 <span class="stat-caption">Service Radius</span>
@@ -206,7 +188,6 @@ const avatarError = ref('')
 const editForm = reactive({
   full_name: '',
   bio: '',
-  hourly_rate: null as number | null,
   service_radius_km: null as number | null,
   city: '',
 })
@@ -214,10 +195,6 @@ const editForm = reactive({
 function syncFormFromStore() {
   editForm.full_name = auth.profile?.full_name ?? ''
   editForm.bio = auth.cleanerProfile?.bio ?? ''
-  editForm.hourly_rate =
-    auth.cleanerProfile?.hourly_rate_cents != null
-      ? auth.cleanerProfile.hourly_rate_cents / 100
-      : null
   editForm.service_radius_km = auth.cleanerProfile?.service_radius_km ?? null
   editForm.city = auth.profile?.city ?? ''
 }
@@ -234,12 +211,6 @@ function closeEdit() {
   editError.value = ''
   editSuccess.value = false
 }
-
-const hourlyRateFormatted = computed(() => {
-  const cents = auth.cleanerProfile?.hourly_rate_cents
-  if (cents == null) return '—'
-  return `£${(cents / 100).toFixed(2)}`
-})
 
 // profiles.role is the authoritative source — cleanerProfile.status can lag behind
 // when an admin changes the role directly in the DB without going through the
@@ -296,8 +267,6 @@ async function handleSaveEdit() {
         {
           user_id: auth.userId,
           bio: editForm.bio.trim() || null,
-          hourly_rate_cents:
-            editForm.hourly_rate != null ? Math.round(editForm.hourly_rate * 100) : null,
           service_radius_km: editForm.service_radius_km,
         },
         { onConflict: 'user_id' },

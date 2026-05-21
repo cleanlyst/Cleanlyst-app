@@ -218,19 +218,12 @@
                 </div>
                 <span class="font-label-md text-label-md text-primary">{{ durationLabel }}</span>
               </div>
-              <div
-                v-if="selectedService || cleaner?.hourly_rate_cents"
-                class="flex justify-between items-center"
-              >
+              <div v-if="selectedService" class="flex justify-between items-center">
                 <div class="flex items-center gap-3">
                   <span class="material-symbols-outlined text-secondary">cleaning_services</span>
-                  <span class="font-body text-body text-secondary">
-                    {{ selectedService ? 'Service' : 'Rate' }}
-                  </span>
+                  <span class="font-body text-body text-secondary">Service</span>
                 </div>
-                <span class="font-label-md text-label-md text-primary">
-                  {{ selectedService ? selectedService.title : hourlyRateLabel }}
-                </span>
+                <span class="font-label-md text-label-md text-primary">{{ selectedService.title }}</span>
               </div>
             </div>
             <div class="pt-6 space-y-4 border-t border-surface-variant">
@@ -241,7 +234,7 @@
                 }}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="font-body text-body text-secondary">Service Fee (7%)</span>
+                <span class="font-body text-body text-secondary">{{ bookingFeeLabel }}</span>
                 <span class="font-body text-body text-primary">{{
                   formatPence(serviceFeePence)
                 }}</span>
@@ -281,7 +274,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCleanerPublicProfile, type CleanerSearchResult } from '@/services/cleanerService'
 import { createBookingRequest } from '@/services/bookingService'
@@ -290,6 +283,7 @@ import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { formatPence } from '@/utils/format'
+import { getPricing, type PricingResult } from '@/services/pricingEngine'
 
 interface BookableService {
   id: string
@@ -337,21 +331,23 @@ const addressLine = computed(() => {
   return parts.join(', ')
 })
 
-const subtotalPence = computed(
-  () =>
-    selectedService.value?.base_price_cents ??
-    (cleaner.value?.hourly_rate_cents ?? 0) * durationHours.value,
+const subtotalPence = computed(() => selectedService.value?.base_price_cents ?? 0)
+
+const currentPricing = ref<PricingResult | null>(null)
+
+const serviceFeePence = computed(
+  () => currentPricing.value?.bookingFeeCents ?? Math.round(subtotalPence.value * 0.07),
 )
-
-const serviceFeePence = computed(() => Math.round(subtotalPence.value * 0.07))
-
-const totalPence = computed(() => subtotalPence.value + serviceFeePence.value)
-
-const hourlyRateLabel = computed(() =>
-  cleaner.value?.hourly_rate_cents
-    ? `${formatPence(cleaner.value.hourly_rate_cents)}/hr`
-    : 'Not set',
+const totalPence = computed(
+  () => currentPricing.value?.totalCustomerCents ?? (subtotalPence.value + serviceFeePence.value),
 )
+const bookingFeeLabel = computed(() => `Platform fee (${currentPricing.value?.bookingFeePercent ?? 7}%)`)
+
+async function loadPricing() {
+  if (subtotalPence.value > 0) currentPricing.value = await getPricing(subtotalPence.value)
+}
+
+watch(subtotalPence, loadPricing)
 
 const durationLabel = computed(() => {
   const minutes = selectedService.value?.duration_minutes
@@ -498,6 +494,9 @@ async function submitBooking() {
       [prefs?.address_line_1, prefs?.city, prefs?.postcode].filter(Boolean).join(', ') ||
       'Address not provided'
 
+    if (!currentPricing.value) await loadPricing()
+    const pricing = currentPricing.value
+
     await createBookingRequest({
       customerId: auth.userId,
       cleanerId: cleaner.value.user_id,
@@ -508,12 +507,22 @@ async function submitBooking() {
       locationText: location,
       scheduledStart: scheduledStart.toISOString(),
       scheduledEnd: scheduledEnd.toISOString(),
-      quoteCents: totalPence.value,
-      cleanerPayoutCents: subtotalPence.value,
+      quoteCents: pricing?.totalCustomerCents ?? totalPence.value,
+      cleanerPayoutCents: pricing?.cleanerPayoutCents ?? subtotalPence.value,
       currency: cleaner.value.currency,
       notes: notes.value || null,
       durationMinutes,
-      hourlyRateCents: cleaner.value.hourly_rate_cents ?? null,
+      financials: pricing
+        ? {
+            servicePriceCents: pricing.servicePriceCents,
+            bookingFeeCents: pricing.bookingFeeCents,
+            cleanerCommissionCents: pricing.cleanerCommissionCents,
+            cleanerPayoutCents: pricing.cleanerPayoutCents,
+            platformRevenueCents: pricing.platformRevenueCents,
+            bookingFeePercent: pricing.bookingFeePercent,
+            cleanerCommissionPercent: pricing.cleanerCommissionPercent,
+          }
+        : null,
     })
     router.push({ name: 'CustomerBookings' })
   } catch (e) {

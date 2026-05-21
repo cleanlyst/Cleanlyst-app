@@ -4,7 +4,6 @@ export interface CleanerSearchResult {
   user_id: string
   business_name: string | null
   bio: string | null
-  hourly_rate_cents: number | null
   currency: string
   average_rating: number
   review_count: number
@@ -19,7 +18,6 @@ export interface CleanerSearchResult {
 export interface CleanerSearchParams {
   city?: string
   serviceCategory?: string
-  maxRateCents?: number
   minRating?: number
   availabilityDate?: string // YYYY-MM-DD format
   availabilityTime?: string // HH:MM format – only used when availabilityDate is also set
@@ -34,7 +32,6 @@ export async function searchCleaners(
   const {
     limit = 20,
     offset = 0,
-    maxRateCents,
     minRating,
     serviceCategory,
     availabilityDate,
@@ -108,7 +105,6 @@ export async function searchCleaners(
       user_id,
       business_name,
       bio,
-      hourly_rate_cents,
       currency,
       average_rating,
       review_count,
@@ -129,9 +125,6 @@ export async function searchCleaners(
   }
   if (availableCleanerIds !== null) {
     query = query.in('user_id', availableCleanerIds)
-  }
-  if (maxRateCents !== undefined) {
-    query = query.lte('hourly_rate_cents', maxRateCents)
   }
   if (minRating !== undefined) {
     query = query.gte('average_rating', minRating)
@@ -154,7 +147,6 @@ export async function getCleanerPublicProfile(userId: string): Promise<CleanerSe
       user_id,
       business_name,
       bio,
-      hourly_rate_cents,
       currency,
       average_rating,
       review_count,
@@ -177,7 +169,6 @@ export async function updateCleanerProfile(
   updates: Partial<{
     business_name: string
     bio: string
-    hourly_rate_cents: number
     service_radius_km: number
   }>,
 ) {

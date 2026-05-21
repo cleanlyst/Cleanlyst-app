@@ -2,7 +2,7 @@
   <main class="pt-24 pb-24 px-6 max-w-7xl mx-auto">
 
     <!-- Payment Success -->
-    <div v-if="paymentSuccess" class="max-w-lg mx-auto text-center py-24 space-y-6">
+    <div v-if="paymentSuccess" class="max-w-3xl mx-auto text-center py-24 space-y-6">
       <span class="material-symbols-outlined text-6xl text-green-600 block success-icon">check_circle</span>
       <h1 class="font-h1 text-h1 text-primary">Payment Successful</h1>
       <p class="font-body text-body text-secondary">Your booking has been successfully placed.</p>
@@ -18,7 +18,7 @@
     <div v-else>
 
       <!-- Header + Progress -->
-      <section class="mb-10">
+      <section class="mb-10 max-w-3xl mx-auto">
         <h1 class="font-h1 text-h1 text-primary mb-1">Book Cleaner</h1>
         <div class="flex items-center gap-2 mt-4">
           <template v-for="(label, i) in STEP_LABELS" :key="i">
@@ -49,7 +49,7 @@
       </section>
 
       <!-- Step 1: Service + Add-ons -->
-      <section v-if="step === 1" class="max-w-2xl space-y-8">
+      <section v-if="step === 1" class="max-w-2xl mx-auto space-y-8">
         <h2 class="font-h2 text-h2 text-primary">Choose the service you need</h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -113,7 +113,7 @@
       </section>
 
       <!-- Step 2: Schedule -->
-      <section v-else-if="step === 2" class="max-w-lg space-y-6">
+      <section v-else-if="step === 2" class="max-w-3xl mx-auto space-y-6">
         <h2 class="font-h2 text-h2 text-primary">Schedule</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -137,7 +137,7 @@
       </section>
 
       <!-- Step 3: Property Details -->
-      <section v-else-if="step === 3" class="max-w-lg space-y-6">
+      <section v-else-if="step === 3" class="max-w-3xl mx-auto space-y-6">
         <h2 class="font-h2 text-h2 text-primary">Property Details</h2>
         <div class="space-y-4">
           <div>
@@ -219,7 +219,7 @@
       </section>
 
       <!-- Step 4: Available Cleaners -->
-      <section v-else-if="step === 4" class="space-y-6">
+      <section v-else-if="step === 4" class="max-w-5xl mx-auto space-y-6">
         <h2 class="font-h2 text-h2 text-primary">Available Cleaners</h2>
 
         <!-- Loading skeleton -->
@@ -291,9 +291,9 @@
                 </div>
                 <div class="text-right">
                   <div class="font-h2 text-h2">
-                    {{ c.hourly_rate_cents ? formatPence(c.hourly_rate_cents) : '—' }}
+                    {{ estimatedCostForCleaner(c) > 0 ? formatPence(estimatedCostForCleaner(c)) : '—' }}
                   </div>
-                  <div class="text-secondary text-caption font-caption">per hour</div>
+                  <div class="text-secondary text-caption font-caption">est. total</div>
                 </div>
               </div>
               <p v-if="c.bio" class="text-sm text-on-surface-variant line-clamp-2">{{ c.bio }}</p>
@@ -314,7 +314,7 @@
       </section>
 
       <!-- Step 5: Booking Summary + Payment -->
-      <section v-else-if="step === 5" class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <section v-else-if="step === 5" class="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div class="lg:col-span-7 space-y-6">
           <h2 class="font-h2 text-h2 text-primary">Booking Summary</h2>
 
@@ -395,7 +395,7 @@
                 <span class="text-primary">{{ formatPence(subtotalPence) }}</span>
               </div>
               <div class="flex justify-between text-sm">
-                <span class="text-secondary">Booking fee (7%)</span>
+                <span class="text-secondary">{{ bookingFeeLabel }}</span>
                 <span class="text-primary">{{ formatPence(bookingFeePence) }}</span>
               </div>
               <div class="flex justify-between pt-2 border-t border-outline-variant">
@@ -436,7 +436,7 @@
       </section>
 
       <!-- Navigation buttons -->
-      <div v-if="step >= 1 && step <= 3" class="flex items-center justify-between pt-8 max-w-2xl">
+      <div v-if="step >= 1 && step <= 3" class="flex items-center justify-between pt-8 max-w-3xl mx-auto">
         <button
           v-if="step > 1"
           type="button"
@@ -456,7 +456,7 @@
         </button>
       </div>
 
-      <div v-else-if="step === 4" class="flex pt-8 max-w-2xl">
+      <div v-else-if="step === 4" class="flex pt-8 max-w-5xl mx-auto">
         <button
           type="button"
           class="px-6 py-3 border border-outline-variant text-primary font-label-md hover:bg-surface-container"
@@ -466,7 +466,7 @@
         </button>
       </div>
 
-      <div v-else-if="step === 5" class="flex pt-4 max-w-2xl">
+      <div v-else-if="step === 5" class="flex pt-4 max-w-4xl mx-auto">
         <button
           type="button"
           class="px-6 py-3 border border-outline-variant text-primary font-label-md hover:bg-surface-container"
@@ -480,7 +480,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import { createBookingRequest, processPaymentDirect } from '@/services/bookingService'
@@ -488,6 +488,7 @@ import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { formatPence } from '@/utils/format'
+import { fetchPlatformSettings, getPricing, type PricingResult } from '@/services/pricingEngine'
 import {
   ADDON_CATEGORY,
   ADD_ON_PRICES_PENCE,
@@ -507,14 +508,6 @@ interface BookableService {
 }
 
 const STEP_LABELS = ['Service', 'Schedule', 'Property', 'Cleaners', 'Summary']
-
-const BEDROOMS_HOURS: Record<string, number> = {
-  studio: 1.5,
-  '1': 2,
-  '2': 3,
-  '3': 4,
-  '4': 5,
-}
 
 const BEDROOMS_SIZE_SLUG: Record<string, string> = {
   studio: 'studio',
@@ -553,11 +546,16 @@ const addressPostcode = ref('')
 const loadingCleaners = ref(false)
 const cleaners = ref<CleanerSearchResult[]>([])
 const selectedCleaner = ref<CleanerSearchResult | null>(null)
+// Base price (before property multiplier) per cleaner for the selected service
+const cleanerBasePrices = ref<Map<string, number>>(new Map())
 
 // Step 5
 const cleanerServices = ref<BookableService[]>([])
 const paying = ref(false)
 const payError = ref('')
+const currentPricing = ref<PricingResult | null>(null)
+// Pre-loaded at step 4 so cleaner card estimates include the correct fee
+const platformFeePercent = ref(7)
 
 // --- Computed ---
 
@@ -599,13 +597,10 @@ const matchedService = computed(() =>
 )
 
 const basePricePence = computed(() => {
-  if (matchedService.value) {
-    const sizeSlug = BEDROOMS_SIZE_SLUG[bedrooms.value] ?? '2bed'
-    const multiplier = PROPERTY_SIZE_OPTIONS.find((o) => o.value === sizeSlug)?.multiplier ?? 1.0
-    return Math.round(matchedService.value.base_price_cents * multiplier)
-  }
-  const hours = BEDROOMS_HOURS[bedrooms.value] ?? 2
-  return Math.round((selectedCleaner.value?.hourly_rate_cents ?? 0) * hours)
+  if (!matchedService.value) return 0
+  const sizeSlug = BEDROOMS_SIZE_SLUG[bedrooms.value] ?? '2bed'
+  const multiplier = PROPERTY_SIZE_OPTIONS.find((o) => o.value === sizeSlug)?.multiplier ?? 1.0
+  return Math.round(matchedService.value.base_price_cents * multiplier)
 })
 
 const addOnsTotalPence = computed(() =>
@@ -613,8 +608,15 @@ const addOnsTotalPence = computed(() =>
 )
 
 const subtotalPence = computed(() => basePricePence.value + addOnsTotalPence.value)
-const bookingFeePence = computed(() => Math.round(subtotalPence.value * 0.07))
+
+// Always derived from the CURRENT subtotal using the known fee %, never from a
+// potentially-stale currentPricing object that may have been computed for a
+// different base (e.g. hourly estimate before the matched service loaded).
+const bookingFeePence = computed(() =>
+  Math.round(subtotalPence.value * (platformFeePercent.value / 100)),
+)
 const totalPence = computed(() => subtotalPence.value + bookingFeePence.value)
+const bookingFeeLabel = computed(() => `Platform fee (${platformFeePercent.value}%)`)
 
 const canNext = computed(() => {
   if (step.value === 1) return !!selectedServiceSlug.value
@@ -633,6 +635,15 @@ function addonName(slug: string): string {
   return ADDON_CATEGORY.subServices.find((s) => s.slug === slug)?.name ?? slug
 }
 
+function estimatedCostForCleaner(c: CleanerSearchResult): number {
+  const basePrice = cleanerBasePrices.value.get(c.user_id)
+  if (!basePrice) return 0
+  const sizeSlug = BEDROOMS_SIZE_SLUG[bedrooms.value] ?? '2bed'
+  const multiplier = PROPERTY_SIZE_OPTIONS.find((o) => o.value === sizeSlug)?.multiplier ?? 1.0
+  const subtotal = Math.round(basePrice * multiplier) + addOnsTotalPence.value
+  return Math.round(subtotal * (1 + platformFeePercent.value / 100))
+}
+
 function formatDateDisplay(date: string): string {
   if (!date) return '—'
   return new Date(date + 'T00:00:00').toLocaleDateString('en-GB', {
@@ -641,6 +652,31 @@ function formatDateDisplay(date: string): string {
     month: 'short',
   })
 }
+
+// --- Pricing ---
+
+async function loadPlatformFeePercent() {
+  try {
+    const settings = await fetchPlatformSettings()
+    platformFeePercent.value = settings.bookingFeePercent
+  } catch {
+    // keep default
+  }
+}
+
+async function loadPricing() {
+  if (subtotalPence.value <= 0) return
+  currentPricing.value = await getPricing(subtotalPence.value)
+  // Keep platformFeePercent in sync with what the engine resolved
+  if (currentPricing.value) {
+    platformFeePercent.value = currentPricing.value.bookingFeePercent
+  }
+}
+
+// Re-fetch if add-ons change while on the summary step
+watch(subtotalPence, () => {
+  if (step.value === 5) loadPricing()
+})
 
 // --- Navigation ---
 
@@ -658,6 +694,7 @@ function prevStep() {
   if (step.value === 5) {
     selectedCleaner.value = null
     cleanerServices.value = []
+    currentPricing.value = null
   }
   if (step.value > 1) step.value--
 }
@@ -667,11 +704,14 @@ function prevStep() {
 async function loadAvailableCleaners() {
   loadingCleaners.value = true
   cleaners.value = []
+  cleanerBasePrices.value = new Map()
+  loadPlatformFeePercent()
   try {
     const params: Parameters<typeof searchCleaners>[0] = { limit: 15 }
     if (bookingDate.value) params.availabilityDate = bookingDate.value
     if (bookingDate.value && bookingTime.value) params.availabilityTime = bookingTime.value
     cleaners.value = await searchCleaners(params)
+    await loadCleanerBasePrices(cleaners.value.map((c) => c.user_id))
   } catch {
     cleaners.value = []
   } finally {
@@ -679,10 +719,43 @@ async function loadAvailableCleaners() {
   }
 }
 
+async function loadCleanerBasePrices(cleanerIds: string[]) {
+  if (!cleanerIds.length || !selectedServiceSlug.value) return
+  const keywords = (CORE_SERVICE_MATCH_KEYWORDS[selectedServiceSlug.value] ?? []).map((k) =>
+    k.toLowerCase(),
+  )
+  if (!keywords.length) return
+  try {
+    const supabase = requireSupabase()
+    const { data } = await supabase
+      .from('services')
+      .select('cleaner_id, title, category, description, base_price_cents')
+      .in('cleaner_id', cleanerIds)
+      .eq('active', true)
+    const prices = new Map<string, number>()
+    for (const svc of data ?? []) {
+      if (prices.has(svc.cleaner_id)) continue
+      const title = (svc.title ?? '').toLowerCase()
+      const category = (svc.category ?? '').toLowerCase()
+      const description = (svc.description ?? '').toLowerCase()
+      if (keywords.some((kw) => title.includes(kw) || category.includes(kw) || description.includes(kw))) {
+        prices.set(svc.cleaner_id, svc.base_price_cents)
+      }
+    }
+    cleanerBasePrices.value = prices
+  } catch {
+    // leave map empty — cards will show "—"
+  }
+}
+
 async function selectCleaner(c: CleanerSearchResult) {
   selectedCleaner.value = c
   step.value = 5
+  // Load services FIRST so subtotalPence reflects the actual service price
+  // before loadPricing() runs — eliminates the race condition that caused
+  // totalPence to be computed against the hourly-rate estimate.
   await loadCleanerServices(c.user_id)
+  await loadPricing()
 }
 
 async function loadCleanerServices(cleanerId: string) {
@@ -704,16 +777,21 @@ async function loadCleanerServices(cleanerId: string) {
 
 async function confirmAndPay() {
   if (paying.value || !selectedCleaner.value || !auth.userId) return
+
   paying.value = true
   payError.value = ''
 
   try {
     const serviceId = matchedService.value?.id ?? cleanerServices.value[0]?.id
-    if (!serviceId) throw new Error('No matching service found for this cleaner.')
+    if (!serviceId) throw new Error('No matching service found')
 
-    const durationMinutes = Math.round((BEDROOMS_HOURS[bedrooms.value] ?? 3) * 60)
+    // Ensure we have fresh pricing before creating booking
+    if (!currentPricing.value) await loadPricing()
+    const pricing = currentPricing.value
+
+    const durationMinutes = matchedService.value?.duration_minutes ?? 180
     const scheduledStart = new Date(`${bookingDate.value}T${bookingTime.value}:00`)
-    const scheduledEnd = new Date(scheduledStart.getTime() + durationMinutes * 60_000)
+    const scheduledEnd = new Date(scheduledStart.getTime() + durationMinutes * 60000)
 
     const addOnNote =
       selectedAddOns.value.length > 0
@@ -727,7 +805,7 @@ async function confirmAndPay() {
         ? ' + ' + selectedAddOns.value.map(addonName).join(', ')
         : '')
 
-    const { id: bookingId } = await createBookingRequest({
+    const booking = await createBookingRequest({
       customerId: auth.userId,
       cleanerId: selectedCleaner.value.user_id,
       serviceId,
@@ -737,20 +815,30 @@ async function confirmAndPay() {
       locationText: locationText.value || 'Address not provided',
       scheduledStart: scheduledStart.toISOString(),
       scheduledEnd: scheduledEnd.toISOString(),
-      quoteCents: totalPence.value,
-      cleanerPayoutCents: subtotalPence.value,
+      quoteCents: pricing?.totalCustomerCents ?? totalPence.value,
+      cleanerPayoutCents: pricing?.cleanerPayoutCents ?? subtotalPence.value,
       currency: selectedCleaner.value.currency,
       notes: fullNotes,
       durationMinutes,
-      hourlyRateCents: selectedCleaner.value.hourly_rate_cents,
+      financials: pricing
+        ? {
+            servicePriceCents: pricing.servicePriceCents,
+            bookingFeeCents: pricing.bookingFeeCents,
+            cleanerCommissionCents: pricing.cleanerCommissionCents,
+            cleanerPayoutCents: pricing.cleanerPayoutCents,
+            platformRevenueCents: pricing.platformRevenueCents,
+            bookingFeePercent: pricing.bookingFeePercent,
+            cleanerCommissionPercent: pricing.cleanerCommissionPercent,
+          }
+        : null,
     })
 
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    await processPaymentDirect(bookingId)
+    if (!booking?.id) throw new Error('Booking creation failed — no ID returned')
 
+    await processPaymentDirect(booking.id)
     paymentSuccess.value = true
   } catch (e) {
-    payError.value = e instanceof Error ? e.message : 'Failed to process payment.'
+    payError.value = e instanceof Error ? e.message : JSON.stringify(e)
   } finally {
     paying.value = false
   }

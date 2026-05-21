@@ -15,6 +15,16 @@ export interface BookingListRow {
   customer?: { id: string; full_name: string; avatar_url: string | null } | null
 }
 
+export interface BookingFinancialsSnapshot {
+  servicePriceCents: number
+  bookingFeeCents: number
+  cleanerCommissionCents: number
+  cleanerPayoutCents: number
+  platformRevenueCents: number
+  bookingFeePercent: number
+  cleanerCommissionPercent: number
+}
+
 export interface BookingRequestInput {
   customerId: string
   cleanerId: string
@@ -30,7 +40,7 @@ export interface BookingRequestInput {
   currency?: string
   notes?: string | null
   durationMinutes?: number | null
-  hourlyRateCents?: number | null
+  financials?: BookingFinancialsSnapshot | null
 }
 
 function normalizeCustomerRelationship(raw: unknown): BookingListRow['customer'] {
@@ -157,14 +167,34 @@ export async function createBookingRequest(input: BookingRequestInput): Promise<
       status: 'pending_request',
       payment_status: 'unpaid',
       duration_minutes: input.durationMinutes ?? null,
-      hourly_rate_cents: input.hourlyRateCents ?? null,
       notes: input.notes ?? null,
     })
     .select('id')
     .single()
 
   if (error) throw error
-  return data as { id: string }
+  const booking = data as { id: string }
+
+  // Persist immutable financial snapshot so admin fee changes never affect past bookings
+  if (input.financials) {
+    const f = input.financials
+    await supabase.from('booking_financials').upsert({
+      booking_id: booking.id,
+      service_price_cents: f.servicePriceCents,
+      booking_fee_cents: f.bookingFeeCents,
+      cleaner_commission_cents: f.cleanerCommissionCents,
+      cleaner_payout_cents: f.cleanerPayoutCents,
+      platform_revenue_cents: f.platformRevenueCents,
+      booking_fee_percent: f.bookingFeePercent,
+      cleaner_commission_percent: f.cleanerCommissionPercent,
+      // legacy columns kept for backward compat
+      quote_cents: input.quoteCents,
+      platform_fee_cents: f.platformRevenueCents,
+      currency: input.currency ?? 'GBP',
+    })
+  }
+
+  return booking
 }
 
 export async function transitionBookingState(
@@ -195,14 +225,22 @@ export interface BookingDetailRow extends BookingListRow {
   notes: string | null
   estimated_hours: number | null
   duration_minutes: number | null
-  hourly_rate_cents: number | null
   decline_reason?: string | null
   booking_edit_note?: string | null
   cleaner_payout_cents: number | null
   currency?: string | null
   payments?: Array<{ status: string; amount_cents: number | null; captured_at: string | null }>
   customer: { id: string; full_name: string; avatar_url: string | null } | null | undefined
-  booking_financials?: { cleaner_payout_cents: number | null; currency: string | null }
+  booking_financials?: {
+    service_price_cents: number | null
+    booking_fee_cents: number | null
+    cleaner_commission_cents: number | null
+    cleaner_payout_cents: number | null
+    platform_revenue_cents: number | null
+    booking_fee_percent: number | null
+    cleaner_commission_percent: number | null
+    currency: string | null
+  }
 }
 
 function normalizePayments(raw: unknown): BookingDetailRow['payments'] {
@@ -225,14 +263,18 @@ function normalizeBookingFinancials(
   raw: unknown,
 ): BookingDetailRow['booking_financials'] | undefined {
   if (!raw || typeof raw !== 'object') return undefined
-  const record = raw as Record<string, unknown>
+  const r = raw as Record<string, unknown>
+  const n = (v: unknown): number | null =>
+    v === null || v === undefined ? null : Number(v)
   return {
-    cleaner_payout_cents:
-      record.cleaner_payout_cents === null || record.cleaner_payout_cents === undefined
-        ? null
-        : Number(record.cleaner_payout_cents),
-    currency:
-      record.currency === null || record.currency === undefined ? null : String(record.currency),
+    service_price_cents: n(r.service_price_cents),
+    booking_fee_cents: n(r.booking_fee_cents),
+    cleaner_commission_cents: n(r.cleaner_commission_cents),
+    cleaner_payout_cents: n(r.cleaner_payout_cents),
+    platform_revenue_cents: n(r.platform_revenue_cents),
+    booking_fee_percent: n(r.booking_fee_percent),
+    cleaner_commission_percent: n(r.cleaner_commission_percent),
+    currency: r.currency === null || r.currency === undefined ? null : String(r.currency),
   }
 }
 
@@ -260,10 +302,6 @@ function normalizeBookingDetailRow(raw: unknown): BookingDetailRow | null {
       row.duration_minutes === null || row.duration_minutes === undefined
         ? null
         : Number(row.duration_minutes),
-    hourly_rate_cents:
-      row.hourly_rate_cents === null || row.hourly_rate_cents === undefined
-        ? null
-        : Number(row.hourly_rate_cents),
     decline_reason:
       row.decline_reason === null || row.decline_reason === undefined
         ? null
@@ -291,7 +329,7 @@ export async function getBookingById(bookingId: string): Promise<BookingDetailRo
       `*,
       customer:profiles!customer_id(id, full_name, avatar_url),
       payments(status, amount_cents, captured_at),
-      booking_financials(cleaner_payout_cents, currency)`,
+      booking_financials(service_price_cents, booking_fee_cents, cleaner_commission_cents, cleaner_payout_cents, platform_revenue_cents, booking_fee_percent, cleaner_commission_percent, currency)`,
     )
     .eq('id', bookingId)
     .maybeSingle()
@@ -359,114 +397,19 @@ export async function processBookingPayment(bookingId: string): Promise<BookingD
 
 export async function processPaymentDirect(bookingId: string): Promise<BookingDetailRow> {
   const supabase = getSupabaseClient()
-  const now = new Date().toISOString()
 
-  const current = await getBookingById(bookingId)
-  if (!current) throw new Error('Booking not found.')
+  console.log('[processPaymentDirect] invoking edge function for booking:', bookingId)
 
-  const quoteCents = current.quote_cents ?? 0
-  const currency = current.currency ?? 'GBP'
-  const cleanerPayoutCents = current.cleaner_payout_cents ?? Math.round(quoteCents * 0.93)
-  const platformFeeCents = quoteCents - cleanerPayoutCents
+  const { data, error } = await supabase.functions.invoke('process-payment-direct', {
+    body: { booking_id: bookingId },
+  })
 
-  // Upsert payment row
-  const { data: existingPayment } = await supabase
-    .from('payments')
-    .select('id')
-    .eq('booking_id', bookingId)
-    .maybeSingle()
-
-  const paymentFields = {
-    booking_id: bookingId,
-    status: 'captured',
-    amount_cents: quoteCents,
-    currency,
-    authorized_at: now,
-    captured_at: now,
-    platform_fee_cents: platformFeeCents,
-    cleaner_payout_cents: cleanerPayoutCents,
-    metadata: { type: 'dummy_payment', processed: true },
+  if (error) {
+    console.error('[processPaymentDirect] edge function error:', error)
+    throw new Error(error.message ?? 'Payment processing failed')
   }
 
-  let paymentId: string | null = existingPayment?.id ?? null
-
-  if (existingPayment?.id) {
-    const { error } = await supabase
-      .from('payments')
-      .update({ ...paymentFields, updated_at: now })
-      .eq('booking_id', bookingId)
-    if (error) throw error
-  } else {
-    const { data: newPayment, error } = await supabase
-      .from('payments')
-      .insert(paymentFields)
-      .select('id')
-      .single()
-    if (error) throw error
-    paymentId = newPayment?.id ?? null
-  }
-
-  // Upsert booking_financials
-  const { error: finError } = await supabase.from('booking_financials').upsert(
-    {
-      booking_id: bookingId,
-      quote_cents: quoteCents,
-      platform_fee_cents: platformFeeCents,
-      booking_fee_cents: 0,
-      cleaner_payout_cents: cleanerPayoutCents,
-      currency,
-    },
-    { onConflict: 'booking_id' },
-  )
-  if (finError) console.warn('booking_financials upsert failed:', finError)
-
-  // Insert transaction record (skip if already exists)
-  if (paymentId) {
-    const { data: existingTx } = await supabase
-      .from('transactions')
-      .select('id')
-      .eq('booking_id', bookingId)
-      .maybeSingle()
-
-    if (!existingTx) {
-      const { error: txError } = await supabase.from('transactions').insert({
-        booking_id: bookingId,
-        payment_id: paymentId,
-        stripe_payment_intent_id: null,
-        amount: quoteCents,
-        currency,
-        payment_status: 'paid',
-      })
-      if (txError) console.warn('transactions insert failed:', txError)
-    }
-  }
-
-  // Mark booking as paid; advance estimate_proposed/awaiting_customer_payment → accepted
-  const needsStatusAdvance = ['estimate_proposed', 'awaiting_customer_payment'].includes(
-    current.status ?? '',
-  )
-  const bookingPatch: Record<string, unknown> = {
-    payment_status: 'paid',
-    paid_at: now,
-    updated_at: now,
-  }
-  if (needsStatusAdvance) bookingPatch.status = 'accepted'
-  const { error: bookingError } = await supabase
-    .from('bookings')
-    .update(bookingPatch)
-    .eq('id', bookingId)
-  if (bookingError) throw bookingError
-
-  // Notify cleaner (non-fatal)
-  if (current.cleaner_id) {
-    const { error: notifError } = await supabase.rpc('create_notification', {
-      p_user_id: current.cleaner_id,
-      p_type: 'payment_received',
-      p_title: 'Payment received',
-      p_body: 'Customer payment has been confirmed. You can now start the job.',
-    })
-    if (notifError) console.warn('Notification failed:', notifError)
-  }
+  console.log('[processPaymentDirect] success:', data)
 
   const updated = await getBookingById(bookingId)
   if (!updated) throw new Error('Payment recorded but failed to fetch updated booking.')

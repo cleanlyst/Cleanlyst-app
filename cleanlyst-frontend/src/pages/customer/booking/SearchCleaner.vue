@@ -398,6 +398,11 @@
                 <span class="text-secondary">{{ bookingFeeLabel }}</span>
                 <span class="text-primary">{{ formatPence(bookingFeePence) }}</span>
               </div>
+              <div>
+              <p class="text-caption font-caption text-secondary text-xs mt-4">
+                * Platform fee helps us secure your payment, provide customer support and vet cleaners.
+              </p>
+              </div>
               <div class="flex justify-between pt-2 border-t border-outline-variant">
                 <span class="font-h2 text-h2 text-primary">Total</span>
                 <span class="font-h2 text-h2 text-primary">{{ formatPence(totalPence) }}</span>

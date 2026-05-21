@@ -15,8 +15,12 @@
           >
             Dashboard
           </router-link>
-          <router-link :to="{ name: 'Services' }" :class="navLinkClass('Services')">
-            Services
+          <router-link
+            v-if="auth.isAuthenticated && auth.hasRole('customer')"
+            :to="{ name: 'BookCleaner' }"
+            :class="navLinkClass('BookCleaner')"
+          >
+            Book a cleaner
           </router-link>
           <router-link :to="{ name: 'About' }" :class="navLinkClass('About')">
             About Us
@@ -103,8 +107,12 @@
           >
             Dashboard
           </router-link>
-          <router-link :to="{ name: 'Services' }" :class="navLinkClass('Services')">
-            Services
+          <router-link
+            v-if="auth.isAuthenticated && auth.hasRole('customer')"
+            :to="{ name: 'BookCleaner' }"
+            :class="navLinkClass('BookCleaner')"
+          >
+            Book a cleaner
           </router-link>
           <router-link :to="{ name: 'About' }" :class="navLinkClass('About')">
             About Us

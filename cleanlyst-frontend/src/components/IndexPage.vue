@@ -1,168 +1,184 @@
 <template>
   <main class="pt-16">
+
+    <!-- ── Hero ──────────────────────────────────────────────────────────── -->
     <section class="hero-section">
       <div class="hero-inner">
-        <h1 class="hero-title">Expert cleaners in your city.</h1>
+        <h1 class="hero-title">Trusted home cleaners,<br />booked in minutes.</h1>
         <p class="hero-copy">
-          The most reliable marketplace for professional cleaning services. Simple booking, vetted
-          experts, and a spotless home guaranteed.
+          Professional, vetted cleaners available across the UK. Fixed prices, no surprises —
+          just a spotless home.
         </p>
         <div class="hero-actions">
-          <router-link :to="{ name: 'About' }" class="button-primary">
-            Join Waiting List
+          <router-link :to="{ name: 'BookCleaner' }" class="button-primary">
+            Book a cleaner
           </router-link>
-          <router-link :to="{ name: 'SignupCustomer' }" class="button-secondary">
-            Sign Up
+          <router-link :to="{ name: 'SignupCleaner' }" class="button-secondary">
+            Join as a cleaner
           </router-link>
         </div>
       </div>
     </section>
 
-    <section class="feature-grid">
-      <article class="feature-card feature-card--large">
-        <span class="feature-step">01 / Process</span>
-        <h2>How it works</h2>
-        <div class="feature-list">
-          <div class="feature-item">
-            <div class="feature-item__index">1</div>
-            <div>
-              <h3 class="feature-subtitle">Sign up</h3>
-              <p class="feature-text">
-                Create your profile and tell us about your space in seconds.
-              </p>
-            </div>
+    <!-- ── Trust strip ────────────────────────────────────────────────────── -->
+    <section class="trust-strip">
+      <div class="trust-inner">
+        <div class="trust-item">
+          <span class="material-symbols-outlined trust-icon">verified_user</span>
+          <span class="trust-text">Fully vetted &amp; background-checked cleaners</span>
+        </div>
+        <div class="trust-item">
+          <span class="material-symbols-outlined trust-icon">price_check</span>
+          <span class="trust-text">Fixed pricing — no hidden fees</span>
+        </div>
+        <div class="trust-item">
+          <span class="material-symbols-outlined trust-icon">thumb_up</span>
+          <span class="trust-text">Satisfaction guaranteed on every clean</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Service cards ──────────────────────────────────────────────────── -->
+    <section class="services-section">
+      <div class="services-inner">
+        <div class="services-header">
+          <h2 class="section-title">What we clean</h2>
+          <p class="section-copy">
+            Choose from our core home cleaning services — all with fixed, upfront pricing.
+          </p>
+        </div>
+
+        <div class="service-grid">
+          <router-link
+            v-for="svc in services"
+            :key="svc.slug"
+            :to="{ name: 'BookCleaner', query: { service: svc.slug } }"
+            class="service-card"
+          >
+            <span class="material-symbols-outlined service-card__icon">{{ svc.icon }}</span>
+            <h3 class="service-card__title">{{ svc.title }}</h3>
+            <p class="service-card__copy">{{ svc.description }}</p>
+            <span class="service-card__cta">
+              Book now <span class="material-symbols-outlined service-card__arrow">arrow_forward</span>
+            </span>
+          </router-link>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── How it works ───────────────────────────────────────────────────── -->
+    <section class="how-section">
+      <div class="how-inner">
+        <h2 class="section-title">How it works</h2>
+        <p class="section-copy">Book a professional clean in three simple steps.</p>
+
+        <div class="steps-grid">
+          <div class="step">
+            <div class="step-number">1</div>
+            <h3 class="step-title">Pick your service</h3>
+            <p class="step-copy">
+              Select the type of clean you need and tell us about your property.
+            </p>
           </div>
-          <div class="feature-item">
-            <div class="feature-item__index">2</div>
-            <div>
-              <h3 class="feature-subtitle">Book</h3>
-              <p class="feature-text">
-                Choose a verified professional and a time that fits your schedule.
-              </p>
-            </div>
+          <div class="step">
+            <div class="step-number">2</div>
+            <h3 class="step-title">Choose your cleaner</h3>
+            <p class="step-copy">
+              Browse available cleaners near you, see their ratings, and pick the right fit.
+            </p>
           </div>
-          <div class="feature-item">
-            <div class="feature-item__index">3</div>
-            <div>
-              <h3 class="feature-subtitle">Clean</h3>
-              <p class="feature-text">
-                Relax while your expert professional makes your home shine.
-              </p>
-            </div>
+          <div class="step">
+            <div class="step-number">3</div>
+            <h3 class="step-title">Sit back and relax</h3>
+            <p class="step-copy">
+              Your cleaner arrives on time. Pay securely online — no cash required.
+            </p>
           </div>
         </div>
-      </article>
+      </div>
+    </section>
 
-      <article class="feature-card">
-        <span class="feature-icon material-symbols-outlined">verified_user</span>
-        <h3>Vetted Pros</h3>
-        <p class="feature-text">
-          Every cleaner undergoes a rigorous background check and skill assessment.
-        </p>
-      </article>
-
-      <article class="feature-card">
+    <!-- ── Social proof ───────────────────────────────────────────────────── -->
+    <section class="testimonial-section">
+      <div class="testimonial-inner">
         <div class="stars">
-          <span class="material-symbols-outlined">star</span>
-          <span class="material-symbols-outlined">star</span>
-          <span class="material-symbols-outlined">star</span>
-          <span class="material-symbols-outlined">star</span>
-          <span class="material-symbols-outlined">star</span>
+          <span v-for="n in 5" :key="n" class="material-symbols-outlined star-icon">star</span>
         </div>
-        <p class="testimonial">
-          "The booking process was seamless and the cleaning was exceptional. Finally a service that
-          values quality over quantity."
-        </p>
-        <span class="testimonial-author">— Sarah J., London</span>
-      </article>
-    </section>
-
-    <section class="marketplace-grid">
-      <div class="marketplace-header">
-        <div>
-          <h2>Trusted by thousands of residents.</h2>
-          <p>Our cleaners specialize in deep cleans, move-ins, and recurring weekly maintenance.</p>
-        </div>
-        <router-link :to="{ name: 'Services' }" class="link-secondary">
-          View all services <span class="material-symbols-outlined">arrow_forward</span>
-        </router-link>
-      </div>
-
-      <div class="listing-grid">
-        <article class="listing-card">
-          <div class="listing-card__media">
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJEkvdwL8g_ED_J8qcgB-iXtOzjP3bGLcJyrXepNNETc0CYuRFMLc70qARS2L3XxcHP4NnWl5HJCCwmUe10N2bieh3-5oyVU5r48y2ANMf5GIflO21Z4hFiKEteH_KvzSXuX62kE46mrK74VNlMbyR-Euk_WH7BW8temzQAHOrDZkzTJmCRwEL31ywEqFSI8CESYuyMZpxsCg-FfyYKh8mfiZTk4BUTLWuH_qwu4-Z0RIw6y80Trc8ac2CC3w5OUXYdkP-AAbA4g"
-              alt="Living room feature"
-            />
-          </div>
-          <div class="listing-card__content">
-            <h3 class="listing-card__title">Home Cleaning</h3>
-            <p class="listing-card__price">Fixed pricing</p>
-          </div>
-        </article>
-
-        <article class="listing-card">
-          <div class="listing-card__media">
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuABkP60Y2QBGGh2u0dIJMdcnfRxMTkJJLYTO9-n_LSMuI4H6YyEQc7RaQG1aXzDkzCsGCTcVmRf3tN7yhVOPTmypVPaC9yfTYzlWJ-zw274nbgIWkFJgvhIjPCVa7vImKgkuLw8SY4oYCL6IJsjTocyIKZdDk9uVXFZXaDMHqpEfl-SOuXmEPLNPXjZjHwGIHZ2nBH1rbH6s37eZ2H8TmRf36KoB0arGxtHBc0MjBuGN_52TuACVjvyrSjfS8KsOAf3RlM5mjnd2w"
-              alt="Kitchen feature"
-            />
-          </div>
-          <div class="listing-card__content">
-            <h3 class="listing-card__title">Commercial & Office Cleaning</h3>
-            <p class="listing-card__price">Fixed pricing</p>
-          </div>
-        </article>
-
-        <article class="listing-card">
-          <div class="listing-card__media">
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5TNyJt1uIAx-KZuwcqKRH_-mo28iQl3KHYvgRgM-MgTjO8X5-FJVMof3PdDU_hZxe-iIm-SjvyIjhiugGVQiv45yFGho6MdytCnQGFFcQwQA3aiJWnf6Sglc65WIkv-xM_QwvU59kzZmB17j_fD_0Axs7NLsQobS8Utijpw9B3XSTM89jtxKA5LHhnjHwcorLGmUPXKO8nERVCqReYIvmh29DuShe01TTqI5RZqOVKnMTGFmbX_ACZjIqoi6JjK2w2pgpjg0jcA"
-              alt="Bathroom feature"
-            />
-          </div>
-          <div class="listing-card__content">
-            <h3 class="listing-card__title">Window & Glass</h3>
-            <p class="listing-card__price">Fixed pricing</p>
-          </div>
-        </article>
-
-        <article class="listing-card">
-          <div class="listing-card__media">
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuChGNpYRWl83w1VNaigJrww-BDXGlWnw6xwquFiL5zPLpGBFAcujx0fucO9Lgv-pt3mTGOmsKxsCpPuyIKP0ZZ3vDXKPFCQ6J86AuXrsTzYCAYTAfOYTl854XfAdFIFNP0uaxLy_6NfR-GuU-uK_YPrNbP2DeCcSoWSP3ks6-gCzoH0qTg3Lu3g1UsGt3MArZmn8-Epn9QRTXpv7kjDOMEs9CpwZHfATJMX2gaabyWejAC0wZb7viqPTiof28O695PIv9Bgm_wWXQ"
-              alt="Office cleaning feature"
-            />
-          </div>
-          <div class="listing-card__content">
-            <h3 class="listing-card__title">Vehicle & Mobility Cleaning</h3>
-            <p class="listing-card__price">Custom Quote</p>
-          </div>
-        </article>
+        <blockquote class="testimonial-quote">
+          "The booking process was seamless and the cleaning was exceptional. Finally a service
+          that values quality over quantity."
+        </blockquote>
+        <p class="testimonial-author">— Sarah J., London</p>
       </div>
     </section>
 
+    <!-- ── Final CTA ──────────────────────────────────────────────────────── -->
     <section class="cta-panel">
       <div class="callout-panel">
-        <h2>Start earning with Cleanlyst</h2>
+        <h2>Ready for a spotless home?</h2>
         <p>
-          Join a growing network of professional cleaners and get access to consistent, high-quality
-          bookings. Set your availability, manage your schedule, and get paid reliably — all in one
-          place.
+          Book a trusted cleaner today. Fixed prices, flexible scheduling, and a 100%
+          satisfaction guarantee on every clean.
         </p>
         <div class="callout-actions">
-          <router-link :to="{ name: 'SignupCleaner' }" class="button-primary">
-            Join as a Cleaner
+          <router-link :to="{ name: 'BookCleaner' }" class="button-primary">
+            Book a cleaner
           </router-link>
-          <router-link :to="{ name: 'About' }" class="button-secondary">Learn More</router-link>
+          <router-link :to="{ name: 'SignupCleaner' }" class="button-secondary">
+            Join as a cleaner
+          </router-link>
         </div>
       </div>
     </section>
+
   </main>
 </template>
 
+<script setup lang="ts">
+const services = [
+  {
+    slug: 'deep-cleaning',
+    icon: 'cleaning_services',
+    title: 'Deep Cleaning',
+    description: 'A thorough top-to-bottom clean for homes that need extra attention.',
+  },
+  {
+    slug: 'end-of-tenancy',
+    icon: 'key',
+    title: 'End of Tenancy',
+    description: 'Move-out ready. Get your deposit back with a comprehensive tenancy clean.',
+  },
+  {
+    slug: 'regular-cleaning',
+    icon: 'home',
+    title: 'Regular Home Cleaning',
+    description: 'Weekly or fortnightly visits to keep your home consistently fresh.',
+  },
+  {
+    slug: 'airbnb-turnover',
+    icon: 'bed',
+    title: 'Airbnb Turnover',
+    description: 'Fast, reliable turnovers between guests — linen changes included.',
+  },
+]
+</script>
+
 <style scoped>
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+}
+
 main {
   min-height: 100vh;
   color: var(--on-background);
@@ -170,27 +186,36 @@ main {
   font-family: var(--font-body);
 }
 
-h1,
-h2,
-h3,
-p {
+h1, h2, h3, p, blockquote {
   margin: 0;
 }
 
+/* ── Shared section layout ── */
 .hero-section,
-.feature-grid,
-.marketplace-grid,
+.trust-strip,
+.services-section,
+.how-section,
+.testimonial-section,
 .cta-panel {
   width: 100%;
+}
+
+.hero-inner,
+.trust-inner,
+.services-inner,
+.how-inner,
+.testimonial-inner {
   max-width: 80rem;
   margin: 0 auto;
   padding-right: 1.5rem;
   padding-left: 1.5rem;
 }
 
+/* ── Hero ── */
 .hero-section {
   padding-top: 6rem;
   padding-bottom: 6rem;
+  background: var(--background);
 }
 
 .hero-inner {
@@ -201,21 +226,20 @@ p {
 }
 
 .hero-title {
-  max-width: 48rem;
-  margin-bottom: 2rem;
+  max-width: 42rem;
+  margin-bottom: 1.5rem;
   color: var(--primary);
   font-family: var(--font-h1);
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.02em !important;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
 .hero-copy {
-  max-width: 42rem;
-  margin-bottom: 3rem;
+  max-width: 34rem;
+  margin-bottom: 2.5rem;
   color: var(--secondary);
-  font-family: var(--font-body);
   font-size: 1.125rem;
   font-weight: 400;
   line-height: 1.6;
@@ -233,14 +257,12 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 3.5rem;
-  padding: 1rem 2rem;
-  border-radius: var(--radius);
-  font-family: var(--font-label-md);
+  min-height: 3rem;
+  padding: 0.875rem 2rem;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.4;
-  letter-spacing: 0.01em !important;
+  letter-spacing: 0.01em;
   text-decoration: none;
   transition:
     background-color 200ms ease,
@@ -255,7 +277,7 @@ p {
 }
 
 .button-primary:hover {
-  opacity: 0.9;
+  opacity: 0.88;
 }
 
 .button-secondary {
@@ -269,281 +291,264 @@ p {
 
 .button-primary:active,
 .button-secondary:active {
-  transform: scale(0.95);
+  transform: scale(0.97);
 }
 
-.feature-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  padding-top: 6rem;
-  padding-bottom: 6rem;
+/* ── Trust strip ── */
+.trust-strip {
   background: var(--surface-container-lowest);
+  border-top: 1px solid var(--outline-variant);
+  border-bottom: 1px solid var(--outline-variant);
 }
 
-.feature-card {
+.trust-inner {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 2rem;
-  overflow: hidden;
-  color: var(--primary);
-  background: #ffffff;
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius-lg);
+  gap: 1.25rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
-.feature-card:not(.feature-card--large) {
-  align-items: center;
-  text-align: center;
-}
-
-.feature-card--large {
-  position: relative;
-  justify-content: space-between;
-  min-height: 400px;
-  padding: 3rem;
-}
-
-.feature-step {
-  display: block;
-  margin-bottom: 1rem;
-  color: var(--secondary);
-  font-family: var(--font-caption);
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.4;
-  letter-spacing: 0.12em !important;
-  text-transform: uppercase;
-}
-
-.feature-card h2,
-.marketplace-header h2,
-.callout-panel h2 {
-  color: var(--primary);
-  font-family: var(--font-h1);
-  font-size: 32px;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.02em !important;
-}
-
-.feature-card h2 {
-  margin-bottom: 1.5rem;
-}
-
-.feature-list {
-  display: grid;
-  max-width: 28rem;
-  gap: 2rem;
-}
-
-.feature-item {
+.trust-item {
   display: flex;
-  gap: 1.5rem;
-}
-
-.feature-item__index {
-  flex: 0 0 auto;
-  color: var(--outline-variant);
-  font-family: var(--font-h2);
-  font-size: 24px;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.01em !important;
-}
-
-.feature-subtitle,
-.listing-card__title {
-  margin-bottom: 0.25rem;
+  align-items: center;
+  gap: 0.75rem;
   color: var(--primary);
-  font-family: var(--font-label-md);
+}
+
+.trust-icon {
+  font-size: 1.375rem;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.trust-text {
   font-size: 14px;
   font-weight: 500;
   line-height: 1.4;
-  letter-spacing: 0.01em !important;
+  color: var(--primary);
 }
 
-.feature-text {
-  color: var(--secondary);
-  font-family: var(--font-body);
-  font-size: 16px;
+/* ── Shared section headings ── */
+.section-title {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+
+.section-copy {
+  font-size: 1rem;
   font-weight: 400;
   line-height: 1.6;
+  color: var(--secondary);
 }
 
-.feature-icon {
-  margin-bottom: 1rem;
-  color: var(--primary);
-  font-size: 2.25rem;
+/* ── Service cards ── */
+.services-section {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
 }
 
-.feature-card > h3 {
-  margin-bottom: 0.5rem;
+.services-header {
+  margin-bottom: 2.5rem;
+}
+
+.service-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  background: #ffffff;
+  border: 1px solid var(--outline-variant);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.service-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.service-card__icon {
+  font-size: 2rem;
   color: var(--primary);
-  font-family: var(--font-h2);
-  font-size: 24px;
+  margin-bottom: 1.25rem;
+}
+
+.service-card__title {
+  font-size: 17px;
   font-weight: 600;
   line-height: 1.3;
-  letter-spacing: -0.01em;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+.service-card__copy {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--secondary);
+  flex: 1;
+  margin-bottom: 1.5rem;
+}
+
+.service-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary);
+  letter-spacing: 0.01em;
+}
+
+.service-card__arrow {
+  font-size: 1rem;
+  transition: transform 200ms ease;
+}
+
+.service-card:hover .service-card__arrow {
+  transform: translateX(3px);
+}
+
+/* ── How it works ── */
+.how-section {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+  background: var(--surface-container-lowest);
+  border-top: 1px solid var(--outline-variant);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.how-inner .section-copy {
+  margin-bottom: 3rem;
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-number {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--outline-variant);
+  color: var(--secondary);
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  flex-shrink: 0;
+}
+
+.step-title {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+.step-copy {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--secondary);
+}
+
+/* ── Testimonial ── */
+.testimonial-section {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+.testimonial-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 42rem;
 }
 
 .stars {
   display: flex;
-  align-self: flex-start;
   gap: 0.25rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   color: var(--primary);
 }
 
-.stars .material-symbols-outlined {
-  font-variation-settings:
-    'FILL' 1,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
+.star-icon {
+  font-size: 1.25rem;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-.testimonial {
-  margin-bottom: 1rem;
-  color: var(--primary);
-  font-family: var(--font-body);
+.testimonial-quote {
+  font-size: 1.125rem;
   font-style: italic;
-  line-height: 1.625;
-  text-align: left;
-}
-
-.testimonial-author,
-.listing-card__price {
-  color: var(--secondary);
-  font-family: var(--font-label-md);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em !important;
-}
-
-.marketplace-grid {
-  padding-top: 6rem;
-  padding-bottom: 6rem;
-}
-
-.marketplace-header {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  margin-bottom: 3rem;
-}
-
-.marketplace-header > div {
-  max-width: 28rem;
-}
-
-.marketplace-header h2 {
-  margin-bottom: 1rem;
-}
-
-.marketplace-header p {
-  color: var(--secondary);
-  font-family: var(--font-body);
-  line-height: 1.6;
-}
-
-.link-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  line-height: 1.65;
   color: var(--primary);
-  font-family: var(--font-label-md);
+  margin-bottom: 1.25rem;
+}
+
+.testimonial-author {
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em !important;
+  color: var(--secondary);
+  letter-spacing: 0.01em;
 }
 
-.link-secondary:hover {
-  text-decoration: underline;
-}
-
-.listing-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
-.listing-card {
-  overflow: hidden;
-  cursor: pointer;
-  background: #ffffff;
-  border: 1px solid var(--outline-variant);
-  border-radius: var(--radius);
-  transition: border-color 200ms ease;
-}
-
-.listing-card:hover {
-  border-color: var(--primary);
-}
-
-.listing-card__media {
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  background: var(--surface-container);
-}
-
-.listing-card__media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 500ms ease;
-}
-
-.listing-card:hover .listing-card__media img {
-  transform: scale(1.05);
-}
-
-.listing-card__content {
-  padding: 1.5rem;
-}
-
-.listing-card__price {
-  display: block;
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0 !important;
-}
-
+/* ── CTA panel ── */
 .cta-panel {
-  padding-top: 6rem;
-  padding-bottom: 6rem;
-  margin-bottom: 6rem;
+  padding-top: 0;
+  padding-bottom: 5rem;
 }
 
 .callout-panel {
+  max-width: 80rem;
+  margin: 0 auto;
   padding: 4rem 1.5rem;
   color: var(--on-primary);
   text-align: center;
   background: var(--primary);
-  border-radius: var(--radius-lg);
 }
 
 .callout-panel h2 {
-  margin-bottom: 1.5rem;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
   color: var(--on-primary);
+  margin-bottom: 1.25rem;
 }
 
-.callout-panel p {
-  max-width: 36rem;
-  margin: 0 auto 3rem;
-  color: var(--on-primary-container);
-  font-family: var(--font-body);
+.callout-panel > p {
+  max-width: 34rem;
+  margin: 0 auto 2.5rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
   line-height: 1.6;
 }
 
 .callout-panel .button-primary {
-  padding-right: 3rem;
-  padding-left: 3rem;
   color: var(--primary);
-  background: var(--surface-container-lowest);
+  background: #ffffff;
 }
 
 .callout-panel .button-primary:hover {
@@ -552,16 +557,15 @@ p {
 }
 
 .callout-panel .button-secondary {
-  padding-right: 3rem;
-  padding-left: 3rem;
-  color: var(--on-primary);
-  border-color: var(--on-primary-container);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .callout-panel .button-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
+/* ── Responsive ── */
 @media (min-width: 640px) {
   .hero-actions,
   .callout-actions {
@@ -572,45 +576,46 @@ p {
 
 @media (min-width: 768px) {
   .hero-section {
-    padding-top: 12rem;
-    padding-bottom: 12rem;
+    padding-top: 10rem;
+    padding-bottom: 10rem;
   }
 
   .hero-title {
-    font-size: 56px;
-    line-height: 1.1;
+    font-size: 52px;
   }
 
-  .feature-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .feature-card--large {
-    grid-column: span 2;
-    grid-row: span 2;
-  }
-
-  .marketplace-header {
+  .trust-inner {
     flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 3rem;
   }
 
-  .listing-grid {
+  .service-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .steps-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem;
   }
 }
 
 @media (min-width: 1024px) {
-  .hero-section,
-  .feature-grid,
-  .marketplace-grid,
-  .cta-panel {
+  .hero-inner,
+  .trust-inner,
+  .services-inner,
+  .how-inner,
+  .testimonial-inner {
     padding-right: 3rem;
     padding-left: 3rem;
   }
 
-  .listing-grid {
+  .callout-panel {
+    padding-right: 3rem;
+    padding-left: 3rem;
+  }
+
+  .service-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

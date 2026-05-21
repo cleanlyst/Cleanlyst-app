@@ -35,9 +35,7 @@ const router = createRouter({
     },
     {
       path: '/services',
-      name: 'Services',
-      meta: { title: 'Services' },
-      component: () => import('../pages/ServicesPage.vue'),
+      redirect: { name: 'Home' },
     },
     {
       path: '/auth',

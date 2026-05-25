@@ -83,7 +83,7 @@
                 class="view-btn"
                 >View</router-link
               >
-              <button class="rebook-btn" @click="rebook(b)">Re-book</button>
+              <button class="rebook-btn" @click="rebook">Re-book</button>
             </div>
           </div>
         </div>
@@ -174,7 +174,7 @@ function statusClass(status: string): string {
   return 'pill--cancelled'
 }
 
-function rebook(_booking: BookingWithCleaner) {
+function rebook() {
   router.push({ name: 'BookCleaner' })
 }
 </script>

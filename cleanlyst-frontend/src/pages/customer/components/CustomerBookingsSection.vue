@@ -1,5 +1,5 @@
 <template>
-  <main class="page-main">
+  <main class="clnst-page-main customer-bookings-page">
     <section class="page-header">
       <div>
         <h1 class="header-title">My Bookings</h1>
@@ -23,24 +23,24 @@
     </div>
 
     <!-- Filter bar -->
-    <div class="filter-bar">
-      <div class="tab-group">
+    <div class="clnst-filter-bar">
+      <div class="clnst-tab-group">
         <button
           v-for="tab in BOOKING_TABS"
           :key="tab.key"
-          :class="['tab-btn', list.currentTab.value === tab.key && 'tab-btn--active']"
+          :class="['clnst-tab-btn', list.currentTab.value === tab.key && 'clnst-tab-btn--active']"
           type="button"
           @click="list.setTab(tab.key)"
         >
           {{ tab.label }}
         </button>
       </div>
-      <div class="filter-divider"></div>
-      <div class="search-wrap">
-        <span class="material-symbols-outlined search-icon">search</span>
+      <div class="clnst-filter-divider"></div>
+      <div class="clnst-search-wrap">
+        <span class="material-symbols-outlined clnst-search-icon">search</span>
         <input
           v-model="searchQuery"
-          class="search-input"
+          class="clnst-search-input"
           placeholder="Search bookings…"
           type="text"
           @input="onSearchInput"
@@ -50,15 +50,15 @@
 
     <p v-if="list.error.value" class="error-msg">{{ list.error.value }}</p>
 
-    <div v-if="list.loading.value" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p class="loading-text">Loading your bookings…</p>
+    <div v-if="list.loading.value" class="clnst-loading-state">
+      <div class="clnst-loading-spinner"></div>
+      <p class="clnst-loading-text">Loading your bookings…</p>
     </div>
 
-    <div v-else-if="list.bookings.value.length === 0" class="empty-state">
-      <span class="material-symbols-outlined empty-icon">event_busy</span>
-      <p class="empty-title">No bookings found</p>
-      <p class="empty-copy">
+    <div v-else-if="list.bookings.value.length === 0" class="clnst-empty-state clnst-empty-state--spacious">
+      <span class="material-symbols-outlined clnst-empty-icon">event_busy</span>
+      <p class="clnst-empty-label">No bookings found</p>
+      <p class="clnst-empty-desc clnst-empty-desc--spacious">
         <template v-if="list.currentTab.value === 'all'">
           When you book a cleaner, it will appear here.
         </template>
@@ -89,7 +89,7 @@
               </span>
             </div>
           </div>
-          <span class="status-pill" :class="getStatusPillClass(b.status)">{{
+          <span class="clnst-status-pill" :class="getStatusPillClass(b.status)">{{
             getBookingStatusLabel(b, 'customer')
           }}</span>
         </div>
@@ -139,22 +139,22 @@
     <!-- Pagination -->
     <div
       v-if="!list.loading.value && list.totalCount.value > 0"
-      class="pagination"
+      class="clnst-pagination"
     >
       <button
-        class="pagination-btn"
+        class="clnst-pagination-btn"
         type="button"
         :disabled="list.page.value <= 1"
         @click="list.previousPage()"
       >
         Previous
       </button>
-      <span class="pagination-info">
+      <span class="clnst-pagination-info">
         Page {{ list.page.value }} of {{ list.totalPages.value }}
-        <span class="pagination-total">({{ list.totalCount.value }} total)</span>
+        <span class="clnst-pagination-total">({{ list.totalCount.value }} total)</span>
       </span>
       <button
-        class="pagination-btn"
+        class="clnst-pagination-btn"
         type="button"
         :disabled="list.page.value >= list.totalPages.value"
         @click="list.nextPage()"
@@ -192,8 +192,8 @@
             <div class="pay-row">
               <span class="pay-label">Original Paid</span>
               <span class="pay-val">{{
-                payingBooking.initial_quote_cents
-                  ? formatPence(payingBooking.initial_quote_cents)
+                payingBooking.quote_cents
+                  ? formatPence(payingBooking.quote_cents)
                   : '—'
               }}</span>
             </div>
@@ -453,10 +453,8 @@ function formatDate(value: string): string {
   direction: ltr;
 }
 
-.page-main {
-  padding: 2rem 1.5rem 6rem;
-  max-width: 80rem;
-  margin: 0 auto;
+.customer-bookings-page {
+  padding-bottom: 6rem;
 }
 
 .page-header {
@@ -515,163 +513,12 @@ function formatDate(value: string): string {
   margin: 0;
 }
 
-/* ── Filter bar ── */
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--outline-variant, #c4c7c7);
-}
-
-.filter-divider {
-  display: none;
-  width: 1px;
-  height: 1.5rem;
-  background: var(--outline-variant, #c4c7c7);
-  margin: 0 0.5rem;
-}
-
-@media (min-width: 1024px) {
-  .filter-divider {
-    display: block;
-  }
-}
-
-/* ── Tab group ── */
-.tab-group {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: var(--surface-container, #eeeeee);
-  padding: 0.25rem;
-  border-radius: 0.5rem;
-}
-
-.tab-btn {
-  padding: 0.375rem 1rem;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  color: var(--secondary, #5e5e5e);
-  background: transparent;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-
-.tab-btn:hover {
-  color: var(--primary, #000000);
-}
-
-.tab-btn--active {
-  background: #ffffff;
-  color: var(--primary, #000000);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-/* ── Search ── */
-.search-wrap {
-  position: relative;
-  flex-grow: 1;
-  max-width: 20rem;
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #747878;
-  font-size: 20px;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  border-radius: 0.375rem;
-  font-size: 14px;
-  outline: none;
-  background: #ffffff;
-  box-sizing: border-box;
-}
-
-.search-input:focus {
-  border-color: var(--primary, #000000);
-}
-
 /* ── Error ── */
 .error-msg {
   color: var(--error, #ba1a1a);
   font-family: var(--font-body);
   font-size: 14px;
   margin-bottom: 1rem;
-}
-
-/* ── Loading ── */
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding: 4rem 0;
-}
-
-.loading-spinner {
-  width: 2rem;
-  height: 2rem;
-  border: 2px solid var(--outline-variant, #c4c7c7);
-  border-top-color: var(--primary, #000000);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-text {
-  font-family: var(--font-body);
-  font-size: 16px;
-  color: var(--secondary, #5e5e5e);
-  margin: 0;
-}
-
-/* ── Empty state ── */
-.empty-state {
-  border: 1px dashed var(--outline-variant, #c4c7c7);
-  border-radius: 0.25rem;
-  padding: 4rem 2rem;
-  text-align: center;
-}
-
-.empty-icon {
-  font-size: 3rem;
-  color: var(--outline-variant, #c4c7c7);
-  display: block;
-  margin: 0 auto 1rem;
-}
-
-.empty-title {
-  font-family: var(--font-label-md);
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--on-surface, #1a1c1c);
-  margin: 0 0 0.5rem;
-}
-
-.empty-copy {
-  font-family: var(--font-body);
-  font-size: 16px;
-  color: var(--secondary, #5e5e5e);
-  margin: 0 0 1.5rem;
 }
 
 /* ── Booking list ── */
@@ -732,42 +579,6 @@ function formatDate(value: string): string {
   font-size: 0.875rem;
 }
 
-/* ── Status pills ── */
-.status-pill {
-  border-radius: 999px;
-  padding: 0.25rem 0.625rem;
-  font-family: var(--font-caption);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.status-pill--pending {
-  background: #ffffff;
-  color: #4c6c4a;
-  border: 1px solid #ffcc80;
-}
-
-.status-pill--active {
-  background: #e3f2fd;
-  color: #1565c0;
-  border: 1px solid #90caf9;
-}
-
-.status-pill--completed {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
-}
-
-.status-pill--cancelled {
-  background: #ffebee;
-  color: #c62828;
-  border: 1px solid #ef9a9a;
-}
 
 /* ── Card actions ── */
 .card-actions {
@@ -779,45 +590,6 @@ function formatDate(value: string): string {
   gap: 0.5rem;
 }
 
-/* ── Pagination ── */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--outline-variant, #c4c7c7);
-}
-
-.pagination-btn {
-  padding: 0.5rem 1.25rem;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  background: #ffffff;
-  border-radius: 0.25rem;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-
-.pagination-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.pagination-btn:not(:disabled):hover {
-  background: var(--surface-container, #eeeeee);
-}
-
-.pagination-info {
-  font-size: 14px;
-  color: var(--on-surface, #1a1c1c);
-}
-
-.pagination-total {
-  color: var(--secondary, #5e5e5e);
-}
 
 /* ── Buttons ── */
 .btn-primary {
@@ -1149,16 +921,6 @@ function formatDate(value: string): string {
   .card-top {
     flex-direction: column;
   }
-
-  .tab-group {
-    flex-wrap: wrap;
-  }
 }
 
-@media (min-width: 1024px) {
-  .page-main {
-    padding-left: 3rem;
-    padding-right: 3rem;
-  }
-}
 </style>

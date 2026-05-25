@@ -210,10 +210,6 @@ interface AmountRow {
   amount_cents: number | null
 }
 
-interface PlatformFeeRow {
-  platform_fee_cents: number | null
-}
-
 interface Transaction {
   id: string
   amount_cents: number

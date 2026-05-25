@@ -7,6 +7,8 @@ export interface Notification {
   type: string
   title: string
   body: string | null
+  booking_id: string | null
+  metadata: Record<string, unknown> | null
   read_at: string | null
   created_at: string
 }
@@ -19,7 +21,7 @@ export async function getNotifications(limit = 50): Promise<Notification[]> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from('notifications')
-    .select('id, user_id, type, title, body, read_at, created_at')
+    .select('id, user_id, type, title, body, booking_id, metadata, read_at, created_at')
     .order('created_at', { ascending: false })
     .limit(limit)
   if (error) throw error

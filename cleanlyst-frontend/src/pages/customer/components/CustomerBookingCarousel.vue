@@ -59,7 +59,7 @@
                   <p class="booking-provider">{{ b.cleaner_name ?? 'Your cleaner' }}</p>
                 </div>
                 <span :class="['status-pill', statusClass(b.status)]">
-                  {{ getBookingDisplayStatus(b, 'customer') }}
+                  {{ getBookingStatusLabel(b, 'customer') }}
                 </span>
               </div>
 
@@ -83,7 +83,7 @@
                 class="action-banner action-banner--pay"
               >
                 <span class="material-symbols-outlined">payments</span>
-                Your booking was accepted — complete payment to confirm.
+                Your booking has been accepted.
               </div>
 
               <div
@@ -211,7 +211,7 @@ import { computed, ref } from 'vue'
 import type { PropType } from 'vue'
 import { formatDate, formatPence } from '@/utils/format'
 import { isCustomerPaymentRequired } from '@/utils/bookingStatus'
-import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
+import { getBookingStatusLabel } from '@/utils/bookingStatusLabel'
 import { recordAdditionalPayment } from '@/services/bookingService'
 
 interface CarouselBooking {
@@ -281,8 +281,7 @@ async function confirmPayment() {
   payProcessing.value = true
   payError.value = ''
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    await processPaymentDirect(bookingId)
+    await recordAdditionalPayment(bookingId)
     optimisticPaidIds.value = new Set([...optimisticPaidIds.value, bookingId])
     paySuccess.value = true
     emit('paymentDone', bookingId)

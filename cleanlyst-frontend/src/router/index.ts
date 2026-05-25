@@ -155,8 +155,8 @@ const router = createRouter({
       component: () => import('../pages/customer/CustomerDashboard.vue'),
     },
     {
-      path: '/bookings/:bookingId',
-      alias: '/customer/bookings/:bookingId',
+      path: '/dashboard/bookings/:bookingId',
+      alias: ['/bookings/:bookingId', '/customer/bookings/:bookingId'],
       name: 'CustomerBookingDetails',
       meta: { title: 'Booking Details', requiresAuth: true, requiresRole: 'customer' },
       component: () => import('../pages/customer/CustomerBookingDetailsPage.vue'),
@@ -269,6 +269,12 @@ const router = createRouter({
       path: '/admin/dashboard/bookingmanagement',
       name: 'BookingManagement',
       meta: { title: 'Booking Management', requiresAuth: true, requiresRole: 'admin' },
+      component: () => import('../pages/admin/AdminDashboard.vue'),
+    },
+    {
+      path: '/admin/bookings/:bookingId',
+      name: 'AdminBookingDetails',
+      meta: { title: 'Booking Details', requiresAuth: true, requiresRole: 'admin' },
       component: () => import('../pages/admin/AdminDashboard.vue'),
     },
     {

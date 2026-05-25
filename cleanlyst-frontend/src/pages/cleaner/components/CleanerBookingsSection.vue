@@ -1,6 +1,6 @@
 <template>
-  <main class="page-main">
-    <p v-if="props.errorMessage" class="error-msg">{{ props.errorMessage }}</p>
+  <main class="clnst-page-main">
+    <p v-if="props.errorMessage" class="clnst-error-msg">{{ props.errorMessage }}</p>
 
     <section class="page-header">
       <div>
@@ -28,24 +28,24 @@
     </section>
 
     <!-- Filter bar -->
-    <div class="filter-bar">
-      <div class="tab-group">
+    <div class="clnst-filter-bar">
+      <div class="clnst-tab-group">
         <button
           v-for="tab in BOOKING_TABS"
           :key="tab.key"
-          :class="['tab-btn', list.currentTab.value === tab.key && 'tab-btn--active']"
+          :class="['clnst-tab-btn', list.currentTab.value === tab.key && 'clnst-tab-btn--active']"
           type="button"
           @click="list.setTab(tab.key)"
         >
           {{ tab.label }}
         </button>
       </div>
-      <div class="filter-divider"></div>
-      <div class="search-wrap">
-        <span class="material-symbols-outlined search-icon">search</span>
+      <div class="clnst-filter-divider"></div>
+      <div class="clnst-search-wrap">
+        <span class="material-symbols-outlined clnst-search-icon">search</span>
         <input
           v-model="searchQuery"
-          class="search-input"
+          class="clnst-search-input"
           placeholder="Search bookings…"
           type="text"
           @input="onSearchInput"
@@ -53,18 +53,18 @@
       </div>
     </div>
 
-    <div v-if="list.loading.value" class="loading-state">
-      <div class="loading-spinner"></div>
-      <p class="loading-text">Loading bookings…</p>
+    <div v-if="list.loading.value" class="clnst-loading-state">
+      <div class="clnst-loading-spinner"></div>
+      <p class="clnst-loading-text">Loading bookings…</p>
     </div>
 
     <template v-else>
-      <div v-if="list.bookings.value.length === 0" class="empty-state">
-        <span class="material-symbols-outlined empty-icon">
+      <div v-if="list.bookings.value.length === 0" class="clnst-empty-state">
+        <span class="material-symbols-outlined clnst-empty-icon">
           {{ emptyIcon }}
         </span>
-        <p class="empty-label">{{ emptyTitle }}</p>
-        <p class="empty-desc">{{ emptyDesc }}</p>
+        <p class="clnst-empty-label">{{ emptyTitle }}</p>
+        <p class="clnst-empty-desc">{{ emptyDesc }}</p>
       </div>
 
       <div v-else class="bookings-list">
@@ -80,7 +80,7 @@
                   {{ b.location_text }}
                 </p>
               </div>
-              <span class="status-pill" :class="getStatusPillClass(b.status)">{{
+              <span class="clnst-status-pill" :class="getStatusPillClass(b.status)">{{
                 getBookingStatusLabel(b, 'cleaner')
               }}</span>
             </div>
@@ -127,21 +127,21 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="list.totalCount.value > 0" class="pagination">
+      <div v-if="list.totalCount.value > 0" class="clnst-pagination">
         <button
-          class="pagination-btn"
+          class="clnst-pagination-btn"
           type="button"
           :disabled="list.page.value <= 1"
           @click="list.previousPage()"
         >
           Previous
         </button>
-        <span class="pagination-info">
+        <span class="clnst-pagination-info">
           Page {{ list.page.value }} of {{ list.totalPages.value }}
-          <span class="pagination-total">({{ list.totalCount.value }} total)</span>
+          <span class="clnst-pagination-total">({{ list.totalCount.value }} total)</span>
         </span>
         <button
-          class="pagination-btn"
+          class="clnst-pagination-btn"
           type="button"
           :disabled="list.page.value >= list.totalPages.value"
           @click="list.nextPage()"
@@ -265,36 +265,6 @@ const emptyDesc = computed(() => {
   direction: ltr;
 }
 
-/* ── Page shell ───────────────────────────────────────────────── */
-.page-main {
-  padding-top: 2rem;
-  padding-bottom: 5rem;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
-  max-width: 80rem;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-@media (min-width: 1024px) {
-  .page-main {
-    padding-left: 3rem;
-    padding-right: 3rem;
-  }
-}
-
-/* ── Error ────────────────────────────────────────────────────── */
-.error-msg {
-  font-size: 14px;
-  font-weight: 500;
-  color: #ba1a1a;
-  background-color: #ffdad6;
-  border: 1px solid #ba1a1a;
-  border-radius: 0.25rem;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.5rem;
-}
-
 /* ── Page header ──────────────────────────────────────────────── */
 .page-header {
   margin-bottom: 3rem;
@@ -361,153 +331,6 @@ const emptyDesc = computed(() => {
   margin-top: 0.25rem;
 }
 
-/* ── Filter bar ───────────────────────────────────────────────── */
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--outline-variant, #c4c7c7);
-}
-
-.filter-divider {
-  display: none;
-  width: 1px;
-  height: 1.5rem;
-  background: var(--outline-variant, #c4c7c7);
-  margin: 0 0.5rem;
-}
-
-@media (min-width: 1024px) {
-  .filter-divider {
-    display: block;
-  }
-}
-
-/* ── Tab group ────────────────────────────────────────────────── */
-.tab-group {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: var(--surface-container, #eeeeee);
-  padding: 0.25rem;
-  border-radius: 0.5rem;
-}
-
-.tab-btn {
-  padding: 0.375rem 1rem;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  color: var(--secondary, #5e5e5e);
-  background: transparent;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-
-.tab-btn:hover {
-  color: var(--primary, #000000);
-}
-
-.tab-btn--active {
-  background: #ffffff;
-  color: var(--primary, #000000);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-/* ── Search ───────────────────────────────────────────────────── */
-.search-wrap {
-  position: relative;
-  flex-grow: 1;
-  max-width: 20rem;
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #747878;
-  font-size: 20px;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  border-radius: 0.375rem;
-  font-size: 14px;
-  outline: none;
-  background: #ffffff;
-  box-sizing: border-box;
-}
-
-.search-input:focus {
-  border-color: var(--primary, #000000);
-}
-
-/* ── Loading ──────────────────────────────────────────────────── */
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding: 4rem 0;
-}
-
-.loading-spinner {
-  width: 2rem;
-  height: 2rem;
-  border: 2px solid var(--outline-variant, #c4c7c7);
-  border-top-color: var(--primary, #000000);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-text {
-  font-size: 16px;
-  color: var(--secondary, #5e5e5e);
-}
-
-/* ── Empty state ──────────────────────────────────────────────── */
-.empty-state {
-  border: 1px dashed var(--outline-variant, #c4c7c7);
-  border-radius: 0.25rem;
-  padding: 3rem 2rem;
-  text-align: center;
-}
-
-.empty-icon {
-  font-size: 3rem;
-  color: var(--outline-variant, #c4c7c7);
-  display: block;
-  margin: 0 auto 1rem;
-}
-
-.empty-label {
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--primary, #000000);
-  margin: 0 0 0.5rem;
-}
-
-.empty-desc {
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--secondary, #5e5e5e);
-  margin: 0;
-}
 
 /* ── Bookings list ────────────────────────────────────────────── */
 .bookings-list {
@@ -589,41 +412,6 @@ const emptyDesc = computed(() => {
   justify-content: flex-end;
 }
 
-/* ── Status pills ─────────────────────────────────────────────── */
-.status-pill {
-  border-radius: 999px;
-  padding: 0.25rem 0.625rem;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.status-pill--pending {
-  background: #ffffff;
-  color: #4c6c4a;
-  border: 1px solid #ffcc80;
-}
-
-.status-pill--active {
-  background: #e3f2fd;
-  color: #1565c0;
-  border: 1px solid #90caf9;
-}
-
-.status-pill--completed {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #a5d6a7;
-}
-
-.status-pill--cancelled {
-  background: #ffebee;
-  color: #c62828;
-  border: 1px solid #ef9a9a;
-}
 
 /* ── Buttons ──────────────────────────────────────────────────── */
 .btn-start {
@@ -677,49 +465,4 @@ const emptyDesc = computed(() => {
   background-color: var(--surface-variant, #e2e2e2);
 }
 
-/* ── Pagination ───────────────────────────────────────────────── */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--outline-variant, #c4c7c7);
-}
-
-.pagination-btn {
-  padding: 0.5rem 1.25rem;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  background: #ffffff;
-  border-radius: 0.25rem;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-
-.pagination-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.pagination-btn:not(:disabled):hover {
-  background: var(--surface-container, #eeeeee);
-}
-
-.pagination-info {
-  font-size: 14px;
-  color: var(--on-surface, #1a1c1c);
-}
-
-.pagination-total {
-  color: var(--secondary, #5e5e5e);
-}
-
-@media (max-width: 768px) {
-  .tab-group {
-    flex-wrap: wrap;
-  }
-}
 </style>

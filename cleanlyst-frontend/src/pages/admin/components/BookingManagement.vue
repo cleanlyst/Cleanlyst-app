@@ -11,18 +11,18 @@
     <p v-if="errorMessage" class="mb-4 text-caption text-red-600">{{ errorMessage }}</p>
 
     <!-- Filter Bar -->
-    <div class="filter-bar">
-      <div class="tab-group">
+    <div class="clnst-filter-bar">
+      <div class="clnst-tab-group">
         <button
           v-for="tab in TABS"
           :key="tab.value"
-          :class="['tab-btn', activeTab === tab.value && 'tab-btn--active']"
+          :class="['clnst-tab-btn', activeTab === tab.value && 'clnst-tab-btn--active']"
           @click="setTab(tab.value)"
         >
           {{ tab.label }}
         </button>
       </div>
-      <div class="filter-divider"></div>
+      <div class="clnst-filter-divider"></div>
       <div class="search-wrap">
         <span class="material-symbols-outlined search-icon">search</span>
         <input
@@ -470,65 +470,6 @@ function statusBadgeClass(status: string): string {
   color: var(--secondary, #5e5e5e);
   max-width: 42rem;
   margin: 0;
-}
-
-/* ── Filter bar ───────────────────────────────────────────── */
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--outline-variant, #c4c7c7);
-}
-
-.filter-divider {
-  display: none;
-  width: 1px;
-  height: 1.5rem;
-  background: var(--outline-variant, #c4c7c7);
-  margin: 0 0.5rem;
-}
-
-@media (min-width: 1024px) {
-  .filter-divider {
-    display: block;
-  }
-}
-
-/* ── Tab group ────────────────────────────────────────────── */
-.tab-group {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: var(--surface-container, #eeeeee);
-  padding: 0.25rem;
-  border-radius: 0.5rem;
-}
-
-.tab-btn {
-  padding: 0.375rem 1rem;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.01em;
-  color: var(--secondary, #5e5e5e);
-  background: transparent;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: color 0.15s ease;
-}
-
-.tab-btn:hover {
-  color: var(--primary, #000000);
-}
-
-.tab-btn--active {
-  background: #ffffff;
-  color: var(--primary, #000000);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* ── Search ───────────────────────────────────────────────── */

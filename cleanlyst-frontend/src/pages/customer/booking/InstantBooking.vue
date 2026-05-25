@@ -409,7 +409,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { getCleanerPublicProfile, type CleanerSearchResult } from '@/services/cleanerService'
 import { createBookingRequest, processPaymentDirect } from '@/services/bookingService'
 import { getPricing, type PricingResult } from '@/services/pricingEngine'
@@ -438,7 +438,6 @@ interface BookableService {
 const STEP_LABELS = ['Service', 'Schedule', 'Property', 'Add-ons', 'Pay']
 
 const route = useRoute()
-const router = useRouter()
 const auth = useAuthStore()
 const prefsStore = useCustomerPreferencesStore()
 

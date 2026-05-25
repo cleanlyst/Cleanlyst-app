@@ -44,7 +44,6 @@ import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useCleanerBookings } from '@/composables/useCleanerBookings'
 import { completeBooking } from '@/services/bookingService'
-import { formatDateTime, formatStatus } from '@/utils/format'
 import { subscribeToTable, unsubscribe } from '@/lib/realtime'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { cleanerDashboardLinks } from '@/pages/dasboardLinks'
@@ -213,5 +212,4 @@ async function markCompleted(id: string) {
   }
 }
 
-const formatDate = formatDateTime
 </script>

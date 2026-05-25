@@ -367,7 +367,7 @@ async function refreshBooking() {
   errorMessage.value = ''
   try {
     const data = await getBookingById(bookingId)
-    if (!data) throw new Error('Booking not found.')
+    if (!data) throw new Error('Booking no longer available')
     booking.value = data
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load booking.'

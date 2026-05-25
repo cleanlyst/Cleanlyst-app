@@ -64,7 +64,7 @@
                   type="button"
                   class="notification-item"
                   :class="{ 'notification-item--unread': !notification.read_at }"
-                  @click="markRead(notification.id)"
+                  @click="handleNotificationClick(notification)"
                 >
                   <span>{{ notification.title }}</span>
                   <small v-if="notification.body">{{ notification.body }}</small>
@@ -160,17 +160,22 @@
   <router-view />
   <FooterPage :compact="isComingSoonRoute" />
 
+  <p v-if="notificationRouteError" class="notification-route-error">
+    {{ notificationRouteError }}
+  </p>
+
   <div v-if="signingOut" class="logout-overlay">
     <div class="logout-spinner"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import FooterPage from '@/components/FooterPage.vue'
 import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNotifications } from '@/composables/useNotifications'
+import type { Notification } from '@/services/notificationService'
 import companyLogo from '/logo.svg'
 
 const route = useRoute()
@@ -197,6 +202,8 @@ const dashboardRoute = computed<RouteLocationRaw>(() =>
 const isDashboardRoute = computed(
   () => typeof route.name === 'string' && route.name.includes('Dashboard'),
 )
+const notificationRouteError = ref('')
+let notificationRouteErrorTimeout: ReturnType<typeof setTimeout> | null = null
 
 onMounted(async () => {
   if (!auth.initialized) await auth.init()
@@ -209,6 +216,7 @@ onMounted(async () => {
 watch(
   () => route.fullPath,
   () => {
+    notificationRouteError.value = ''
     if (open.value) {
       open.value = false
       document.body.classList.remove('mobile-nav-open')
@@ -228,6 +236,10 @@ watch(
   },
 )
 
+onBeforeUnmount(() => {
+  if (notificationRouteErrorTimeout) clearTimeout(notificationRouteErrorTimeout)
+})
+
 function navLinkClass(routeName?: string) {
   const isActive = routeName ? route.name === routeName : false
   return [
@@ -242,6 +254,48 @@ function navLinkClass(routeName?: string) {
 function toggleNav() {
   open.value = !open.value
   document.body.classList.toggle('mobile-nav-open', open.value)
+}
+
+async function handleNotificationClick(notification: Notification) {
+  notificationRouteError.value = ''
+  try {
+    await markRead(notification.id)
+  } catch {
+    // Navigation should still work even if the read receipt update fails.
+  } finally {
+    notificationsOpen.value = false
+  }
+
+  const bookingId = getNotificationBookingId(notification)
+  if (!bookingId) {
+    showNotificationRouteError()
+    return
+  }
+
+  const role = auth.userRole
+  if (role === 'customer') {
+    await router.push({ name: 'CustomerBookingDetails', params: { bookingId } })
+  } else if (role === 'cleaner_active' || role === 'cleaner_pending') {
+    await router.push({ name: 'CleanerBookingDetails', params: { bookingId } })
+  } else if (role === 'admin') {
+    await router.push({ name: 'AdminBookingDetails', params: { bookingId } })
+  }
+}
+
+function getNotificationBookingId(notification: Notification): string | null {
+  if (notification.booking_id) return notification.booking_id
+
+  const metadataBookingId = notification.metadata?.booking_id
+  return typeof metadataBookingId === 'string' && metadataBookingId ? metadataBookingId : null
+}
+
+function showNotificationRouteError() {
+  notificationRouteError.value = 'Booking no longer available'
+  if (notificationRouteErrorTimeout) clearTimeout(notificationRouteErrorTimeout)
+  notificationRouteErrorTimeout = setTimeout(() => {
+    notificationRouteError.value = ''
+    notificationRouteErrorTimeout = null
+  }, 4000)
 }
 
 async function handleSignOut() {
@@ -426,6 +480,22 @@ async function handleSignOut() {
 
 .notification-item--unread {
   background: #f8fafc;
+}
+
+.notification-route-error {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 70;
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: 0.75rem 1rem;
+  color: #93000a;
+  background: #ffdad6;
+  border: 1px solid #ba1a1a;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .app-account-button {

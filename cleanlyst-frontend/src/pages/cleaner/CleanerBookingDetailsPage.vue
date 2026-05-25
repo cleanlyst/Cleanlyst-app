@@ -337,7 +337,6 @@ import type { RealtimeSubscription } from '@/lib/realtime'
 import {
   getBookingById,
   updateBookingDetails,
-  updateBookingDuration,
   transitionBookingState,
   completeBooking,
   proposeEstimate,
@@ -423,7 +422,7 @@ async function refreshBooking() {
   try {
     const data = await getBookingById(bookingId)
     if (!data) {
-      throw new Error('Booking not found.')
+      throw new Error('Booking no longer available')
     }
     booking.value = data
     editEstimatedHours.value = booking.value.estimated_hours

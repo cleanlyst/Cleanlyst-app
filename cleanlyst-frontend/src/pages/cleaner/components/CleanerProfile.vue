@@ -33,7 +33,7 @@
           <label class="edit-label" for="ep-city">City</label>
           <select id="ep-city" v-model="editForm.city" class="edit-input">
             <option value="">Select a city</option>
-            <option v-for="c in UK_CITIES" :key="c" :value="c">{{ c }}</option>
+            <option v-for="c in ROLLOUT_CONFIG.cities" :key="c" :value="c">{{ c }}</option>
           </select>
         </div>
         <div class="edit-group edit-group--full">
@@ -174,7 +174,7 @@ import { computed, reactive, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { uploadAvatar } from '@/services/storageService'
-import { UK_CITIES } from '@/utils/ukCities'
+import { ROLLOUT_CONFIG } from '@/config/rollout'
 
 const auth = useAuthStore()
 

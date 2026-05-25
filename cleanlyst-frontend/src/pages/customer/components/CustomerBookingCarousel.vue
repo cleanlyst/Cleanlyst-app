@@ -79,7 +79,7 @@
               </div>
 
               <div
-                v-if="b.status === 'accepted' && b.payment_status !== 'paid'"
+                v-if="b.status === 'accepted' && b.payment_status !== 'captured'"
                 class="action-banner action-banner--pay"
               >
                 <span class="material-symbols-outlined">payments</span>
@@ -89,7 +89,7 @@
               <div
                 v-if="
                   b.status === 'paid_pending_start' ||
-                  (b.status === 'accepted' && b.payment_status === 'paid')
+                  (b.status === 'accepted' && b.payment_status === 'captured')
                 "
                 class="action-banner action-banner--info"
               >
@@ -210,8 +210,9 @@
 import { computed, ref } from 'vue'
 import type { PropType } from 'vue'
 import { formatDate, formatPence } from '@/utils/format'
-import { getBookingDisplayStatus, isCustomerPaymentRequired } from '@/utils/bookingStatus'
-import { processPaymentDirect } from '@/services/bookingService'
+import { isCustomerPaymentRequired } from '@/utils/bookingStatus'
+import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
+import { recordAdditionalPayment } from '@/services/bookingService'
 
 interface CarouselBooking {
   id: string

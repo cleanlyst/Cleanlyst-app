@@ -190,12 +190,18 @@
               class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none mb-2"
             />
             <div class="grid grid-cols-2 gap-2">
-              <input
-                v-model="addressCity"
-                type="text"
-                placeholder="City"
-                class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
-              />
+              <div class="flex flex-col gap-1">
+                <input
+                  v-model="addressCity"
+                  type="text"
+                  placeholder="City"
+                  class="w-full h-12 px-3 border bg-white font-body focus:ring-0 outline-none"
+                  :class="cityOutsideRollout ? 'border-amber-400' : 'border-outline-variant focus:border-primary'"
+                />
+                <p v-if="cityOutsideRollout" class="text-xs text-amber-600 leading-snug">
+                  {{ ROLLOUT_UNAVAILABLE_MESSAGE }}
+                </p>
+              </div>
               <input
                 v-model="addressPostcode"
                 type="text"
@@ -493,6 +499,7 @@ import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { formatPence } from '@/utils/format'
+import { isCityEnabled, ROLLOUT_UNAVAILABLE_MESSAGE } from '@/config/rollout'
 import { fetchPlatformSettings, getPricing, type PricingResult } from '@/services/pricingEngine'
 import {
   ADDON_CATEGORY,
@@ -546,6 +553,9 @@ const notes = ref('')
 const addressLine1 = ref('')
 const addressCity = ref('')
 const addressPostcode = ref('')
+const cityOutsideRollout = computed(
+  () => !!addressCity.value.trim() && !isCityEnabled(addressCity.value),
+)
 
 // Step 4
 const loadingCleaners = ref(false)

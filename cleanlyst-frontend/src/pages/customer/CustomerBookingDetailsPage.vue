@@ -18,8 +18,8 @@
               </h1>
               <p class="header-copy">Your booking reference</p>
             </div>
-            <span :class="['status-pill', statusClass(booking.status)]">
-              {{ getBookingDisplayStatus(booking, 'customer') }}
+            <span :class="['status-pill', getStatusPillClass(booking.status)]">
+              {{ getBookingStatusLabel(booking, 'customer') }}
             </span>
           </div>
 
@@ -79,27 +79,35 @@
           </div>
 
           <div class="action-group">
-            <button
-              v-if="booking.status === 'accepted' && booking.payment_status === 'unpaid'"
-              type="button"
-              class="btn-primary"
-              @click="openPayModal"
-            >
-              Make Payment
-            </button>
-
-            <!-- Custom booking: cleaner has proposed an estimate -->
-            <div v-if="booking.status === 'estimate_proposed'" class="estimate-card">
-              <p class="estimate-label">Your cleaner has proposed a revised quote</p>
-              <p class="estimate-price">
-                {{ formatPence(booking.quote_cents ?? 0, booking.currency ?? 'GBP') }}
-              </p>
+            <!-- estimate_proposed: cleaner raised price and customer owes more -->
+            <div v-if="booking.status === 'estimate_proposed' && booking.requires_additional_payment" class="estimate-card">
+              <p class="estimate-label">Revised Quote — Additional Payment Required</p>
+              <div class="estimate-breakdown">
+                <span class="estimate-row">
+                  <span>Originally paid</span>
+                  <strong>{{ formatPence(booking.initial_quote_cents ?? booking.quote_cents ?? 0, booking.currency ?? 'GBP') }}</strong>
+                </span>
+                <span class="estimate-row estimate-row--due">
+                  <span>Additional due</span>
+                  <strong>{{ formatPence(booking.additional_payment_cents ?? 0, booking.currency ?? 'GBP') }}</strong>
+                </span>
+                <span class="estimate-row estimate-row--total">
+                  <span>New total</span>
+                  <strong>{{ formatPence(booking.quote_cents ?? 0, booking.currency ?? 'GBP') }}</strong>
+                </span>
+              </div>
               <p v-if="booking.booking_edit_note" class="estimate-note">
                 "{{ booking.booking_edit_note }}"
               </p>
               <button type="button" class="btn-primary" @click="openPayModal">
-                Accept Quote &amp; Pay
+                Pay Additional {{ formatPence(booking.additional_payment_cents ?? 0, booking.currency ?? 'GBP') }}
               </button>
+            </div>
+
+            <!-- estimate_proposed: cleaner revised price down (no extra payment needed) -->
+            <div v-else-if="booking.status === 'estimate_proposed' && !booking.requires_additional_payment" class="status-info">
+              <span class="material-symbols-outlined status-info-icon">info</span>
+              Your cleaner has updated the quote. No additional payment is required.
             </div>
 
             <!-- Legacy: pre-new-flow bookings that still require customer confirmation -->
@@ -141,7 +149,7 @@
           </div>
 
           <div class="action-footer">
-            <p class="footer-copy">Status: {{ getBookingDisplayStatus(booking, 'customer') }}</p>
+            <p class="footer-copy">Status: {{ getBookingStatusLabel(booking, 'customer') }}</p>
             <p v-if="successMessage" class="success-text">{{ successMessage }}</p>
           </div>
 
@@ -169,10 +177,10 @@
             </div>
             <div class="modal-body">
               <p class="modal-desc">
-                You are about to pay
+                You are about to pay an additional
                 <strong>{{
-                  booking && booking.quote_cents != null
-                    ? formatPence(booking.quote_cents, booking.currency ?? 'GBP')
+                  booking && booking.additional_payment_cents != null
+                    ? formatPence(booking.additional_payment_cents, booking.currency ?? 'GBP')
                     : '—'
                 }}</strong>
                 for <strong>{{ booking?.service_title_snapshot ?? 'Cleaning Booking' }}</strong
@@ -287,11 +295,11 @@ import { getSupabaseClient } from '@/services/supabaseClient'
 import {
   getBookingById,
   transitionBookingState,
-  processPaymentDirect,
+  recordAdditionalPayment,
   type BookingDetailRow,
 } from '@/services/bookingService'
 import { formatDate, formatDateTime, formatPence } from '@/utils/format'
-import { getBookingDisplayStatus } from '@/utils/bookingStatus'
+import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
 import { cancelBooking as cancelBookingRequest } from '@/services/bookingService'
 
 const auth = useAuthStore()
@@ -335,7 +343,7 @@ function isTerminal(status: string): boolean {
 function statusInfo(status: string): string {
   const map: Record<string, string> = {
     pending_request: 'Your request has been sent. Waiting for the cleaner to respond.',
-    accepted: 'Your cleaner has accepted. Complete payment to confirm the booking.',
+    accepted: 'Your cleaner has accepted. They will start at the scheduled time.',
     paid_pending_start: 'Payment confirmed. Your cleaner will start soon.',
     scheduled: 'Your cleaner will start soon.',
     payment_authorized: 'Your cleaner will start soon.',
@@ -344,15 +352,6 @@ function statusInfo(status: string): string {
   return map[status] ?? ''
 }
 
-function statusClass(status: string): string {
-  if (status === 'completed') return 'status-pill--completed'
-  if (['in_progress', 'paid_pending_start', 'scheduled', 'payment_authorized'].includes(status))
-    return 'status-pill--active'
-  if (['pending_request', 'accepted', 'estimate_proposed'].includes(status))
-    return 'status-pill--pending'
-  if (['completion_pending_customer'].includes(status)) return 'status-pill--warning'
-  return 'status-pill--cancelled'
-}
 
 function timeRange(start: string, end: string | null | undefined): string {
   if (!end) return 'Duration TBC'
@@ -432,8 +431,7 @@ async function confirmPayment() {
   payModalError.value = ''
   successMessage.value = ''
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    const updated = await processPaymentDirect(bookingId)
+    const updated = await recordAdditionalPayment(bookingId)
     booking.value = updated
     paySuccess.value = true
   } catch (e) {
@@ -683,8 +681,8 @@ onBeforeUnmount(() => {
 }
 
 .status-pill--pending {
-  background: #fff8e1;
-  color: #e65100;
+  background: #ffffff;
+  color: #4c6c4a;
   border: 1px solid #ffcc80;
 }
 .status-pill--active {
@@ -832,6 +830,36 @@ onBeforeUnmount(() => {
   font-weight: 700;
   color: var(--primary, #000000);
   margin: 0;
+}
+
+.estimate-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.625rem 0;
+  border-top: 1px solid var(--outline-variant, #c4c7c7);
+  border-bottom: 1px solid var(--outline-variant, #c4c7c7);
+  margin: 0.25rem 0 0.5rem;
+}
+
+.estimate-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--secondary, #5e5e5e);
+}
+
+.estimate-row--due strong {
+  color: var(--error, #ba1a1a);
+}
+
+.estimate-row--total {
+  font-size: 14px;
+  color: var(--on-surface, #1a1c1c);
+  font-weight: 600;
+  padding-top: 0.375rem;
+  border-top: 1px solid var(--outline-variant, #c4c7c7);
+  margin-top: 0.25rem;
 }
 
 .estimate-note {

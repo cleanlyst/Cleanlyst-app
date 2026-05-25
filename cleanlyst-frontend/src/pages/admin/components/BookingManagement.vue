@@ -84,10 +84,13 @@
 
     <!-- Pagination -->
     <div
-      v-if="!loading && (page > 1 || bookings.length === PAGE_SIZE)"
+      v-if="!loading && totalCount > 0"
       class="flex items-center justify-between mt-6 pt-4 border-t border-outline-variant"
     >
-      <span class="font-caption text-caption text-secondary"> Page {{ page }} </span>
+      <span class="font-caption text-caption text-secondary">
+        Page {{ page }} of {{ totalPages }}
+        <span class="ml-2 opacity-60">({{ totalCount }} total)</span>
+      </span>
       <div class="flex gap-2">
         <button
           class="px-3 py-1.5 border border-outline-variant text-label-md disabled:opacity-40"
@@ -98,7 +101,7 @@
         </button>
         <button
           class="px-3 py-1.5 border border-outline-variant text-label-md disabled:opacity-40"
-          :disabled="bookings.length < PAGE_SIZE || loading"
+          :disabled="page >= totalPages || loading"
           @click="goToPage(page + 1)"
         >
           Next
@@ -145,7 +148,7 @@
           No recent activity.
         </div>
         <div v-else class="activity-list">
-          <div v-for="event in activityEvents" :key="event.id" class="activity-item">
+          <div v-for="event in activityEvents.slice(0,4)" :key="event.id" class="activity-item">
             <div :class="['activity-dot', event.isFirst ? '' : 'activity-dot--inactive']"></div>
             <div>
               <p class="activity-item__title">
@@ -163,11 +166,11 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
 import { formatDate, formatStatus, formatPence, formatRelativeTime } from '@/utils/format'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 10
 
 const TABS = [
   { label: 'All Bookings', value: '' },
@@ -226,6 +229,8 @@ const errorMessage = ref('')
 const activeTab = ref('')
 const searchQuery = ref('')
 const page = ref(1)
+const totalCount = ref(0)
+const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / PAGE_SIZE)))
 
 const bookings = ref<BookingRow[]>([])
 const activityEvents = ref<ActivityEvent[]>([])
@@ -260,23 +265,33 @@ async function loadBookings() {
   errorMessage.value = ''
   try {
     const supabase = requireSupabase()
+    const term = searchQuery.value.trim()
+    const start = (page.value - 1) * PAGE_SIZE
+    const end = start + PAGE_SIZE - 1
+
+    // Pre-query: find profile IDs whose full_name matches the search term
+    let matchingProfileIds: string[] | null = null
+    if (term) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('full_name', `%${term}%`)
+      if (profiles && profiles.length > 0) {
+        matchingProfileIds = (profiles as { id: string }[]).map((p) => p.id)
+      }
+    }
 
     let q = supabase
       .from('bookings')
       .select(
-        `
-        id,
-        status,
-        scheduled_start,
-        scheduled_end,
-        service_title_snapshot,
-        quote_cents,
-        customer:customer_id(full_name),
-        cleaner:cleaner_id(full_name)
-      `,
+        `id, status, scheduled_start, scheduled_end,
+         service_title_snapshot, quote_cents,
+         customer:customer_id(full_name),
+         cleaner:cleaner_id(full_name)`,
+        { count: 'exact' },
       )
       .order('created_at', { ascending: false })
-      .range((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE - 1)
+      .range(start, end)
 
     if (activeTab.value) {
       if (activeTab.value === 'pending_request') {
@@ -286,13 +301,23 @@ async function loadBookings() {
       }
     }
 
-    if (searchQuery.value.trim()) {
-      q = q.ilike('service_title_snapshot', `%${searchQuery.value.trim()}%`)
+    if (term) {
+      const parts: string[] = [
+        `service_title_snapshot.ilike.%${term}%`,
+        `id.ilike.%${term}%`,
+        `status.ilike.%${term}%`,
+      ]
+      if (matchingProfileIds && matchingProfileIds.length > 0) {
+        parts.push(`customer_id.in.(${matchingProfileIds.join(',')})`)
+        parts.push(`cleaner_id.in.(${matchingProfileIds.join(',')})`)
+      }
+      q = q.or(parts.join(','))
     }
 
-    const { data, error } = await q
+    const { data, error, count } = await q
     if (error) throw error
 
+    totalCount.value = count ?? 0
     const rows = (data ?? []) as BookingQueryRow[]
     bookings.value = rows.map((row) => ({
       id: row.id,

@@ -10,12 +10,31 @@
           just a spotless home.
         </p>
         <div class="hero-actions">
-          <router-link :to="{ name: 'BookCleaner' }" class="button-primary">
-            Book a cleaner
-          </router-link>
-          <router-link :to="{ name: 'SignupCleaner' }" class="button-secondary">
-            Join as a cleaner
-          </router-link>
+
+          <!-- Guest: acquisition CTAs -->
+          <template v-if="isGuest">
+            <router-link :to="{ name: 'SignupCustomer' }" class="button-primary">
+              Book a cleaner
+            </router-link>
+            <router-link :to="{ name: 'SignupCleaner' }" class="button-secondary">
+              Join as a cleaner
+            </router-link>
+          </template>
+
+          <!-- Customer: booking CTA only -->
+          <template v-else-if="isCustomer">
+            <router-link :to="{ name: 'BookCleaner' }" class="button-primary">
+              Book a cleaner
+            </router-link>
+          </template>
+
+          <!-- Cleaner / Admin: dashboard CTA -->
+          <template v-else>
+            <router-link :to="{ name: dashboardRouteName }" class="button-primary">
+              Go to dashboard
+            </router-link>
+          </template>
+
         </div>
       </div>
     </section>
@@ -41,28 +60,59 @@
     <!-- ── Service cards ──────────────────────────────────────────────────── -->
     <section class="services-section">
       <div class="services-inner">
-        <div class="services-header">
-          <h2 class="section-title">What we clean</h2>
-          <p class="section-copy">
-            Choose from our core home cleaning services — all with fixed, upfront pricing.
-          </p>
-        </div>
 
-        <div class="service-grid">
-          <router-link
-            v-for="svc in services"
-            :key="svc.slug"
-            :to="{ name: 'BookCleaner', query: { service: svc.slug } }"
-            class="service-card"
-          >
-            <span class="material-symbols-outlined service-card__icon">{{ svc.icon }}</span>
-            <h3 class="service-card__title">{{ svc.title }}</h3>
-            <p class="service-card__copy">{{ svc.description }}</p>
-            <span class="service-card__cta">
-              Book now <span class="material-symbols-outlined service-card__arrow">arrow_forward</span>
-            </span>
-          </router-link>
-        </div>
+        <!-- Guest / Customer / Admin: what we clean -->
+        <template v-if="!isCleaner">
+          <div class="services-header">
+            <h2 class="section-title">What we clean</h2>
+            <p class="section-copy">
+              Choose from our core home cleaning services — all with fixed, upfront pricing.
+            </p>
+          </div>
+          <div class="service-grid">
+            <router-link
+              v-for="svc in customerServices"
+              :key="svc.slug"
+              :to="{ name: 'BookCleaner', query: { service: svc.slug } }"
+              class="service-card"
+            >
+              <span class="material-symbols-outlined service-card__icon">{{ svc.icon }}</span>
+              <h3 class="service-card__title">{{ svc.title }}</h3>
+              <p class="service-card__copy">{{ svc.description }}</p>
+              <span class="service-card__cta">
+                Book now
+                <span class="material-symbols-outlined service-card__arrow">arrow_forward</span>
+              </span>
+            </router-link>
+          </div>
+        </template>
+
+        <!-- Cleaner: business overview -->
+        <template v-else>
+          <div class="services-header">
+            <h2 class="section-title">Your Cleaning Business Overview</h2>
+            <p class="section-copy">
+              Manage jobs, availability, and earnings from one place.
+            </p>
+          </div>
+          <div class="service-grid">
+            <router-link
+              v-for="tile in cleanerTiles"
+              :key="tile.slug"
+              :to="{ name: tile.route }"
+              class="service-card"
+            >
+              <span class="material-symbols-outlined service-card__icon">{{ tile.icon }}</span>
+              <h3 class="service-card__title">{{ tile.title }}</h3>
+              <p class="service-card__copy">{{ tile.description }}</p>
+              <span class="service-card__cta">
+                {{ tile.cta }}
+                <span class="material-symbols-outlined service-card__arrow">arrow_forward</span>
+              </span>
+            </router-link>
+          </div>
+        </template>
+
       </div>
     </section>
 
@@ -115,19 +165,65 @@
     <!-- ── Final CTA ──────────────────────────────────────────────────────── -->
     <section class="cta-panel">
       <div class="callout-panel">
-        <h2>Ready for a spotless home?</h2>
-        <p>
-          Book a trusted cleaner today. Fixed prices, flexible scheduling, and a 100%
-          satisfaction guarantee on every clean.
-        </p>
-        <div class="callout-actions">
-          <router-link :to="{ name: 'BookCleaner' }" class="button-primary">
-            Book a cleaner
-          </router-link>
-          <router-link :to="{ name: 'SignupCleaner' }" class="button-secondary">
-            Join as a cleaner
-          </router-link>
-        </div>
+
+        <!-- Guest: acquisition focus -->
+        <template v-if="isGuest">
+          <h2>Ready for a spotless home?</h2>
+          <p>
+            Book a trusted cleaner today. Fixed prices, flexible scheduling, and a 100%
+            satisfaction guarantee on every clean.
+          </p>
+          <div class="callout-actions">
+            <router-link :to="{ name: 'SignupCustomer' }" class="button-primary">
+              Book a cleaner
+            </router-link>
+            <router-link :to="{ name: 'SignupCleaner' }" class="button-secondary">
+              Join as a cleaner
+            </router-link>
+          </div>
+        </template>
+
+        <!-- Customer: drive bookings -->
+        <template v-else-if="isCustomer">
+          <h2>Ready for a spotless home?</h2>
+          <p>
+            Book a trusted cleaner today. Fixed prices, flexible scheduling, and a 100%
+            satisfaction guarantee on every clean.
+          </p>
+          <div class="callout-actions">
+            <router-link :to="{ name: 'BookCleaner' }" class="button-primary">
+              Book a cleaner
+            </router-link>
+          </div>
+        </template>
+
+        <!-- Cleaner: drive dashboard usage -->
+        <template v-else-if="isCleaner">
+          <h2>Ready for your next job?</h2>
+          <p>
+            Manage your upcoming bookings, update your availability, and track your earnings
+            — all from your dashboard.
+          </p>
+          <div class="callout-actions">
+            <router-link :to="{ name: 'CleanerDashboard' }" class="button-primary">
+              Go to dashboard
+            </router-link>
+          </div>
+        </template>
+
+        <!-- Admin -->
+        <template v-else>
+          <h2>Platform Overview</h2>
+          <p>
+            Manage bookings, cleaners, and platform settings from the admin dashboard.
+          </p>
+          <div class="callout-actions">
+            <router-link :to="{ name: 'AdminDashboard' }" class="button-primary">
+              Go to dashboard
+            </router-link>
+          </div>
+        </template>
+
       </div>
     </section>
 
@@ -135,7 +231,11 @@
 </template>
 
 <script setup lang="ts">
-const services = [
+import { useRolePermissions } from '@/composables/useRolePermissions'
+
+const { isGuest, isCustomer, isCleaner, dashboardRouteName } = useRolePermissions()
+
+const customerServices = [
   {
     slug: 'deep-cleaning',
     icon: 'cleaning_services',
@@ -159,6 +259,41 @@ const services = [
     icon: 'bed',
     title: 'Airbnb Turnover',
     description: 'Fast, reliable turnovers between guests — linen changes included.',
+  },
+]
+
+const cleanerTiles = [
+  {
+    slug: 'jobs',
+    icon: 'calendar_month',
+    title: 'Upcoming Jobs',
+    description: 'See upcoming bookings and today\'s schedule.',
+    cta: 'View Bookings',
+    route: 'CleanerBookings',
+  },
+  {
+    slug: 'availability',
+    icon: 'schedule',
+    title: 'Availability',
+    description: 'Manage your working days and times.',
+    cta: 'Update Availability',
+    route: 'CleanerAvailability',
+  },
+  {
+    slug: 'earnings',
+    icon: 'payments',
+    title: 'Earnings',
+    description: 'Track completed jobs and payouts.',
+    cta: 'View Earnings',
+    route: 'CleanerFinancials',
+  },
+  {
+    slug: 'performance',
+    icon: 'star_rate',
+    title: 'Performance',
+    description: 'Monitor ratings and completed jobs.',
+    cta: 'View Dashboard',
+    route: 'CleanerDashboard',
   },
 ]
 </script>
@@ -538,7 +673,8 @@ h1, h2, h3, p, blockquote {
   margin-bottom: 1.25rem;
 }
 
-.callout-panel > p {
+.callout-panel > p,
+.callout-panel template > p {
   max-width: 34rem;
   margin: 0 auto 2.5rem;
   color: rgba(255, 255, 255, 0.8);

@@ -5,22 +5,29 @@ export type BookingDisplayRole = 'customer' | 'cleaner'
 export interface BookingDisplayStatus {
   status: BookingStatus | string
   payment_status?: string | null
+  requires_additional_payment?: boolean | null
 }
 
 export function isCustomerPaymentRequired(booking: BookingDisplayStatus): boolean {
-  return booking.status === 'accepted' && booking.payment_status === 'unpaid'
+  return !!booking.requires_additional_payment
 }
 
 export function getBookingDisplayStatus(
   booking: BookingDisplayStatus,
   role: BookingDisplayRole,
 ): string {
-  if (booking.status === 'accepted' && booking.payment_status === 'unpaid') {
-    return role === 'cleaner' ? 'Awaiting Customer Payment' : 'Accepted'
+  // Upfront payment: pending_request + paid means cleaner needs to accept
+  if (booking.status === 'pending_request' && booking.payment_status === 'captured') {
+    return role === 'cleaner' ? 'Customer Paid – Pending Approval' : 'Pending Approval'
   }
 
-  if (booking.status === 'accepted' && booking.payment_status === 'paid') {
-    return role === 'cleaner' ? 'Ready to Start' : 'Paid'
+  if (booking.status === 'accepted' && booking.payment_status === 'captured') {
+    return role === 'cleaner' ? 'Ready to Start' : 'Confirmed'
+  }
+
+  // Legacy: accepted + unpaid (should not occur in new flow but kept for safety)
+  if (booking.status === 'accepted' && booking.payment_status === 'unpaid') {
+    return role === 'cleaner' ? 'Awaiting Customer Payment' : 'Accepted'
   }
 
   if (booking.status === 'awaiting_customer_payment') {
@@ -28,7 +35,10 @@ export function getBookingDisplayStatus(
   }
 
   if (booking.status === 'estimate_proposed') {
-    return role === 'customer' ? 'Quote Received – Action Required' : 'Estimate Proposed'
+    if (booking.requires_additional_payment) {
+      return role === 'customer' ? 'Quote Revised – Payment Required' : 'Awaiting Additional Payment'
+    }
+    return role === 'customer' ? 'Quote Received' : 'Estimate Proposed'
   }
 
   const labels: Record<BookingStatus, string> = {

@@ -612,8 +612,8 @@ onBeforeUnmount(() => unsubscribe(realtimeChannel.value))
 }
 
 .status-pill--pending {
-  background: #fff8e1;
-  color: #e65100;
+  background: #ffffff;
+  color: #4c6c4a;
   border: 1px solid #ffcc80;
 }
 

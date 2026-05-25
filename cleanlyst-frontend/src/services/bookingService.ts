@@ -12,6 +12,9 @@ export interface BookingListRow {
   created_at: string
   quote_cents: number | null
   cleaner_id?: string | null
+  requires_additional_payment: boolean
+  additional_payment_cents: number | null
+  initial_quote_cents: number | null
   customer?: { id: string; full_name: string; avatar_url: string | null } | null
 }
 
@@ -91,6 +94,16 @@ function normalizeBookingListRows(data: unknown): BookingListRow[] {
         row.quote_cents === null || row.quote_cents === undefined ? null : Number(row.quote_cents),
       cleaner_id:
         row.cleaner_id === null || row.cleaner_id === undefined ? null : String(row.cleaner_id),
+      requires_additional_payment:
+        row.requires_additional_payment === true || row.requires_additional_payment === 'true',
+      additional_payment_cents:
+        row.additional_payment_cents === null || row.additional_payment_cents === undefined
+          ? null
+          : Number(row.additional_payment_cents),
+      initial_quote_cents:
+        row.initial_quote_cents === null || row.initial_quote_cents === undefined
+          ? null
+          : Number(row.initial_quote_cents),
       customer: normalizeCustomerRelationship(row.customer),
     }
 
@@ -100,7 +113,7 @@ function normalizeBookingListRows(data: unknown): BookingListRow[] {
 }
 
 const BOOKING_LIST_SELECT =
-  'id, service_title_snapshot, scheduled_start, scheduled_end, location_text, status, payment_status, created_at, quote_cents, cleaner_id, customer:profiles!customer_id(id, full_name, avatar_url)'
+  'id, service_title_snapshot, scheduled_start, scheduled_end, location_text, status, payment_status, created_at, quote_cents, cleaner_id, requires_additional_payment, additional_payment_cents, initial_quote_cents, customer:profiles!customer_id(id, full_name, avatar_url)'
 
 export async function getMyBookings() {
   const supabase = getSupabaseClient()
@@ -229,6 +242,9 @@ export interface BookingDetailRow extends BookingListRow {
   booking_edit_note?: string | null
   cleaner_payout_cents: number | null
   currency?: string | null
+  requires_additional_payment: boolean
+  additional_payment_cents: number | null
+  initial_quote_cents: number | null
   payments?: Array<{ status: string; amount_cents: number | null; captured_at: string | null }>
   customer: { id: string; full_name: string; avatar_url: string | null } | null | undefined
   booking_financials?: {
@@ -398,18 +414,31 @@ export async function processBookingPayment(bookingId: string): Promise<BookingD
 export async function processPaymentDirect(bookingId: string): Promise<BookingDetailRow> {
   const supabase = getSupabaseClient()
 
-  console.log('[processPaymentDirect] invoking edge function for booking:', bookingId)
+  // Simulate payment gateway delay
+  await new Promise((resolve) => setTimeout(resolve, 2500))
 
-  const { data, error } = await supabase.functions.invoke('process-payment-direct', {
-    body: { booking_id: bookingId },
+  const { error } = await supabase.rpc('record_initial_payment', {
+    p_booking_id: bookingId,
   })
 
-  if (error) {
-    console.error('[processPaymentDirect] edge function error:', error)
-    throw new Error(error.message ?? 'Payment processing failed')
-  }
+  if (error) throw new Error(error.message ?? 'Payment processing failed')
 
-  console.log('[processPaymentDirect] success:', data)
+  const updated = await getBookingById(bookingId)
+  if (!updated) throw new Error('Payment recorded but failed to fetch updated booking.')
+  return updated
+}
+
+export async function recordAdditionalPayment(bookingId: string): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+
+  // Simulate payment gateway delay
+  await new Promise((resolve) => setTimeout(resolve, 2500))
+
+  const { error } = await supabase.rpc('record_additional_payment', {
+    p_booking_id: bookingId,
+  })
+
+  if (error) throw new Error(error.message ?? 'Additional payment processing failed')
 
   const updated = await getBookingById(bookingId)
   if (!updated) throw new Error('Payment recorded but failed to fetch updated booking.')

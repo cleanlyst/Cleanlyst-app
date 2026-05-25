@@ -11,10 +11,7 @@
     />
     <CustomerBookingsSection
       v-if="activeRouteName === 'CustomerBookings'"
-      :bookings="bookings"
       :bookingTotals="bookingTotals"
-      :loading="loading"
-      :errorMessage="errorMessage"
       :cancelBooking="cancelBooking"
       :confirmComplete="confirmComplete"
     />

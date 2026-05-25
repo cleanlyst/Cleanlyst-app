@@ -56,7 +56,7 @@
                   <p class="booking-address">{{ b.location_text }}</p>
                 </div>
                 <span :class="['status-badge', statusBadgeClass(b.status)]">
-                  {{ getBookingDisplayStatus(b, 'cleaner') }}
+                  {{ getBookingStatusLabel(b, 'cleaner') }}
                 </span>
               </div>
 
@@ -76,7 +76,7 @@
               </div>
 
               <div
-                v-if="b.status === 'accepted' && b.payment_status !== 'paid'"
+                v-if="b.status === 'accepted' && b.payment_status !== 'captured'"
                 class="countdown-banner"
               >
                 <span class="material-symbols-outlined">payments</span>
@@ -172,7 +172,7 @@
 import { computed, ref } from 'vue'
 import type { PropType } from 'vue'
 import { formatPence } from '@/utils/format'
-import { getBookingDisplayStatus } from '@/utils/bookingStatus'
+import { getBookingStatusLabel } from '@/utils/bookingStatusLabel'
 
 interface CarouselBooking {
   id: string
@@ -230,7 +230,7 @@ function isPaidAndStartable(b: CarouselBooking): boolean {
   return (
     b.status === 'paid_pending_start' ||
     b.status === 'payment_authorized' ||
-    (b.status === 'accepted' && b.payment_status === 'paid')
+    (b.status === 'accepted' && b.payment_status === 'captured')
   )
 }
 

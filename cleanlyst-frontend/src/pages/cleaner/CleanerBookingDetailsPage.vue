@@ -17,8 +17,8 @@
               </h1>
               <p class="header-copy">Booking for {{ booking.customer?.full_name ?? 'Customer' }}</p>
             </div>
-            <span :class="['status-pill', statusClass(booking.status)]">{{
-              getBookingDisplayStatus(booking, 'cleaner')
+            <span :class="['status-pill', getStatusPillClass(booking.status)]">{{
+              getBookingStatusLabel(booking, 'cleaner')
             }}</span>
           </div>
 
@@ -107,7 +107,7 @@
             </button>
 
             <button
-              v-if="booking.status === 'pending_request' || booking.status === 'accepted'"
+              v-if="booking.status === 'pending_request'"
               type="button"
               class="btn-action"
               :disabled="actionLoading"
@@ -117,12 +117,12 @@
             </button>
 
             <button
-              v-if="booking.status === 'accepted' && booking.payment_status !== 'paid'"
+              v-if="booking.status === 'estimate_proposed' && booking.requires_additional_payment"
               type="button"
               class="btn-secondary"
               disabled
             >
-              Waiting for customer payment
+              Awaiting additional payment from customer
             </button>
 
             <button
@@ -140,7 +140,7 @@
               :disabled="actionLoading"
               @click="startCleaning"
             >
-              {{ actionLoading && activeAction === 'start' ? 'Starting…' : 'Start Job' }}
+              {{ actionLoading && activeAction === 'start' ? 'Starting…' : 'Start Cleaning' }}
             </button>
             <button
               v-if="booking.status === 'in_progress'"
@@ -149,13 +149,10 @@
               :disabled="actionLoading"
               @click="endJob"
             >
-              {{ actionLoading && activeAction === 'end' ? 'Finishing…' : 'Finish Job' }}
+              {{ actionLoading && activeAction === 'end' ? 'Finishing…' : 'Complete Cleaning' }}
             </button>
             <button
-              v-if="
-                booking.status === 'estimate_proposed' ||
-                booking.status === 'awaiting_customer_payment'
-              "
+              v-if="booking.status === 'awaiting_customer_payment'"
               type="button"
               class="btn-secondary"
               disabled
@@ -175,7 +172,7 @@
 
           <div class="action-summary">
             <p class="summary-copy">
-              Current status: {{ getBookingDisplayStatus(booking, 'cleaner') }}
+              Current status: {{ getBookingStatusLabel(booking, 'cleaner') }}
             </p>
             <p v-if="successMessage" class="success-text">{{ successMessage }}</p>
           </div>
@@ -347,7 +344,8 @@ import {
   type BookingDetailRow,
 } from '@/services/bookingService'
 import { formatDate, formatDateTime, formatPence } from '@/utils/format'
-import { getBookingDisplayStatus } from '@/utils/bookingStatus'
+import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
+import { upsertAvailabilityOverride } from '@/services/availabilityService'
 
 const auth = useAuthStore()
 const messagesStore = useMessagesStore()
@@ -377,16 +375,6 @@ const paymentsChannel = ref<RealtimeSubscription | null>(null)
 
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
-function statusClass(status: string) {
-  if (status === 'completed') return 'status-pill--completed'
-  if (['in_progress', 'paid_pending_start', 'scheduled', 'payment_authorized'].includes(status))
-    return 'status-pill--active'
-  if (['pending_request', 'accepted', 'estimate_proposed'].includes(status))
-    return 'status-pill--pending'
-  if (['cancelled', 'declined', 'cleaner_declined', 'refunded'].includes(status))
-    return 'status-pill--cancelled'
-  return 'status-pill--active'
-}
 
 function canEditBooking(status: string): boolean {
   return ['pending_request', 'accepted', 'estimate_proposed'].includes(status)
@@ -416,7 +404,7 @@ function isPaidAndStartable(currentBooking: BookingDetailRow): boolean {
   return (
     currentBooking.status === 'paid_pending_start' ||
     currentBooking.status === 'payment_authorized' ||
-    (currentBooking.status === 'accepted' && currentBooking.payment_status === 'paid')
+    (currentBooking.status === 'accepted' && currentBooking.payment_status === 'captured')
   )
 }
 
@@ -424,9 +412,8 @@ function isWithinStartWindow(currentBooking: BookingDetailRow): boolean {
   if (!isPaidAndStartable(currentBooking)) return false
   const start = new Date(currentBooking.scheduled_start)
   const now = new Date()
-  const isToday = start.toDateString() === now.toDateString()
-  const isWithin30Min = now.getTime() >= start.getTime() - 30 * 60 * 1000
-  return isToday || isWithin30Min
+  const isWithin1Hour = now.getTime() >= start.getTime() - 60 * 60 * 1000
+  return isWithin1Hour
 }
 
 async function refreshBooking() {
@@ -456,6 +443,14 @@ async function acceptBooking() {
   successMessage.value = ''
   try {
     await transitionBookingState(bookingId, 'accepted')
+
+    // Block the cleaner's calendar for the booking date so they won't appear
+    // in customer searches during that day.
+    if (booking.value.scheduled_start && auth.userId) {
+      const bookingDate = booking.value.scheduled_start.slice(0, 10)
+      await upsertAvailabilityOverride(auth.userId, bookingDate, false, 'Booking accepted')
+    }
+
     successMessage.value = 'Booking accepted'
     await refreshBooking()
   } catch (e) {

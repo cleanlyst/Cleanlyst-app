@@ -21,13 +21,9 @@
       v-if="activeRouteName === 'CleanerBookings'"
       :bookingTotals="bookingTotals"
       :errorMessage="errorMessage"
-      :loading="loading"
-      :bookings="bookings"
       :acceptBooking="acceptBooking"
       :declineBooking="declineBooking"
       :markCompleted="markCompleted"
-      :formatDate="formatDate"
-      :formatStatus="formatStatus"
     />
     <CleanerAvailabilitySection
       v-if="activeRouteName === 'CleanerAvailability'"

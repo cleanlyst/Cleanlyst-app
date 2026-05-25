@@ -98,7 +98,7 @@
                       class="w-full bg-white border border-zinc-200 p-3 rounded focus:border-primary outline-none text-body appearance-none"
                     >
                       <option value="">Select a city</option>
-                      <option v-for="city in UK_CITIES" :key="city" :value="city">{{ city }}</option>
+                      <option v-for="city in ROLLOUT_CONFIG.cities" :key="city" :value="city">{{ city }}</option>
                     </select>
                   </div>
                   <div class="space-y-2">
@@ -217,7 +217,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
-import { UK_CITIES } from '@/utils/ukCities'
+import { ROLLOUT_CONFIG } from '@/config/rollout'
 
 const router = useRouter()
 const store = useCustomerPreferencesStore()

@@ -22,22 +22,59 @@
       </div>
     </div>
 
-    <p v-if="errorMessage" class="error-msg">{{ errorMessage }}</p>
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="tab-group">
+        <button
+          v-for="tab in BOOKING_TABS"
+          :key="tab.key"
+          :class="['tab-btn', list.currentTab.value === tab.key && 'tab-btn--active']"
+          type="button"
+          @click="list.setTab(tab.key)"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+      <div class="filter-divider"></div>
+      <div class="search-wrap">
+        <span class="material-symbols-outlined search-icon">search</span>
+        <input
+          v-model="searchQuery"
+          class="search-input"
+          placeholder="Search bookings…"
+          type="text"
+          @input="onSearchInput"
+        />
+      </div>
+    </div>
 
-    <div v-if="loading" class="loading-state">
+    <p v-if="list.error.value" class="error-msg">{{ list.error.value }}</p>
+
+    <div v-if="list.loading.value" class="loading-state">
       <div class="loading-spinner"></div>
       <p class="loading-text">Loading your bookings…</p>
     </div>
 
-    <div v-else-if="bookings.length === 0" class="empty-state">
+    <div v-else-if="list.bookings.value.length === 0" class="empty-state">
       <span class="material-symbols-outlined empty-icon">event_busy</span>
-      <p class="empty-title">No bookings yet</p>
-      <p class="empty-copy">When you book a cleaner, it will appear here.</p>
-      <router-link class="btn-primary" :to="{ name: 'BookCleaner' }">+ Book a Cleaner</router-link>
+      <p class="empty-title">No bookings found</p>
+      <p class="empty-copy">
+        <template v-if="list.currentTab.value === 'all'">
+          When you book a cleaner, it will appear here.
+        </template>
+        <template v-else>
+          No {{ list.currentTab.value }} bookings to show.
+        </template>
+      </p>
+      <router-link
+        v-if="list.currentTab.value === 'all'"
+        class="btn-primary"
+        :to="{ name: 'BookCleaner' }"
+      >+ Book a Cleaner</router-link>
     </div>
 
     <div v-else class="booking-list">
-      <article v-for="b in bookings" :key="b.id" class="booking-card">
+      <article v-for="b in list.bookings.value" :key="b.id" class="booking-card">
         <div class="card-top">
           <div class="card-info">
             <h3 class="card-title">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h3>
@@ -52,8 +89,8 @@
               </span>
             </div>
           </div>
-          <span class="status-pill" :class="statusClass(b.status)">{{
-            getBookingDisplayStatus(b, 'customer')
+          <span class="status-pill" :class="getStatusPillClass(b.status)">{{
+            getBookingStatusLabel(b, 'customer')
           }}</span>
         </div>
         <div class="card-actions">
@@ -69,13 +106,13 @@
             class="btn-primary-sm"
             @click="openPayModal(b)"
           >
-            Make Payment
+            Pay Additional {{ b.additional_payment_cents ? formatPence(b.additional_payment_cents) : '' }}
           </button>
           <button
             v-if="canCancel(b.status)"
             class="btn-danger"
             type="button"
-            @click="props.cancelBooking(b.id)"
+            @click="handleCancelBooking(b.id)"
           >
             Cancel
           </button>
@@ -83,7 +120,7 @@
             v-if="canConfirmComplete(b.status)"
             class="btn-success"
             type="button"
-            @click="props.confirmComplete(b.id)"
+            @click="handleConfirmComplete(b.id)"
           >
             Confirm Complete
           </button>
@@ -99,12 +136,39 @@
       </article>
     </div>
 
+    <!-- Pagination -->
+    <div
+      v-if="!list.loading.value && list.totalCount.value > 0"
+      class="pagination"
+    >
+      <button
+        class="pagination-btn"
+        type="button"
+        :disabled="list.page.value <= 1"
+        @click="list.previousPage()"
+      >
+        Previous
+      </button>
+      <span class="pagination-info">
+        Page {{ list.page.value }} of {{ list.totalPages.value }}
+        <span class="pagination-total">({{ list.totalCount.value }} total)</span>
+      </span>
+      <button
+        class="pagination-btn"
+        type="button"
+        :disabled="list.page.value >= list.totalPages.value"
+        @click="list.nextPage()"
+      >
+        Next
+      </button>
+    </div>
+
     <!-- Payment modal -->
     <div v-if="payingBooking" class="modal-backdrop" @click.self="closePayModal">
       <div class="modal-box">
         <template v-if="!paySuccess">
           <div class="modal-header">
-            <h2 class="modal-title">Booking Payment</h2>
+            <h2 class="modal-title">Additional Payment</h2>
             <button
               class="modal-close"
               type="button"
@@ -125,10 +189,20 @@
               <span class="pay-label">Cleaner</span>
               <span class="pay-val">{{ payingBooking.cleaner_name ?? '—' }}</span>
             </div>
+            <div class="pay-row">
+              <span class="pay-label">Original Paid</span>
+              <span class="pay-val">{{
+                payingBooking.initial_quote_cents
+                  ? formatPence(payingBooking.initial_quote_cents)
+                  : '—'
+              }}</span>
+            </div>
             <div class="pay-row pay-row--total">
-              <span class="pay-label">Amount</span>
+              <span class="pay-label">Additional Due</span>
               <span class="pay-val pay-amount">{{
-                payingBooking.quote_cents ? formatPence(payingBooking.quote_cents) : '—'
+                payingBooking.additional_payment_cents
+                  ? formatPence(payingBooking.additional_payment_cents)
+                  : '—'
               }}</span>
             </div>
             <p v-if="payError" class="pay-error">{{ payError }}</p>
@@ -211,23 +285,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import type { PropType } from 'vue'
 import { createReview } from '@/services/reviewService'
-import { processPaymentDirect } from '@/services/bookingService'
+import { recordAdditionalPayment } from '@/services/bookingService'
 import { formatPence } from '@/utils/format'
-import { getBookingDisplayStatus, isCustomerPaymentRequired } from '@/utils/bookingStatus'
-
-interface BookingSummary {
-  id: string
-  service_title_snapshot: string | null
-  location_text: string
-  scheduled_start: string
-  status: string
-  payment_status?: string | null
-  quote_cents?: number | null
-  cleaner_name?: string | null
-}
+import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
+import { useBookingList, BOOKING_TABS } from '@/composables/useBookingList'
+import type { BookingListItem } from '@/composables/useBookingList'
 
 interface BookingTotals {
   pending: number
@@ -236,13 +301,10 @@ interface BookingTotals {
 }
 
 const props = defineProps({
-  bookings: { type: Array as PropType<BookingSummary[]>, default: () => [] },
   bookingTotals: {
     type: Object as PropType<BookingTotals>,
     default: () => ({ pending: 0, accepted: 0, completed: 0 }),
   },
-  loading: { type: Boolean, default: false },
-  errorMessage: { type: String, default: '' },
   cancelBooking: {
     type: Function as PropType<(id: string) => Promise<void>>,
     default: () => {},
@@ -253,6 +315,32 @@ const props = defineProps({
   },
 })
 
+const list = useBookingList('customer')
+
+const searchQuery = ref('')
+let searchTimeout: ReturnType<typeof setTimeout>
+
+onMounted(() => {
+  list.fetch()
+})
+
+function onSearchInput() {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    list.setSearch(searchQuery.value)
+  }, 350)
+}
+
+async function handleCancelBooking(id: string) {
+  await props.cancelBooking(id)
+  await list.fetch()
+}
+
+async function handleConfirmComplete(id: string) {
+  await props.confirmComplete(id)
+  await list.fetch()
+}
+
 const reviewingBookingId = ref<string | null>(null)
 const reviewRating = ref(5)
 const reviewComment = ref('')
@@ -261,17 +349,17 @@ const reviewError = ref('')
 const reviewedIds = ref<Set<string>>(new Set())
 
 // Payment modal state
-const payingBooking = ref<BookingSummary | null>(null)
+const payingBooking = ref<BookingListItem | null>(null)
 const payProcessing = ref(false)
 const paySuccess = ref(false)
 const payError = ref('')
 const optimisticPaidIds = ref(new Set<string>())
 
-function showPayButton(b: BookingSummary): boolean {
-  return isCustomerPaymentRequired(b) && !optimisticPaidIds.value.has(b.id)
+function showPayButton(b: BookingListItem): boolean {
+  return b.requires_additional_payment && !optimisticPaidIds.value.has(b.id)
 }
 
-function openPayModal(b: BookingSummary) {
+function openPayModal(b: BookingListItem) {
   if (optimisticPaidIds.value.has(b.id)) return
   payingBooking.value = b
   payProcessing.value = false
@@ -292,10 +380,10 @@ async function confirmPayment() {
   payProcessing.value = true
   payError.value = ''
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    await processPaymentDirect(bookingId)
+    await recordAdditionalPayment(bookingId)
     optimisticPaidIds.value = new Set([...optimisticPaidIds.value, bookingId])
     paySuccess.value = true
+    await list.fetch()
   } catch (e) {
     payError.value = e instanceof Error ? e.message : 'Payment failed. Please try again.'
   } finally {
@@ -347,25 +435,6 @@ function formatDate(value: string): string {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 
-function statusClass(status: string): string {
-  if (['pending_request', 'accepted', 'estimate_proposed'].includes(status))
-    return 'status-pill--pending'
-  if (
-    [
-      'paid_pending_start',
-      'scheduled',
-      'awaiting_customer_payment',
-      'payment_authorized',
-      'in_progress',
-      'completion_pending_customer',
-    ].includes(status)
-  )
-    return 'status-pill--active'
-  if (status === 'completed') return 'status-pill--completed'
-  if (['cancelled', 'declined', 'cleaner_declined', 'disputed', 'refunded'].includes(status))
-    return 'status-pill--cancelled'
-  return ''
-}
 </script>
 
 <style scoped>
@@ -444,6 +513,96 @@ function statusClass(status: string): string {
   line-height: 1.2;
   color: var(--on-surface, #1a1c1c);
   margin: 0;
+}
+
+/* ── Filter bar ── */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--outline-variant, #c4c7c7);
+}
+
+.filter-divider {
+  display: none;
+  width: 1px;
+  height: 1.5rem;
+  background: var(--outline-variant, #c4c7c7);
+  margin: 0 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .filter-divider {
+    display: block;
+  }
+}
+
+/* ── Tab group ── */
+.tab-group {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--surface-container, #eeeeee);
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+}
+
+.tab-btn {
+  padding: 0.375rem 1rem;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: var(--secondary, #5e5e5e);
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.tab-btn:hover {
+  color: var(--primary, #000000);
+}
+
+.tab-btn--active {
+  background: #ffffff;
+  color: var(--primary, #000000);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Search ── */
+.search-wrap {
+  position: relative;
+  flex-grow: 1;
+  max-width: 20rem;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #747878;
+  font-size: 20px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  border-radius: 0.375rem;
+  font-size: 14px;
+  outline: none;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  border-color: var(--primary, #000000);
 }
 
 /* ── Error ── */
@@ -587,8 +746,8 @@ function statusClass(status: string): string {
 }
 
 .status-pill--pending {
-  background: #fff8e1;
-  color: #e65100;
+  background: #ffffff;
+  color: #4c6c4a;
   border: 1px solid #ffcc80;
 }
 
@@ -618,6 +777,46 @@ function statusClass(status: string): string {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
+}
+
+/* ── Pagination ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--outline-variant, #c4c7c7);
+}
+
+.pagination-btn {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: #ffffff;
+  border-radius: 0.25rem;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-btn:not(:disabled):hover {
+  background: var(--surface-container, #eeeeee);
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: var(--on-surface, #1a1c1c);
+}
+
+.pagination-total {
+  color: var(--secondary, #5e5e5e);
 }
 
 /* ── Buttons ── */
@@ -717,6 +916,7 @@ function statusClass(status: string): string {
   font-weight: 400;
   cursor: pointer;
   transition: background-color 200ms ease;
+  text-decoration: none;
 }
 
 .btn-outline:hover {
@@ -941,12 +1141,6 @@ function statusClass(status: string): string {
   display: inline-block;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 @media (max-width: 768px) {
   .stats-row {
     grid-template-columns: 1fr;
@@ -954,6 +1148,10 @@ function statusClass(status: string): string {
 
   .card-top {
     flex-direction: column;
+  }
+
+  .tab-group {
+    flex-wrap: wrap;
   }
 }
 

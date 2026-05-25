@@ -339,6 +339,7 @@ import {
   updateBookingDetails,
   transitionBookingState,
   completeBooking,
+  startBooking as startBookingRequest,
   proposeEstimate,
   type BookingDetailRow,
 } from '@/services/bookingService'
@@ -401,8 +402,6 @@ function countdownText(startValue: string) {
 
 function isPaidAndStartable(currentBooking: BookingDetailRow): boolean {
   return (
-    currentBooking.status === 'paid_pending_start' ||
-    currentBooking.status === 'payment_authorized' ||
     (currentBooking.status === 'accepted' && currentBooking.payment_status === 'captured')
   )
 }
@@ -411,8 +410,7 @@ function isWithinStartWindow(currentBooking: BookingDetailRow): boolean {
   if (!isPaidAndStartable(currentBooking)) return false
   const start = new Date(currentBooking.scheduled_start)
   const now = new Date()
-  const isWithin1Hour = now.getTime() >= start.getTime() - 60 * 60 * 1000
-  return isWithin1Hour
+  return now.getTime() >= start.getTime() - 30 * 60 * 1000
 }
 
 async function refreshBooking() {
@@ -509,8 +507,8 @@ async function startCleaning() {
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await transitionBookingState(bookingId, 'in_progress')
-    successMessage.value = 'Cleaning Started'
+    await startBookingRequest(bookingId)
+    successMessage.value = 'Cleaning in progress'
     await refreshBooking()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to start cleaning.'

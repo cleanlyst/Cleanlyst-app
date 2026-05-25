@@ -15,6 +15,7 @@ const transitions: Record<BookingStatus, BookingStatus[]> = {
   completed: [],
   refunded: [],
   cleaner_declined: [],
+  cleaner_no_show: ['cancelled'],
   cancelled: [],
 }
 

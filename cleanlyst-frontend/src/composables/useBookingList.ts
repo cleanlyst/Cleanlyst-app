@@ -22,7 +22,14 @@ const TAB_STATUSES: Record<BookingTab, string[] | null> = {
     'payment_authorized',
     'estimate_proposed',
   ],
-  active: ['accepted', 'paid_pending_start', 'scheduled', 'in_progress', 'completion_pending_customer'],
+  active: [
+    'accepted',
+    'paid_pending_start',
+    'scheduled',
+    'in_progress',
+    'completion_pending_customer',
+    'cleaner_no_show',
+  ],
   completed: ['completed'],
   cancelled: ['cancelled', 'declined', 'cleaner_declined', 'disputed', 'refunded'],
 }
@@ -34,6 +41,8 @@ export interface BookingListItem {
   scheduled_start: string
   status: string
   payment_status: string | null
+  started_at: string | null
+  no_show_action: string | null
   quote_cents: number | null
   requires_additional_payment: boolean
   additional_payment_cents: number | null
@@ -48,6 +57,8 @@ interface BookingQueryRow {
   location_text: string | null
   service_title_snapshot: string | null
   payment_status: string | null
+  started_at: string | null
+  no_show_action: string | null
   quote_cents: number | null
   requires_additional_payment: boolean | null
   additional_payment_cents: number | null
@@ -102,7 +113,7 @@ export function useBookingList(role: 'customer' | 'cleaner') {
       let q = supabase
         .from('bookings')
         .select(
-          `id, status, scheduled_start, location_text, service_title_snapshot, payment_status, quote_cents, requires_additional_payment, additional_payment_cents, ${nameJoin}`,
+          `id, status, scheduled_start, location_text, service_title_snapshot, payment_status, started_at, no_show_action, quote_cents, requires_additional_payment, additional_payment_cents, ${nameJoin}`,
           { count: 'exact' },
         )
         .eq(ownerCol, auth.userId)
@@ -137,6 +148,8 @@ export function useBookingList(role: 'customer' | 'cleaner') {
         scheduled_start: row.scheduled_start ?? '',
         status: row.status,
         payment_status: row.payment_status ?? null,
+        started_at: row.started_at ?? null,
+        no_show_action: row.no_show_action ?? null,
         quote_cents: row.quote_cents ?? null,
         requires_additional_payment: row.requires_additional_payment ?? false,
         additional_payment_cents: row.additional_payment_cents ?? null,

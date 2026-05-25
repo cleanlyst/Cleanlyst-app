@@ -99,7 +99,12 @@
 
               <div v-if="b.status === 'in_progress'" class="action-banner action-banner--active">
                 <span class="material-symbols-outlined">cleaning_services</span>
-                Cleaner is working now.
+                Cleaner has started cleaning.
+              </div>
+
+              <div v-if="b.status === 'cleaner_no_show'" class="action-banner action-banner--info">
+                <span class="material-symbols-outlined">person_search</span>
+                Replacement cleaner requested
               </div>
 
               <!-- Legacy: bookings requiring explicit customer confirmation -->
@@ -234,6 +239,7 @@ const UPCOMING_STATUSES = [
   'payment_authorized',
   'in_progress',
   'completion_pending_customer',
+  'cleaner_no_show',
 ]
 
 const props = defineProps({
@@ -310,7 +316,11 @@ function next() {
 function statusClass(status: string): string {
   if (status === 'completion_pending_customer') return 'pill--warning'
   if (status === 'accepted') return 'pill--warning'
-  if (['paid_pending_start', 'scheduled', 'payment_authorized', 'in_progress'].includes(status))
+  if (
+    ['paid_pending_start', 'scheduled', 'payment_authorized', 'in_progress', 'cleaner_no_show'].includes(
+      status,
+    )
+  )
     return 'pill--active'
   if (['pending_request', 'estimate_proposed'].includes(status)) return 'pill--pending'
   return 'pill--default'

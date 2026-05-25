@@ -74,6 +74,9 @@
             <span :class="['status-badge', statusBadgeClass(booking.status)]">
               {{ formatStatus(booking.status) }}
             </span>
+            <div v-if="booking.no_show_action" class="col-sub">
+              {{ formatNoShowAction(booking.no_show_action) }}
+            </div>
           </div>
         </div>
         <div class="row-actions">
@@ -178,6 +181,7 @@ const TABS = [
   { label: 'Active', value: 'in_progress' },
   { label: 'Completed', value: 'completed' },
   { label: 'Cancelled', value: 'cancelled' },
+  { label: 'No-shows', value: 'cleaner_no_show' },
 ]
 
 interface BookingRow {
@@ -189,6 +193,7 @@ interface BookingRow {
   quote_cents: number
   customer_name: string | null
   cleaner_name: string | null
+  no_show_action: string | null
 }
 
 interface BookingQueryRow {
@@ -198,6 +203,7 @@ interface BookingQueryRow {
   scheduled_end: string | null
   service_title_snapshot: string | null
   quote_cents: number | null
+  no_show_action: string | null
   customer?: {
     full_name?: string | null
   } | null
@@ -286,6 +292,7 @@ async function loadBookings() {
       .select(
         `id, status, scheduled_start, scheduled_end,
          service_title_snapshot, quote_cents,
+         no_show_action,
          customer:customer_id(full_name),
          cleaner:cleaner_id(full_name)`,
         { count: 'exact' },
@@ -296,6 +303,8 @@ async function loadBookings() {
     if (activeTab.value) {
       if (activeTab.value === 'pending_request') {
         q = q.in('status', ['pending_request', 'awaiting_customer_payment', 'payment_authorized'])
+      } else if (activeTab.value === 'cleaner_no_show') {
+        q = q.not('no_show_action', 'is', null)
       } else {
         q = q.eq('status', activeTab.value)
       }
@@ -328,6 +337,7 @@ async function loadBookings() {
       quote_cents: row.quote_cents ?? 0,
       customer_name: row.customer?.full_name ?? null,
       cleaner_name: row.cleaner?.full_name ?? null,
+      no_show_action: row.no_show_action ?? null,
     }))
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load bookings.'
@@ -389,6 +399,7 @@ function statusIcon(status: string): string {
     completed: 'task_alt',
     cancelled: 'cancel',
     refunded: 'undo',
+    cleaner_no_show: 'event_busy',
   }
   return map[status] ?? 'calendar_today'
 }
@@ -396,8 +407,15 @@ function statusIcon(status: string): string {
 function statusBadgeClass(status: string): string {
   if (status === 'in_progress' || status === 'payment_authorized') return 'status-badge--active'
   if (status === 'completed') return 'status-badge--completed'
-  if (status === 'cancelled' || status === 'refunded') return 'status-badge--cancelled'
+  if (status === 'cancelled' || status === 'refunded' || status === 'cleaner_no_show')
+    return 'status-badge--cancelled'
   return 'status-badge--pending'
+}
+
+function formatNoShowAction(action: string): string {
+  if (action === 'replacement_requested') return 'Replacement cleaner requested'
+  if (action === 'refund_requested') return 'Refund requested'
+  return formatStatus(action)
 }
 </script>
 

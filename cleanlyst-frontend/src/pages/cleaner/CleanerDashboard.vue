@@ -23,6 +23,7 @@
       :errorMessage="errorMessage"
       :acceptBooking="acceptBooking"
       :declineBooking="declineBooking"
+      :startBooking="startBooking"
       :markCompleted="markCompleted"
     />
     <CleanerAvailabilitySection
@@ -43,7 +44,7 @@ import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useCleanerBookings } from '@/composables/useCleanerBookings'
-import { completeBooking } from '@/services/bookingService'
+import { completeBooking, startBooking as startBookingRequest } from '@/services/bookingService'
 import { subscribeToTable, unsubscribe } from '@/lib/realtime'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { cleanerDashboardLinks } from '@/pages/dasboardLinks'
@@ -191,7 +192,7 @@ async function declineBooking(id: string) {
 async function startBooking(id: string) {
   actionLoadingId.value = id
   try {
-    await transition(id, 'in_progress')
+    await startBookingRequest(id)
     await loadBookings()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to start booking.'

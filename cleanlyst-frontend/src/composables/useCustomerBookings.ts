@@ -26,6 +26,7 @@ export function useCustomerBookings() {
         'payment_authorized',
         'in_progress',
         'completion_pending_customer',
+        'cleaner_no_show',
       ].includes(b.status),
     ).length,
     completed: bookings.value.filter((b) => b.status === 'completed').length,

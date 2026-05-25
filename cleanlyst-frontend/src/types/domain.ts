@@ -15,6 +15,7 @@ export type BookingStatus =
   | 'disputed'
   | 'refunded'
   | 'cleaner_declined'
+  | 'cleaner_no_show'
   | 'cancelled'
 
 export type ApplicationStatus =

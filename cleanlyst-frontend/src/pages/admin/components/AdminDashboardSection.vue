@@ -7,7 +7,7 @@
       </header>
 
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
+      <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-16">
         <div class="bg-surface-container-lowest border border-outline-variant p-padding-card">
           <div class="flex justify-between items-start mb-4">
             <span class="material-symbols-outlined text-primary">group</span>
@@ -75,6 +75,22 @@
             <span class="text-caption font-caption"
               >{{ formatPence(stats.pendingPayoutPence) }} pending payout</span
             >
+          </div>
+        </div>
+
+        <div class="bg-surface-container-lowest border border-outline-variant p-padding-card">
+          <div class="flex justify-between items-start mb-4">
+            <span class="material-symbols-outlined text-primary">event_busy</span>
+            <span class="text-caption font-caption bg-surface-container px-2 py-0.5">ALERTS</span>
+          </div>
+          <h2 class="font-h2 text-h2 mb-1">
+            <span v-if="statsLoading" class="animate-pulse">—</span>
+            <span v-else>{{ stats.noShowIncidents.toLocaleString() }}</span>
+          </h2>
+          <p class="text-label-md font-label-md text-secondary">No-show incidents</p>
+          <div class="mt-4 pt-4 border-t border-outline-variant flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-sm">person_search</span>
+            <span class="text-caption font-caption">Requires admin review</span>
           </div>
         </div>
       </div>
@@ -217,6 +233,7 @@ interface PlatformStats {
   activeBookings: number
   totalRevenuePence: number
   pendingPayoutPence: number
+  noShowIncidents: number
 }
 
 interface AmountRow {
@@ -242,6 +259,7 @@ const stats = ref<PlatformStats>({
   activeBookings: 0,
   totalRevenuePence: 0,
   pendingPayoutPence: 0,
+  noShowIncidents: 0,
 })
 
 const pendingApplications = ref<PendingApplication[]>([])
@@ -276,6 +294,7 @@ async function loadStats() {
       activeResult,
       revenueResult,
       payoutResult,
+      noShowResult,
     ] = await Promise.all([
       supabase
         .from('profiles')
@@ -301,6 +320,7 @@ async function loadStats() {
         .from('payouts')
         .select('amount_cents')
         .in('status', ['pending', 'processing', 'released']),
+      supabase.from('bookings').select('id', { count: 'exact', head: true }).not('no_show_action', 'is', null),
     ])
 
     stats.value = {
@@ -318,6 +338,7 @@ async function loadStats() {
         (s: number, r) => s + (r.amount_cents ?? 0),
         0,
       ),
+      noShowIncidents: noShowResult.count ?? 0,
     }
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load stats.'

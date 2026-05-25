@@ -56,6 +56,8 @@ export function getBookingDisplayStatus(
     completed: 'Completed',
     cancelled: 'Cancelled',
     cleaner_declined: 'Declined',
+    cleaner_no_show:
+      role === 'cleaner' ? 'Booking marked as no-show' : 'Replacement cleaner requested',
     disputed: 'Disputed',
     refunded: 'Refunded',
   }

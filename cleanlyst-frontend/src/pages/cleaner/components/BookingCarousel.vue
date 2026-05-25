@@ -105,7 +105,12 @@
 
               <div v-if="b.status === 'in_progress'" class="in-progress-banner">
                 <span class="material-symbols-outlined">cleaning_services</span>
-                Cleaning In Progress
+                Cleaning in progress
+              </div>
+
+              <div v-if="b.status === 'cleaner_no_show'" class="countdown-banner">
+                <span class="material-symbols-outlined">event_busy</span>
+                Booking marked as no-show
               </div>
             </div>
 
@@ -138,7 +143,7 @@
                   @click="emit('start', b.id)"
                 >
                   <span v-if="loadingId === b.id" class="btn-spinner"></span>
-                  <span v-else>Start Job</span>
+                  <span v-else>Start Cleaning</span>
                 </button>
               </template>
 
@@ -150,7 +155,7 @@
                   @click="emit('end', b.id)"
                 >
                   <span v-if="loadingId === b.id" class="btn-spinner"></span>
-                  <span v-else>Finish Job</span>
+                  <span v-else>Complete Cleaning</span>
                 </button>
               </template>
 
@@ -194,6 +199,7 @@ const ACTIVE_STATUSES = [
   'payment_authorized',
   'in_progress',
   'completion_pending_customer',
+  'cleaner_no_show',
 ]
 
 const props = defineProps({
@@ -227,20 +233,15 @@ function next() {
 }
 
 function isPaidAndStartable(b: CarouselBooking): boolean {
-  return (
-    b.status === 'paid_pending_start' ||
-    b.status === 'payment_authorized' ||
-    (b.status === 'accepted' && b.payment_status === 'captured')
-  )
+  return b.status === 'accepted' && b.payment_status === 'captured'
 }
 
 function isWithinStartWindow(b: CarouselBooking): boolean {
   if (!isPaidAndStartable(b)) return false
   const start = new Date(b.scheduled_start)
   const now = new Date()
-  const isToday = start.toDateString() === now.toDateString()
   const isWithin30Min = now.getTime() >= start.getTime() - 30 * 60 * 1000
-  return isToday || isWithin30Min
+  return isWithin30Min
 }
 
 function countdownText(scheduledStart: string): string {
@@ -264,6 +265,7 @@ function statusBadgeClass(status: string): string {
   if (['in_progress', 'paid_pending_start', 'scheduled', 'payment_authorized'].includes(status))
     return 'badge--active'
   if (status === 'pending_request') return 'badge--pending'
+  if (status === 'cleaner_no_show') return 'badge--default'
   return 'badge--default'
 }
 </script>

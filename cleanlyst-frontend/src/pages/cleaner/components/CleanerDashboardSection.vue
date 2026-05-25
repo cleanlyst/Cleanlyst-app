@@ -95,6 +95,8 @@ interface BookingEntry {
   scheduled_start: string
   location_text: string
   status: string
+  payment_status?: string | null
+  no_show_action?: string | null
   quote_cents?: number | null
   customer?: { id: string; full_name: string; avatar_url: string | null } | null
 }

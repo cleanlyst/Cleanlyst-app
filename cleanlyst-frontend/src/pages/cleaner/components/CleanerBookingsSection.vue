@@ -109,12 +109,20 @@
               Decline
             </button>
             <button
+              v-if="canStartCleaning(b)"
+              class="btn-start"
+              type="button"
+              @click="handleStartBooking(b.id)"
+            >
+              Start Cleaning
+            </button>
+            <button
               v-if="b.status === 'in_progress'"
               class="btn-start"
               type="button"
               @click="handleMarkCompleted(b.id)"
             >
-              Finish Job
+              Complete Cleaning
             </button>
             <router-link
               :to="{ name: 'CleanerBookingDetails', params: { bookingId: b.id } }"
@@ -184,6 +192,10 @@ const props = defineProps({
     type: Function as PropType<(id: string) => Promise<void>>,
     default: () => {},
   },
+  startBooking: {
+    type: Function as PropType<(id: string) => Promise<void>>,
+    default: () => {},
+  },
 })
 
 const list = useBookingList('cleaner')
@@ -215,6 +227,18 @@ async function handleDeclineBooking(id: string) {
 async function handleMarkCompleted(id: string) {
   await props.markCompleted(id)
   await list.fetch()
+}
+
+async function handleStartBooking(id: string) {
+  await props.startBooking(id)
+  await list.fetch()
+}
+
+function canStartCleaning(booking: { status: string; payment_status: string | null; scheduled_start: string }): boolean {
+  if (booking.status !== 'accepted' || booking.payment_status !== 'captured') return false
+  const start = new Date(booking.scheduled_start)
+  if (Number.isNaN(start.valueOf())) return false
+  return Date.now() >= start.getTime() - 30 * 60 * 1000
 }
 
 const formatDate = formatDateTime

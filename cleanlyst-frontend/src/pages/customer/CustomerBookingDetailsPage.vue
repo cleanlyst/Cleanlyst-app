@@ -133,6 +133,21 @@
               {{ actionLoading && activeAction === 'cancel' ? 'Cancelling…' : 'Cancel Booking' }}
             </button>
 
+            <div v-if="canReportNoShow" class="status-info">
+              <span class="material-symbols-outlined status-info-icon">warning</span>
+              Your cleaner appears not to have started this booking.
+            </div>
+
+            <button
+              v-if="canReportNoShow"
+              type="button"
+              class="btn-danger"
+              :disabled="actionLoading"
+              @click="openNoShowModal"
+            >
+              Cleaner Did Not Attend
+            </button>
+
             <div
               v-if="
                 !canCancel &&
@@ -158,6 +173,77 @@
             Back to Dashboard
           </router-link>
         </section>
+      </div>
+
+      <!-- No-show modal -->
+      <div v-if="noShowModalOpen" class="modal-backdrop" @click.self="closeNoShowModal">
+        <div class="modal-box">
+          <div class="modal-header">
+            <h2 class="modal-title">Cleaner didn't attend</h2>
+            <button
+              class="modal-close"
+              type="button"
+              :disabled="!!noShowActionLoading"
+              @click="closeNoShowModal"
+            >
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <p class="modal-desc">Your cleaner appears not to have started this booking.</p>
+            <p v-if="noShowError" class="modal-error">{{ noShowError }}</p>
+            <p v-if="noShowSuccess" class="success-text">{{ noShowSuccess }}</p>
+
+            <div v-if="replacementCleaners.length > 0" class="replacement-list">
+              <article
+                v-for="cleaner in replacementCleaners"
+                :key="cleaner.user_id"
+                class="replacement-row"
+              >
+                <div>
+                  <p class="replacement-name">
+                    {{ cleaner.profiles?.full_name ?? cleaner.business_name ?? 'Cleaner' }}
+                  </p>
+                  <p class="replacement-meta">
+                    {{ cleaner.average_rating.toFixed(1) }} rating ·
+                    {{ cleaner.review_count }} reviews
+                  </p>
+                </div>
+              </article>
+            </div>
+
+            <div class="modal-actions">
+              <button
+                class="btn-primary modal-btn"
+                type="button"
+                :disabled="!!noShowActionLoading || !!booking?.no_show_action"
+                @click="requestReplacementCleaner"
+              >
+                {{
+                  noShowActionLoading === 'replacement'
+                    ? 'Requesting…'
+                    : 'Request another cleaner'
+                }}
+              </button>
+              <button
+                class="btn-danger modal-btn"
+                type="button"
+                :disabled="!!noShowActionLoading || !!booking?.no_show_action"
+                @click="requestNoShowRefund"
+              >
+                {{ noShowActionLoading === 'refund' ? 'Refunding…' : 'Request refund' }}
+              </button>
+              <button
+                class="btn-cancel"
+                type="button"
+                :disabled="!!noShowActionLoading"
+                @click="closeNoShowModal"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Payment modal -->
@@ -296,8 +382,10 @@ import {
   getBookingById,
   transitionBookingState,
   recordAdditionalPayment,
+  reportCleanerNoShow,
   type BookingDetailRow,
 } from '@/services/bookingService'
+import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import { formatDate, formatDateTime, formatPence } from '@/utils/format'
 import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
 import { cancelBooking as cancelBookingRequest } from '@/services/bookingService'
@@ -322,12 +410,30 @@ const successMessage = ref('')
 const messageError = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const statusChannel = ref<RealtimeSubscription | null>(null)
+const noShowModalOpen = ref(false)
+const noShowActionLoading = ref<'replacement' | 'refund' | null>(null)
+const noShowError = ref('')
+const noShowSuccess = ref('')
+const replacementCleaners = ref<CleanerSearchResult[]>([])
+const currentTime = ref(Date.now())
+let noShowClock: ReturnType<typeof setInterval> | null = null
 
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
 const canCancel = computed(() =>
   ['pending_request', 'accepted', 'estimate_proposed'].includes(booking.value?.status ?? ''),
 )
+
+const canReportNoShow = computed(() => {
+  const currentBooking = booking.value
+  if (!currentBooking) return false
+  if (currentBooking.status !== 'accepted') return false
+  if (currentBooking.started_at || currentBooking.completed_at) return false
+  if (currentBooking.no_show_action) return false
+  const start = new Date(currentBooking.scheduled_start)
+  if (Number.isNaN(start.valueOf())) return false
+  return currentTime.value > start.getTime() + 30 * 60 * 1000
+})
 
 function isTerminal(status: string): boolean {
   return [
@@ -347,7 +453,12 @@ function statusInfo(status: string): string {
     paid_pending_start: 'Payment confirmed. Your cleaner will start soon.',
     scheduled: 'Your cleaner will start soon.',
     payment_authorized: 'Your cleaner will start soon.',
-    in_progress: 'Cleaning is in progress.',
+    in_progress: 'Cleaner has started cleaning.',
+    cleaner_no_show: "We'll help find another available cleaner.",
+    cancelled:
+      booking.value?.no_show_action === 'refund_requested'
+        ? 'Refund processed successfully'
+        : 'This booking has been cancelled.',
   }
   return map[status] ?? ''
 }
@@ -425,6 +536,75 @@ function closePayModal() {
   payModalError.value = ''
 }
 
+function openNoShowModal() {
+  noShowModalOpen.value = true
+  noShowError.value = ''
+  noShowSuccess.value = ''
+  replacementCleaners.value = []
+}
+
+function closeNoShowModal() {
+  if (noShowActionLoading.value) return
+  noShowModalOpen.value = false
+}
+
+function replacementSearchCity(locationText: string): string | undefined {
+  const parts = locationText
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+  return parts.length > 1 ? parts[parts.length - 2] : parts[0]
+}
+
+async function requestReplacementCleaner() {
+  if (!booking.value || noShowActionLoading.value) return
+  noShowActionLoading.value = 'replacement'
+  noShowError.value = ''
+  noShowSuccess.value = ''
+  replacementCleaners.value = []
+  try {
+    const updated = await reportCleanerNoShow(bookingId, 'replacement')
+    booking.value = updated
+    noShowSuccess.value = "We'll help find another available cleaner."
+
+    const start = new Date(updated.scheduled_start)
+    const date = Number.isNaN(start.valueOf()) ? undefined : updated.scheduled_start.slice(0, 10)
+    const time = Number.isNaN(start.valueOf()) ? undefined : updated.scheduled_start.slice(11, 16)
+    const matches = await searchCleaners({
+      serviceCategory: updated.category_snapshot ?? undefined,
+      availabilityDate: date,
+      availabilityTime: time,
+      city: replacementSearchCity(updated.location_text),
+      limit: 6,
+    })
+    replacementCleaners.value = matches
+      .filter((cleaner) => cleaner.user_id !== updated.cleaner_id)
+      .slice(0, 3)
+  } catch (e) {
+    noShowError.value =
+      e instanceof Error ? e.message : 'Failed to request another cleaner.'
+  } finally {
+    noShowActionLoading.value = null
+  }
+}
+
+async function requestNoShowRefund() {
+  if (!booking.value || noShowActionLoading.value) return
+  noShowActionLoading.value = 'refund'
+  noShowError.value = ''
+  noShowSuccess.value = ''
+  replacementCleaners.value = []
+  try {
+    const updated = await reportCleanerNoShow(bookingId, 'refund')
+    booking.value = updated
+    noShowSuccess.value = 'Refund processed successfully'
+  } catch (e) {
+    noShowError.value = e instanceof Error ? e.message : 'Failed to process refund.'
+  } finally {
+    noShowActionLoading.value = null
+  }
+}
+
 async function confirmPayment() {
   if (!booking.value || paymentProcessing.value) return
   paymentProcessing.value = true
@@ -472,6 +652,9 @@ watch(
 
 onMounted(async () => {
   await auth.init()
+  noShowClock = setInterval(() => {
+    currentTime.value = Date.now()
+  }, 30000)
   await refreshBooking()
   await messagesStore.loadBookingMessages(bookingId)
   messagesStore.subscribeToBookingMessages(bookingId)
@@ -491,6 +674,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  if (noShowClock) clearInterval(noShowClock)
   statusChannel.value?.unsubscribe()
   messagesStore.unsubscribeFromBookingMessages(bookingId)
 })
@@ -1077,6 +1261,30 @@ onBeforeUnmount(() => {
   font-size: 13px;
   color: #ba1a1a;
   margin: 0 0 0.75rem;
+}
+
+.replacement-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.replacement-row {
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  padding: 0.75rem;
+}
+
+.replacement-name {
+  margin: 0 0 0.25rem;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary, #000000);
+}
+
+.replacement-meta {
+  margin: 0;
+  font-size: 13px;
+  color: var(--secondary, #5e5e5e);
 }
 
 .modal-actions {

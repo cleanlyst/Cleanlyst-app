@@ -9,6 +9,9 @@ export interface BookingListRow {
   scheduled_end?: string | null
   status: BookingStatus
   payment_status?: string | null
+  started_at?: string | null
+  no_show_reported_at?: string | null
+  no_show_action?: string | null
   created_at: string
   quote_cents: number | null
   cleaner_id?: string | null
@@ -89,6 +92,16 @@ function normalizeBookingListRows(data: unknown): BookingListRow[] {
         row.payment_status === null || row.payment_status === undefined
           ? null
           : String(row.payment_status),
+      started_at:
+        row.started_at === null || row.started_at === undefined ? null : String(row.started_at),
+      no_show_reported_at:
+        row.no_show_reported_at === null || row.no_show_reported_at === undefined
+          ? null
+          : String(row.no_show_reported_at),
+      no_show_action:
+        row.no_show_action === null || row.no_show_action === undefined
+          ? null
+          : String(row.no_show_action),
       created_at: String(row.created_at ?? ''),
       quote_cents:
         row.quote_cents === null || row.quote_cents === undefined ? null : Number(row.quote_cents),
@@ -113,7 +126,7 @@ function normalizeBookingListRows(data: unknown): BookingListRow[] {
 }
 
 const BOOKING_LIST_SELECT =
-  'id, service_title_snapshot, scheduled_start, scheduled_end, location_text, status, payment_status, created_at, quote_cents, cleaner_id, requires_additional_payment, additional_payment_cents, initial_quote_cents, customer:profiles!customer_id(id, full_name, avatar_url)'
+  'id, service_title_snapshot, scheduled_start, scheduled_end, location_text, status, payment_status, started_at, no_show_reported_at, no_show_action, created_at, quote_cents, cleaner_id, requires_additional_payment, additional_payment_cents, initial_quote_cents, customer:profiles!customer_id(id, full_name, avatar_url)'
 
 export async function getMyBookings() {
   const supabase = getSupabaseClient()
@@ -232,8 +245,13 @@ export function cancelBooking(bookingId: string, note?: string) {
 
 export interface BookingDetailRow extends BookingListRow {
   customer_id: string
+  service_id?: string | null
+  category_snapshot?: string | null
   scheduled_end: string | null
   started_at?: string | null
+  completed_at?: string | null
+  cancelled_at?: string | null
+  cancellation_reason?: string | null
   paid_at?: string | null
   notes: string | null
   estimated_hours: number | null
@@ -301,12 +319,25 @@ function normalizeBookingDetailRow(raw: unknown): BookingDetailRow | null {
   return {
     ...normalizeBookingListRows([row])[0]!,
     customer_id: String(row.customer_id ?? ''),
+    service_id: row.service_id === null || row.service_id === undefined ? null : String(row.service_id),
+    category_snapshot:
+      row.category_snapshot === null || row.category_snapshot === undefined
+        ? null
+        : String(row.category_snapshot),
     scheduled_end:
       row.scheduled_end === null || row.scheduled_end === undefined
         ? null
         : String(row.scheduled_end),
     started_at:
       row.started_at === null || row.started_at === undefined ? null : String(row.started_at),
+    completed_at:
+      row.completed_at === null || row.completed_at === undefined ? null : String(row.completed_at),
+    cancelled_at:
+      row.cancelled_at === null || row.cancelled_at === undefined ? null : String(row.cancelled_at),
+    cancellation_reason:
+      row.cancellation_reason === null || row.cancellation_reason === undefined
+        ? null
+        : String(row.cancellation_reason),
     paid_at:
       row.paid_at === null || row.paid_at === undefined ? null : String(row.paid_at),
     notes: row.notes === null || row.notes === undefined ? null : String(row.notes),
@@ -382,6 +413,30 @@ export async function completeBooking(bookingId: string): Promise<BookingDetailR
   if (error) throw error
   const booking = normalizeBookingDetailRow(data)
   if (!booking) throw new Error('Failed to complete booking.')
+  return booking
+}
+
+export async function startBooking(bookingId: string): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('start_booking', { p_booking_id: bookingId })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to start booking.')
+  return booking
+}
+
+export async function reportCleanerNoShow(
+  bookingId: string,
+  action: 'replacement' | 'refund',
+): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('report_cleaner_no_show', {
+    p_booking_id: bookingId,
+    p_action: action,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to update no-show report.')
   return booking
 }
 

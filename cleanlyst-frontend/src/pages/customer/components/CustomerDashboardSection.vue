@@ -110,6 +110,7 @@ export interface BookingWithCleaner {
   quote_cents: number | null
   cleaner_name: string | null
   cleaner_id: string | null
+  no_show_action?: string | null
 }
 
 const auth = useAuthStore()
@@ -124,6 +125,7 @@ const UPCOMING_STATUSES = [
   'payment_authorized',
   'in_progress',
   'completion_pending_customer',
+  'cleaner_no_show',
 ]
 
 const PAST_STATUSES = ['completed', 'declined', 'cleaner_declined', 'cancelled', 'disputed', 'refunded']
@@ -169,7 +171,18 @@ const nextCleanLabel = computed(() => {
 
 function statusClass(status: string): string {
   if (['pending_request', 'accepted', 'estimate_proposed'].includes(status)) return 'pill--pending'
-  if (['paid_pending_start', 'scheduled', 'payment_authorized', 'in_progress', 'awaiting_customer_payment', 'completion_pending_customer'].includes(status)) return 'pill--active'
+  if (
+    [
+      'paid_pending_start',
+      'scheduled',
+      'payment_authorized',
+      'in_progress',
+      'awaiting_customer_payment',
+      'completion_pending_customer',
+      'cleaner_no_show',
+    ].includes(status)
+  )
+    return 'pill--active'
   if (status === 'completed') return 'pill--completed'
   return 'pill--cancelled'
 }

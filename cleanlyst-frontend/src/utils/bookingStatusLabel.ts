@@ -4,10 +4,11 @@ export interface StatusLabelInput {
   status: string
   payment_status?: string | null
   requires_additional_payment?: boolean | null
+  no_show_action?: string | null
 }
 
 export function getBookingStatusLabel(booking: StatusLabelInput, role: BookingRole = 'customer'): string {
-  const { status, payment_status, requires_additional_payment } = booking
+  const { status, payment_status, requires_additional_payment, no_show_action } = booking
 
   switch (status) {
     case 'pending_request':
@@ -34,7 +35,12 @@ export function getBookingStatusLabel(booking: StatusLabelInput, role: BookingRo
       return 'Scheduled'
 
     case 'in_progress':
-      return 'Cleaning In Progress'
+      return role === 'customer' ? 'Cleaner has started cleaning' : 'Cleaning in progress'
+
+    case 'cleaner_no_show':
+      if (role === 'cleaner') return 'Booking marked as no-show'
+      if (role === 'admin') return 'Cleaner no-show'
+      return 'Replacement cleaner requested'
 
     case 'completion_pending_customer':
       return role === 'customer' ? 'Confirm Completion' : 'Awaiting Confirmation'
@@ -43,6 +49,7 @@ export function getBookingStatusLabel(booking: StatusLabelInput, role: BookingRo
       return 'Completed'
 
     case 'cancelled':
+      if (no_show_action === 'refund_requested') return 'Refunded'
       return 'Cancelled'
 
     case 'declined':
@@ -71,6 +78,7 @@ export function getStatusPillClass(status: string): string {
       'scheduled',
       'in_progress',
       'completion_pending_customer',
+      'cleaner_no_show',
     ].includes(status)
   )
     return 'status-pill--active'

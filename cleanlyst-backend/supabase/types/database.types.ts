@@ -17,6 +17,10 @@ export type DocumentType = 'id_document' | 'dbs_document' | 'insurance_document'
 export type DocumentStatus = 'pending' | 'approved' | 'rejected'
 export type BookingStatus =
   | 'pending_request'
+  | 'accepted'
+  | 'declined'
+  | 'paid_pending_start'
+  | 'scheduled'
   | 'estimate_proposed'
   | 'awaiting_customer_payment'
   | 'payment_authorized'
@@ -25,6 +29,7 @@ export type BookingStatus =
   | 'completed'
   | 'cancelled'
   | 'cleaner_declined'
+  | 'cleaner_no_show'
   | 'refunded'
   | 'disputed'
 export type PaymentStatus = 'unpaid' | 'authorized' | 'captured' | 'refunded' | 'failed'
@@ -60,6 +65,7 @@ export interface CleanerProfile {
   average_rating: number | null
   total_reviews: number
   total_jobs_completed: number
+  total_earnings_cents: number
   created_at: string
   updated_at: string
 }
@@ -119,9 +125,12 @@ export interface Booking {
   stripe_payment_intent_id: string | null
   status: BookingStatus
   payment_status: PaymentStatus
+  no_show_reported_at: string | null
+  no_show_action: string | null
   booking_request_id: string | null
   estimated_hours: number | null
   accepted_at: string | null
+  started_at: string | null
   completed_at: string | null
   customer_confirmed_completed_at: string | null
   dispute_opened_at: string | null
@@ -178,6 +187,8 @@ export interface Payment {
   status: PaymentStatus
   amount_cents: number
   currency: string
+  platform_fee_cents: number | null
+  cleaner_payout_cents: number | null
   authorized_at: string | null
   captured_at: string | null
   refunded_at: string | null
@@ -208,6 +219,8 @@ export interface Notification {
   type: string
   title: string
   body: string | null
+  booking_id: string | null
+  metadata: Record<string, unknown>
   read_at: string | null
   created_at: string
 }
@@ -313,6 +326,9 @@ export interface Database {
         Returns: Booking
       }
       accept_booking: { Args: { p_booking_id: string }; Returns: Booking }
+      start_booking: { Args: { p_booking_id: string }; Returns: Booking }
+      complete_booking: { Args: { p_booking_id: string }; Returns: Booking }
+      report_cleaner_no_show: { Args: { p_booking_id: string; p_action: 'replacement' | 'refund' }; Returns: Booking }
     }
   }
 }

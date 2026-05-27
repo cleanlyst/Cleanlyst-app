@@ -1,6 +1,26 @@
 import type { CleanerApplication } from '@/types/domain'
 import { getSupabaseClient } from '@/services/supabaseClient'
 
+export async function createCleanerApplication(): Promise<CleanerApplication> {
+  const supabase = getSupabaseClient()
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+  if (!userData.user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('cleaner_applications')
+    .insert({
+      cleaner_id: userData.user.id,
+      status: 'draft',
+      current_step: 'documents',
+    })
+    .select('*')
+    .single()
+
+  if (error) throw error
+  return data as CleanerApplication
+}
+
 export async function getMyCleanerApplication() {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
@@ -40,6 +60,15 @@ export async function submitCleanerApplication(applicationId: string) {
   return data as CleanerApplication
 }
 
+export function buildDocStoragePath(
+  userId: string,
+  applicationId: string,
+  documentType: string,
+  fileName: string,
+): string {
+  return `${userId}/${applicationId}/${documentType}/${Date.now()}-${fileName}`
+}
+
 export async function uploadCleanerDocument(
   userId: string,
   fileName: string,
@@ -48,7 +77,7 @@ export async function uploadCleanerDocument(
   documentType: 'id_document' | 'dbs_document' | 'insurance_document',
 ) {
   const supabase = getSupabaseClient()
-  const path = `${userId}/${applicationId}/${documentType}/${Date.now()}-${fileName}`
+  const path = buildDocStoragePath(userId, applicationId, documentType, fileName)
 
   const { error: storageError } = await supabase.storage
     .from('cleaner-documents')

@@ -37,6 +37,7 @@ export const useAuthStore = defineStore('auth', {
     userId: null as string | null,
     profile: null as Profile | null,
     cleanerProfile: null as CleanerProfile | null,
+    cleanerApplicationStatus: null as string | null,
     loading: true,
     initialized: false,
     authSubscription: null as Subscription | null,
@@ -76,6 +77,7 @@ export const useAuthStore = defineStore('auth', {
         this.userId = null
         this.profile = null
         this.cleanerProfile = null
+        this.cleanerApplicationStatus = null
         this.loading = false
         this.initialized = true
         return
@@ -92,6 +94,7 @@ export const useAuthStore = defineStore('auth', {
         this.userId = null
         this.profile = null
         this.cleanerProfile = null
+        this.cleanerApplicationStatus = null
         this.loading = false
         this.initialized = true
         return
@@ -100,6 +103,7 @@ export const useAuthStore = defineStore('auth', {
       this.userId = data.user?.id ?? null
       this.profile = null
       this.cleanerProfile = null
+      this.cleanerApplicationStatus = null
 
       if (this.userId) {
         const { data: profile, error: profileError } = await supabase
@@ -126,6 +130,15 @@ export const useAuthStore = defineStore('auth', {
           } else {
             this.cleanerProfile = cleanerProfile as CleanerProfile | null
           }
+
+          const { data: appRow } = await supabase
+            .from('cleaner_applications')
+            .select('status')
+            .eq('cleaner_id', this.userId)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          this.cleanerApplicationStatus = appRow?.status ?? null
         }
       }
 
@@ -141,6 +154,7 @@ export const useAuthStore = defineStore('auth', {
       // Use the user returned by signInWithPassword directly — avoids a redundant
       // getUser() round-trip that init() would make for a session we just established.
       this.userId = data.user.id
+      this.cleanerApplicationStatus = null
       this.loading = true
       try {
         await this._loadProfileData(data.user.id)
@@ -268,6 +282,7 @@ export const useAuthStore = defineStore('auth', {
       this.userId = null
       this.profile = null
       this.cleanerProfile = null
+      this.cleanerApplicationStatus = null
     },
 
     hasRole(role: Role) {
@@ -295,8 +310,18 @@ export const useAuthStore = defineStore('auth', {
 
         if (cleanerError) throw cleanerError
         this.cleanerProfile = cleanerProfile as CleanerProfile | null
+
+        const { data: appRow } = await supabase
+          .from('cleaner_applications')
+          .select('status')
+          .eq('cleaner_id', userId)
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        this.cleanerApplicationStatus = appRow?.status ?? null
       } else {
         this.cleanerProfile = null
+        this.cleanerApplicationStatus = null
       }
     },
 
@@ -326,6 +351,7 @@ export const useAuthStore = defineStore('auth', {
           this.userId = null
           this.profile = null
           this.cleanerProfile = null
+          this.cleanerApplicationStatus = null
           return
         }
 

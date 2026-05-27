@@ -1,7 +1,19 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { pinia } from '@/stores'
 import type { Role } from '@/stores/auth'
+
+const CLEANER_PROTECTED_ROUTES = [
+  'CleanerDashboard',
+  'CleanerBookings',
+  'CleanerBookingDetails',
+  'CleanerAvailability',
+  'CleanerServicesPricing',
+  'CleanerFinancials',
+  'CleanerReviews',
+  'CleanerProfile',
+]
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -160,6 +172,26 @@ const router = createRouter({
       name: 'CustomerBookingDetails',
       meta: { title: 'Booking Details', requiresAuth: true, requiresRole: 'customer' },
       component: () => import('../pages/customer/CustomerBookingDetailsPage.vue'),
+    },
+    {
+      path: '/cleaner/onboarding',
+      name: 'CleanerOnboarding',
+      meta: {
+        title: 'Cleaner Onboarding',
+        requiresAuth: true,
+        requiresRole: ['cleaner_pending', 'cleaner_active'],
+      },
+      component: () => import('../pages/cleaner/CleanerOnboarding.vue'),
+    },
+    {
+      path: '/cleaner/pending-review',
+      name: 'CleanerPendingReview',
+      meta: {
+        title: 'Application Under Review',
+        requiresAuth: true,
+        requiresRole: ['cleaner_pending', 'cleaner_active'],
+      },
+      component: () => import('../pages/cleaner/CleanerPendingReview.vue'),
     },
     {
       path: '/cleaner/dashboard',
@@ -341,6 +373,33 @@ router.beforeEach(async (to) => {
       : [to.meta.requiresRole]
 
     if (allowedRoles.some((role) => auth.hasRole(role))) {
+      // Cleaner dashboard access guard — redirect unapproved cleaners
+      if (CLEANER_PROTECTED_ROUTES.includes(to.name as string)) {
+        const isApproved = auth.cleanerProfile?.onboarding_complete === true
+        if (!isApproved) {
+          const appStatus = auth.cleanerApplicationStatus
+          if (appStatus && ['submitted', 'under_review', 'needs_info'].includes(appStatus)) {
+            return { name: 'CleanerPendingReview' }
+          }
+          return { name: 'CleanerOnboarding' }
+        }
+      }
+
+      // Customer setup guard — redirect to onboarding if not yet completed
+      if (
+        auth.hasRole('customer') &&
+        to.name !== 'CustomerOnboarding' &&
+        to.meta.requiresRole === 'customer'
+      ) {
+        const prefsStore = useCustomerPreferencesStore(pinia)
+        if (!prefsStore.preferences && !prefsStore.loading) {
+          await prefsStore.load()
+        }
+        if (!prefsStore.preferences?.setup_completed_at) {
+          return { name: 'CustomerOnboarding' }
+        }
+      }
+
       return
     }
 

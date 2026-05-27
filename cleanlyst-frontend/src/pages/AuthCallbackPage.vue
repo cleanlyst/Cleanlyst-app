@@ -37,7 +37,9 @@ onMounted(async () => {
     }
 
     const signupRole = route.query.signupRole
-    if (signupRole === 'customer' || signupRole === 'cleaner_pending') {
+    const isSignup = signupRole === 'customer' || signupRole === 'cleaner_pending'
+
+    if (isSignup) {
       const businessName = route.query.businessName
       await auth.provisionOAuthSignup(
         signupRole,
@@ -48,6 +50,11 @@ onMounted(async () => {
     const redirect = route.query.redirect
     if (typeof redirect === 'string' && isSafeRedirectPath(redirect) && auth.hasRole('customer')) {
       await router.replace(redirect)
+      return
+    }
+
+    if (isSignup && auth.hasRole('customer')) {
+      await router.replace({ name: 'CustomerOnboarding' })
       return
     }
 

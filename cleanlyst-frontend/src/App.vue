@@ -9,7 +9,7 @@
         </div>
         <nav class="app-nav" aria-label="Primary site navigation">
           <router-link
-            v-if="auth.isAuthenticated"
+            v-if="showDashboardLink"
             :to="dashboardRoute"
             :class="['app-nav__link', { 'app-nav__link--active': isDashboardRoute }]"
           >
@@ -125,7 +125,7 @@
             My bookings
           </router-link>
           <router-link
-            v-if="auth.isAuthenticated"
+            v-if="showDashboardLink"
             :to="dashboardRoute"
             :class="['app-nav__link', { 'app-nav__link--active': isDashboardRoute }]"
           >
@@ -202,6 +202,14 @@ const dashboardRoute = computed<RouteLocationRaw>(() =>
 const isDashboardRoute = computed(
   () => typeof route.name === 'string' && route.name.includes('Dashboard'),
 )
+// Hide the Dashboard link for cleaners who are still pending approval.
+// Customers and admins always see it; a cleaner only sees it once approved.
+const showDashboardLink = computed(() => {
+  if (!auth.isAuthenticated) return false
+  const isCleanerRole = auth.hasRole('cleaner_pending') || auth.hasRole('cleaner_active')
+  if (!isCleanerRole) return true
+  return auth.cleanerProfile?.onboarding_complete === true
+})
 const notificationRouteError = ref('')
 let notificationRouteErrorTimeout: ReturnType<typeof setTimeout> | null = null
 

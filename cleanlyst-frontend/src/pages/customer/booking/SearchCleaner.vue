@@ -186,7 +186,13 @@
             <input
               v-model="addressLine1"
               type="text"
-              placeholder="Address line"
+              placeholder="Address line 1"
+              class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none mb-2"
+            />
+            <input
+              v-model="addressLine2"
+              type="text"
+              placeholder="Address line 2 (optional)"
               class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none mb-2"
             />
             <div class="grid grid-cols-2 gap-2">
@@ -221,6 +227,15 @@
               class="w-full p-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none resize-none"
             ></textarea>
           </div>
+          <!-- Save as preferences -->
+          <label v-if="prefsChanged" class="flex items-center gap-3 cursor-pointer">
+            <input
+              v-model="saveAsPreferences"
+              type="checkbox"
+              class="w-4 h-4 accent-zinc-900"
+            />
+            <span class="font-label-md text-label-md text-primary text-sm">Save as my preferences</span>
+          </label>
         </div>
       </section>
 
@@ -551,11 +566,25 @@ const bedrooms = ref('')
 const bathrooms = ref('')
 const notes = ref('')
 const addressLine1 = ref('')
+const addressLine2 = ref('')
 const addressCity = ref('')
 const addressPostcode = ref('')
+const saveAsPreferences = ref(false)
 const cityOutsideRollout = computed(
   () => !!addressCity.value.trim() && !isCityEnabled(addressCity.value),
 )
+
+const prefsChanged = computed(() => {
+  const p = prefsStore.preferences
+  if (!p) return true
+  return (
+    addressLine1.value !== (p.address_line_1 ?? '') ||
+    addressLine2.value !== (p.address_line_2 ?? '') ||
+    addressCity.value !== (p.city ?? '') ||
+    addressPostcode.value !== (p.postcode ?? '') ||
+    notes.value !== (p.notes ?? '')
+  )
+})
 
 // Step 4
 const loadingCleaners = ref(false)
@@ -579,7 +608,7 @@ const selectedServiceLabel = computed(
 )
 
 const locationText = computed(() =>
-  [addressLine1.value, addressCity.value, addressPostcode.value].filter(Boolean).join(', '),
+  [addressLine1.value, addressLine2.value, addressCity.value, addressPostcode.value].filter(Boolean).join(', '),
 )
 
 const propertyLabel = computed(() => {
@@ -851,6 +880,21 @@ async function confirmAndPay() {
     if (!booking?.id) throw new Error('Booking creation failed — no ID returned')
 
     await processPaymentDirect(booking.id)
+
+    if (saveAsPreferences.value) {
+      try {
+        await prefsStore.save({
+          address_line_1: addressLine1.value || null,
+          address_line_2: addressLine2.value || null,
+          city: addressCity.value || null,
+          postcode: addressPostcode.value || null,
+          notes: notes.value || null,
+        })
+      } catch {
+        // Non-fatal — booking succeeded, preferences save failure is acceptable
+      }
+    }
+
     paymentSuccess.value = true
   } catch (e) {
     payError.value = e instanceof Error ? e.message : JSON.stringify(e)
@@ -867,8 +911,10 @@ onMounted(async () => {
   const p = prefsStore.preferences
   if (p) {
     addressLine1.value = p.address_line_1 ?? ''
+    addressLine2.value = p.address_line_2 ?? ''
     addressCity.value = p.city ?? ''
     addressPostcode.value = p.postcode ?? ''
+    notes.value = p.notes ?? ''
   }
 })
 </script>

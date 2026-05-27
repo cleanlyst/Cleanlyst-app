@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { CleanerApplication } from '@/types/domain'
 import {
+  createCleanerApplication,
   getMyCleanerApplication,
   saveCleanerApplication,
   submitCleanerApplication,
@@ -16,6 +17,15 @@ export const useCleanerApplicationStore = defineStore('cleanerApplication', {
       this.loading = true
       try {
         this.application = await getMyCleanerApplication()
+      } finally {
+        this.loading = false
+      }
+    },
+    async createOrLoad() {
+      this.loading = true
+      try {
+        const existing = await getMyCleanerApplication()
+        this.application = existing ?? (await createCleanerApplication())
       } finally {
         this.loading = false
       }

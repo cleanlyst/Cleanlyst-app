@@ -64,6 +64,11 @@
                 Location & Date
               </th>
               <th
+                class="px-6 py-4 font-label-md text-label-md text-on-surface-variant hidden lg:table-cell"
+              >
+                Documents
+              </th>
+              <th
                 class="px-6 py-4 font-label-md text-label-md text-on-surface-variant hidden md:table-cell"
               >
                 Status
@@ -121,6 +126,14 @@
                 <div class="font-body text-body text-on-surface">{{ app.city ?? '—' }}</div>
                 <div class="font-caption text-caption text-on-surface-variant">
                   Applied: {{ formatDate(app.submitted_at ?? app.updated_at) }}
+                </div>
+              </td>
+
+              <td class="px-6 py-6 hidden lg:table-cell">
+                <div class="flex flex-col gap-1 text-caption">
+                  <span :class="docPillClass(app.doc_id)">ID</span>
+                  <span :class="docPillClass(app.doc_insurance)">Insurance</span>
+                  <span :class="docPillClass(app.doc_dbs)">DBS</span>
                 </div>
               </td>
 
@@ -215,15 +228,26 @@
             <p class="font-label-md text-label-md">{{ reviewModal.full_name }}</p>
             <p class="text-caption text-on-surface-variant">{{ reviewModal.city ?? '—' }}</p>
             <p class="text-caption text-on-surface-variant mt-1">
-              Applied: {{ formatDate(reviewModal.submitted_at ?? reviewModal.updated_at) }}
+              Submitted: {{ formatDate(reviewModal.submitted_at ?? reviewModal.updated_at) }}
             </p>
+          </div>
+
+          <!-- Document status in modal -->
+          <div class="mb-4 border border-outline-variant rounded p-3 space-y-2">
+            <p class="font-label-md text-label-md mb-2">Documents</p>
+            <div v-for="doc in modalDocStatus" :key="doc.type" class="flex items-center justify-between text-caption">
+              <span class="text-on-surface">{{ doc.label }}</span>
+              <span :class="doc.submitted ? 'text-green-700 font-medium' : 'text-on-surface-variant'">
+                {{ doc.submitted ? 'Submitted' : 'Pending' }}
+              </span>
+            </div>
           </div>
 
           <div class="mb-4">
             <label for="review-notes" class="block font-label-md text-label-md mb-1">
               Notes
               <span class="font-caption text-on-surface-variant ml-1"
-                >(required for rejection — min 10 chars)</span
+                >(required for decline — min 10 chars)</span
               >
             </label>
             <textarea
@@ -231,11 +255,12 @@
               v-model="reviewNotes"
               rows="3"
               class="w-full p-3 border border-outline-variant rounded font-body text-body focus:border-primary focus:ring-0 outline-none"
-              placeholder="Optional for approve/needs-info. Required reason for rejection..."
+              placeholder="Optional for approve/request changes. Required reason for decline..."
             ></textarea>
           </div>
 
           <p v-if="reviewError" class="text-caption text-red-600 mb-3">{{ reviewError }}</p>
+          <p v-if="reviewSuccess" class="text-caption text-green-700 mb-3">{{ reviewSuccess }}</p>
 
           <div class="flex gap-3">
             <button
@@ -246,18 +271,18 @@
               {{ reviewLoading === 'approved' ? 'Approving…' : 'Approve' }}
             </button>
             <button
-              class="flex-1 py-3 border border-red-600 text-red-600 font-label-md hover:bg-red-50 transition-colors disabled:opacity-50"
-              :disabled="!!reviewLoading"
-              @click="submitReview('rejected')"
-            >
-              {{ reviewLoading === 'rejected' ? 'Rejecting…' : 'Reject' }}
-            </button>
-            <button
               class="flex-1 py-3 border border-outline-variant font-label-md hover:bg-surface-container transition-colors disabled:opacity-50"
               :disabled="!!reviewLoading"
               @click="submitReview('needs_info')"
             >
-              {{ reviewLoading === 'needs_info' ? '…' : 'Needs Info' }}
+              {{ reviewLoading === 'needs_info' ? '…' : 'Request Changes' }}
+            </button>
+            <button
+              class="flex-1 py-3 border border-red-600 text-red-600 font-label-md hover:bg-red-50 transition-colors disabled:opacity-50"
+              :disabled="!!reviewLoading"
+              @click="submitReview('rejected')"
+            >
+              {{ reviewLoading === 'rejected' ? 'Declining…' : 'Decline' }}
             </button>
           </div>
         </div>
@@ -293,6 +318,15 @@ interface ApplicationRow {
   email: string | null
   avatar_url: string | null
   city: string | null
+  doc_id: boolean
+  doc_insurance: boolean
+  doc_dbs: boolean
+}
+
+interface ModalDocStatus {
+  type: string
+  label: string
+  submitted: boolean
 }
 
 const loading = ref(false)
@@ -311,6 +345,8 @@ const reviewModal = ref<ApplicationRow | null>(null)
 const reviewNotes = ref('')
 const reviewLoading = ref<string | null>(null)
 const reviewError = ref('')
+const reviewSuccess = ref('')
+const modalDocStatus = ref<ModalDocStatus[]>([])
 
 let searchTimeout: ReturnType<typeof setTimeout>
 
@@ -358,17 +394,39 @@ async function loadApplications() {
     if (error) throw error
 
     const rows = (data ?? []) as CleanerApplicationQueryRow[]
+    const appIds = rows.map((r) => r.id)
+
+    // Bulk-fetch document types for all applications in this page
+    const docMap = new Map<string, Set<string>>()
+    if (appIds.length > 0) {
+      const supabase = requireSupabase()
+      const { data: docData } = await supabase
+        .from('cleaner_application_documents')
+        .select('application_id, document_type')
+        .in('application_id', appIds)
+      for (const d of docData ?? []) {
+        if (!docMap.has(d.application_id)) docMap.set(d.application_id, new Set())
+        docMap.get(d.application_id)!.add(d.document_type)
+      }
+    }
+
     applications.value = rows
-      .map((row) => ({
-        id: row.id,
-        status: row.status,
-        submitted_at: row.submitted_at ?? null,
-        updated_at: row.updated_at,
-        full_name: row.profiles?.full_name ?? null,
-        email: null,
-        avatar_url: row.profiles?.avatar_url ?? null,
-        city: row.profiles?.city ?? null,
-      }))
+      .map((row) => {
+        const docTypes = docMap.get(row.id) ?? new Set<string>()
+        return {
+          id: row.id,
+          status: row.status,
+          submitted_at: row.submitted_at ?? null,
+          updated_at: row.updated_at,
+          full_name: row.profiles?.full_name ?? null,
+          email: null,
+          avatar_url: row.profiles?.avatar_url ?? null,
+          city: row.profiles?.city ?? null,
+          doc_id: docTypes.has('id_document'),
+          doc_insurance: docTypes.has('insurance_document'),
+          doc_dbs: docTypes.has('dbs_document'),
+        }
+      })
       .filter((app: ApplicationRow) => {
         if (!searchQuery.value) return true
         const q = searchQuery.value.toLowerCase()
@@ -401,6 +459,12 @@ function goToPage(n: number) {
   loadApplications()
 }
 
+function docPillClass(submitted: boolean): string {
+  return submitted
+    ? 'status-pill pill--completed'
+    : 'status-pill pill--pending'
+}
+
 function statusPillClass(status: string): string {
   const map: Record<string, string> = {
     submitted: 'pill--pending',
@@ -416,21 +480,38 @@ function openReview(app: ApplicationRow) {
   reviewModal.value = app
   reviewNotes.value = ''
   reviewError.value = ''
+  modalDocStatus.value = [
+    { type: 'id_document', label: 'Identity', submitted: app.doc_id },
+    { type: 'insurance_document', label: 'Insurance', submitted: app.doc_insurance },
+    { type: 'dbs_document', label: 'DBS', submitted: app.doc_dbs },
+  ]
 }
 
 function closeReview() {
   reviewModal.value = null
+  reviewSuccess.value = ''
 }
 
 async function submitReview(action: 'approved' | 'rejected' | 'needs_info') {
   if (!reviewModal.value) return
   reviewLoading.value = action
   reviewError.value = ''
+  reviewSuccess.value = ''
+  const appId = reviewModal.value.id
   try {
-    await reviewCleanerApplication(reviewModal.value.id, action, reviewNotes.value || undefined)
-    applications.value = applications.value.filter((a) => a.id !== reviewModal.value!.id)
-    totalCount.value = Math.max(0, totalCount.value - 1)
-    closeReview()
+    if (action === 'needs_info') {
+      await reviewCleanerApplication(appId, action, undefined, reviewNotes.value || undefined)
+      // Update the row in-place (stays in list under 'needs_info' status)
+      const idx = applications.value.findIndex((a) => a.id === appId)
+      if (idx !== -1) applications.value[idx] = { ...applications.value[idx], status: 'needs_info' }
+      reviewSuccess.value = 'Changes requested — the cleaner has been notified.'
+    } else {
+      await reviewCleanerApplication(appId, action, reviewNotes.value || undefined)
+      // Remove from list — approved/rejected applications leave the pending queue
+      applications.value = applications.value.filter((a) => a.id !== appId)
+      totalCount.value = Math.max(0, totalCount.value - 1)
+      closeReview()
+    }
   } catch (e) {
     reviewError.value = e instanceof Error ? e.message : 'Action failed.'
   } finally {

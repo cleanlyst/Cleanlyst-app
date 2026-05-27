@@ -318,6 +318,11 @@ async function redirectAfterAuth() {
     return
   }
 
+  if (auth.hasRole('customer')) {
+    await router.replace({ name: 'CustomerOnboarding' })
+    return
+  }
+
   await router.replace({ name: auth.dashboardRouteName })
 }
 </script>

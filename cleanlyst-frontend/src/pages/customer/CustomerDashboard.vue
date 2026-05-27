@@ -23,10 +23,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { RealtimeSubscription } from '@/lib/realtime'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useCustomerBookings } from '@/composables/useCustomerBookings'
+import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { transitionBookingState } from '@/services/bookingService'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { customerDashboardLinks } from '@/pages/dasboardLinks'
@@ -37,7 +38,9 @@ import CustomerPreferencesSection from './components/CustomerPreferencesSection.
 import CustomerSettingsSection from './components/CustomerSettingsSection.vue'
 
 const auth = useAuthStore()
+const router = useRouter()
 const route = useRoute()
+const prefsStore = useCustomerPreferencesStore()
 const { bookings, loading, errorMessage, bookingTotals, load, cancel } = useCustomerBookings()
 const actionLoadingId = ref<string | null>(null)
 const realtimeChannel = ref<RealtimeSubscription | null>(null)
@@ -47,6 +50,13 @@ const activeRouteName = computed(() =>
 )
 
 onMounted(async () => {
+  // Guard: redirect to onboarding if setup has not been completed
+  await prefsStore.load()
+  if (!prefsStore.preferences?.setup_completed_at) {
+    await router.replace({ name: 'CustomerOnboarding' })
+    return
+  }
+
   await loadBookings()
   if (auth.userId && !realtimeChannel.value) {
     realtimeChannel.value = subscribeToTable('customer-dashboard-bookings', {

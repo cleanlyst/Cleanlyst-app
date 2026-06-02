@@ -122,7 +122,7 @@
               type="button"
               @click="handleMarkCompleted(b.id)"
             >
-              Complete Cleaning
+              End Cleaning
             </button>
             <router-link
               :to="{ name: 'CleanerBookingDetails', params: { bookingId: b.id } }"
@@ -238,7 +238,7 @@ function canStartCleaning(booking: { status: string; payment_status: string | nu
   if (booking.status !== 'accepted' || booking.payment_status !== 'captured') return false
   const start = new Date(booking.scheduled_start)
   if (Number.isNaN(start.valueOf())) return false
-  return Date.now() >= start.getTime() - 30 * 60 * 1000
+  return Date.now() >= start.getTime() - 60 * 60 * 1000
 }
 
 const formatDate = formatDateTime

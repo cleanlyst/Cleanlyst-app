@@ -145,7 +145,7 @@
               :disabled="actionLoading"
               @click="openNoShowModal"
             >
-              Cleaner Did Not Attend
+              Cleaner Didn't Show
             </button>
 
             <div
@@ -453,7 +453,7 @@ function statusInfo(status: string): string {
     paid_pending_start: 'Payment confirmed. Your cleaner will start soon.',
     scheduled: 'Your cleaner will start soon.',
     payment_authorized: 'Your cleaner will start soon.',
-    in_progress: 'Cleaner has started cleaning.',
+    in_progress: 'Cleaner is currently cleaning.',
     cleaner_no_show: "We'll help find another available cleaner.",
     cancelled:
       booking.value?.no_show_action === 'refund_requested'

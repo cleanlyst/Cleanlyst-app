@@ -201,10 +201,12 @@ export async function createBookingRequest(input: BookingRequestInput): Promise<
   if (error) throw error
   const booking = data as { id: string }
 
-  // Persist immutable financial snapshot so admin fee changes never affect past bookings
+  // Persist immutable financial snapshot so admin fee changes never affect past bookings.
+  // record_initial_payment (security definer) provides a server-side fallback if this
+  // client-side upsert fails for any reason.
   if (input.financials) {
     const f = input.financials
-    await supabase.from('booking_financials').upsert({
+    const { error: finError } = await supabase.from('booking_financials').upsert({
       booking_id: booking.id,
       service_price_cents: f.servicePriceCents,
       booking_fee_cents: f.bookingFeeCents,
@@ -218,6 +220,19 @@ export async function createBookingRequest(input: BookingRequestInput): Promise<
       platform_fee_cents: f.platformRevenueCents,
       currency: input.currency ?? 'GBP',
     })
+    if (finError) {
+      // Non-fatal: server-side fallback in record_initial_payment will write the snapshot.
+      console.warn('[Pricing] booking_financials client write failed (server will retry):', finError.message)
+    } else {
+      console.log('[Pricing] booking_financials snapshot written:', {
+        bookingId: booking.id,
+        servicePriceCents: f.servicePriceCents,
+        bookingFeeCents: f.bookingFeeCents,
+        commissionCents: f.cleanerCommissionCents,
+        cleanerPayoutCents: f.cleanerPayoutCents,
+        platformRevenueCents: f.platformRevenueCents,
+      })
+    }
   }
 
   return booking
@@ -413,6 +428,12 @@ export async function completeBooking(bookingId: string): Promise<BookingDetailR
   if (error) throw error
   const booking = normalizeBookingDetailRow(data)
   if (!booking) throw new Error('Failed to complete booking.')
+  console.log('[Booking] Completed:', {
+    bookingId,
+    cleanerPayoutCents: booking.cleaner_payout_cents,
+    quoteCents: booking.quote_cents,
+    bookingFinancials: booking.booking_financials,
+  })
   return booking
 }
 
@@ -472,11 +493,18 @@ export async function processPaymentDirect(bookingId: string): Promise<BookingDe
   // Simulate payment gateway delay
   await new Promise((resolve) => setTimeout(resolve, 2500))
 
-  const { error } = await supabase.rpc('record_initial_payment', {
+  const { data: paymentResult, error } = await supabase.rpc('record_initial_payment', {
     p_booking_id: bookingId,
   })
 
   if (error) throw new Error(error.message ?? 'Payment processing failed')
+
+  const pr = paymentResult as { quote_cents?: number; payment_status?: string } | null
+  console.log('[Payment] record_initial_payment completed:', {
+    bookingId,
+    amountCents: pr?.quote_cents,
+    paymentStatus: pr?.payment_status,
+  })
 
   const updated = await getBookingById(bookingId)
   if (!updated) throw new Error('Payment recorded but failed to fetch updated booking.')
@@ -498,6 +526,23 @@ export async function recordAdditionalPayment(bookingId: string): Promise<Bookin
   const updated = await getBookingById(bookingId)
   if (!updated) throw new Error('Payment recorded but failed to fetch updated booking.')
   return updated
+}
+
+export async function reassignBooking(
+  bookingId: string,
+  newCleanerId: string,
+  note?: string,
+): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('reassign_booking', {
+    p_booking_id: bookingId,
+    p_new_cleaner_id: newCleanerId,
+    p_note: note ?? null,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to reassign booking.')
+  return booking
 }
 
 export async function proposeEstimate(

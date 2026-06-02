@@ -155,7 +155,7 @@
                   @click="emit('end', b.id)"
                 >
                   <span v-if="loadingId === b.id" class="btn-spinner"></span>
-                  <span v-else>Complete Cleaning</span>
+                  <span v-else>End Cleaning</span>
                 </button>
               </template>
 
@@ -240,8 +240,8 @@ function isWithinStartWindow(b: CarouselBooking): boolean {
   if (!isPaidAndStartable(b)) return false
   const start = new Date(b.scheduled_start)
   const now = new Date()
-  const isWithin30Min = now.getTime() >= start.getTime() - 30 * 60 * 1000
-  return isWithin30Min
+  const isWithin60Min = now.getTime() >= start.getTime() - 60 * 60 * 1000
+  return isWithin60Min
 }
 
 function countdownText(scheduledStart: string): string {

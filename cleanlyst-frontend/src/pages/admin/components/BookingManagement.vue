@@ -10,6 +10,69 @@
 
     <p v-if="errorMessage" class="mb-4 text-caption text-red-600">{{ errorMessage }}</p>
 
+    <!-- Reassign Modal -->
+    <AppModal v-model="showReassignModal" title="Reassign Cleaner" size="lg">
+      <div class="reassign-modal-body">
+        <div v-if="reassignBookingInfo" class="reassign-booking-info">
+          <p class="reassign-label">Booking</p>
+          <p class="reassign-value">#{{ reassignBookingInfo.id.slice(0, 8).toUpperCase() }} — {{ reassignBookingInfo.service_title_snapshot ?? 'Cleaning Booking' }}</p>
+          <p class="reassign-sub">{{ formatDate(reassignBookingInfo.scheduled_start ?? '') }} · {{ formatTimeRange(reassignBookingInfo.scheduled_start, reassignBookingInfo.scheduled_end) }}</p>
+        </div>
+        <div v-if="!reassignBookingInfo" class="reassign-field">
+          <label class="reassign-label" for="reassign-booking-id">Booking ID</label>
+          <input
+            id="reassign-booking-id"
+            v-model="reassignBookingIdInput"
+            class="reassign-input"
+            placeholder="Enter booking ID…"
+            type="text"
+          />
+        </div>
+        <div class="reassign-available-section">
+          <div class="reassign-available-header">
+            <span class="reassign-label">Available Cleaners</span>
+            <button
+              class="btn-find-cleaners"
+              type="button"
+              :disabled="cleanerSearchLoading"
+              @click="findAvailableCleaners"
+            >
+              {{ cleanerSearchLoading ? 'Searching…' : 'Refresh' }}
+            </button>
+          </div>
+          <div v-if="cleanerSearchLoading" class="cleaner-search-loading">
+            Searching available cleaners…
+          </div>
+          <div v-else-if="cleanerResults.length > 0" class="cleaner-cards">
+            <button
+              v-for="c in cleanerResults"
+              :key="c.user_id"
+              :class="['cleaner-card', selectedCleaner?.user_id === c.user_id && 'cleaner-card--selected']"
+              type="button"
+              @click="selectCleaner(c)"
+            >
+              <span class="cleaner-card__name">{{ c.profiles?.full_name ?? c.business_name ?? '—' }}</span>
+              <span class="cleaner-card__city">{{ c.profiles?.city ?? '—' }}</span>
+              <span class="cleaner-card__rating">★ {{ c.average_rating > 0 ? c.average_rating.toFixed(1) : '—' }} ({{ c.review_count }} reviews)</span>
+            </button>
+          </div>
+          <p v-else-if="cleanerSearched && !cleanerSearchLoading" class="reassign-sub">No available cleaners found for this time slot.</p>
+        </div>
+        <p v-if="reassignError" class="reassign-error">{{ reassignError }}</p>
+      </div>
+      <template #footer>
+        <button class="btn-modal-cancel" type="button" @click="closeReassignModal">Cancel</button>
+        <button
+          class="btn-modal-confirm"
+          type="button"
+          :disabled="!selectedCleaner || reassignLoading"
+          @click="submitReassign"
+        >
+          {{ reassignLoading ? 'Reassigning…' : 'Confirm Reassignment' }}
+        </button>
+      </template>
+    </AppModal>
+
     <!-- Filter Bar -->
     <div class="clnst-filter-bar">
       <div class="clnst-tab-group">
@@ -81,6 +144,14 @@
         </div>
         <div class="row-actions">
           <span class="col-value">{{ formatPence(booking.quote_cents) }}</span>
+          <button
+            v-if="booking.no_show_action === 'replacement_requested'"
+            class="btn-reassign"
+            type="button"
+            @click="openReassignForBooking(booking)"
+          >
+            Reassign
+          </button>
         </div>
       </div>
     </div>
@@ -134,7 +205,7 @@
               >Issue full or partial refunds directly to client wallet.</span
             >
           </button>
-          <button class="override-card">
+          <button class="override-card" @click="openReassignModal">
             <span class="material-symbols-outlined override-card__icon">person_search</span>
             <span class="override-card__title">Reassign Cleaner</span>
             <span class="override-card__desc"
@@ -172,6 +243,9 @@
 import { computed, onMounted, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
 import { formatDate, formatStatus, formatPence, formatRelativeTime } from '@/utils/format'
+import AppModal from '@/components/ui/AppModal.vue'
+import { reassignBooking } from '@/services/bookingService'
+import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 
 const PAGE_SIZE = 10
 
@@ -190,9 +264,11 @@ interface BookingRow {
   scheduled_start: string | null
   scheduled_end: string | null
   service_title_snapshot: string | null
+  category_snapshot: string | null
   quote_cents: number
   customer_name: string | null
   cleaner_name: string | null
+  cleaner_id: string | null
   no_show_action: string | null
 }
 
@@ -202,8 +278,10 @@ interface BookingQueryRow {
   scheduled_start: string | null
   scheduled_end: string | null
   service_title_snapshot: string | null
+  category_snapshot: string | null
   quote_cents: number | null
   no_show_action: string | null
+  cleaner_id: string | null
   customer?: {
     full_name?: string | null
   } | null
@@ -291,8 +369,8 @@ async function loadBookings() {
       .from('bookings')
       .select(
         `id, status, scheduled_start, scheduled_end,
-         service_title_snapshot, quote_cents,
-         no_show_action,
+         service_title_snapshot, category_snapshot, quote_cents,
+         no_show_action, cleaner_id,
          customer:customer_id(full_name),
          cleaner:cleaner_id(full_name)`,
         { count: 'exact' },
@@ -334,9 +412,11 @@ async function loadBookings() {
       scheduled_start: row.scheduled_start ?? null,
       scheduled_end: row.scheduled_end ?? null,
       service_title_snapshot: row.service_title_snapshot ?? null,
+      category_snapshot: row.category_snapshot ?? null,
       quote_cents: row.quote_cents ?? 0,
       customer_name: row.customer?.full_name ?? null,
       cleaner_name: row.cleaner?.full_name ?? null,
+      cleaner_id: row.cleaner_id ?? null,
       no_show_action: row.no_show_action ?? null,
     }))
   } catch (e) {
@@ -371,6 +451,98 @@ async function loadActivity() {
     // Activity feed is non-critical; silently ignore
   } finally {
     activityLoading.value = false
+  }
+}
+
+// ── Reassignment modal ─────────────────────────────────────────────────
+const showReassignModal = ref(false)
+const reassignBookingInfo = ref<BookingRow | null>(null)
+const reassignBookingIdInput = ref('')
+const cleanerResults = ref<CleanerSearchResult[]>([])
+const cleanerSearchLoading = ref(false)
+const cleanerSearched = ref(false)
+const selectedCleaner = ref<CleanerSearchResult | null>(null)
+const reassignLoading = ref(false)
+const reassignError = ref('')
+
+function openReassignModal() {
+  reassignBookingInfo.value = null
+  reassignBookingIdInput.value = ''
+  cleanerResults.value = []
+  cleanerSearched.value = false
+  selectedCleaner.value = null
+  reassignError.value = ''
+  showReassignModal.value = true
+}
+
+async function openReassignForBooking(booking: BookingRow) {
+  reassignBookingInfo.value = booking
+  reassignBookingIdInput.value = booking.id
+  cleanerResults.value = []
+  cleanerSearched.value = false
+  selectedCleaner.value = null
+  reassignError.value = ''
+  showReassignModal.value = true
+  await findAvailableCleaners()
+}
+
+function closeReassignModal() {
+  showReassignModal.value = false
+  reassignBookingInfo.value = null
+  reassignBookingIdInput.value = ''
+  cleanerResults.value = []
+  cleanerSearchLoading.value = false
+  cleanerSearched.value = false
+  selectedCleaner.value = null
+  reassignError.value = ''
+}
+
+async function findAvailableCleaners() {
+  if (!reassignBookingInfo.value?.scheduled_start) return
+  const start = reassignBookingInfo.value.scheduled_start
+  const dateStr = start.split('T')[0]
+  const timeStr = start.split('T')[1]?.slice(0, 5) ?? '09:00'
+
+  cleanerSearchLoading.value = true
+  cleanerSearched.value = false
+  cleanerResults.value = []
+  try {
+    const results = await searchCleaners({
+      availabilityDate: dateStr,
+      availabilityTime: timeStr,
+      serviceCategory: reassignBookingInfo.value.category_snapshot ?? undefined,
+    })
+    cleanerResults.value = results
+    cleanerSearched.value = true
+  } catch {
+    cleanerResults.value = []
+    cleanerSearched.value = true
+  } finally {
+    cleanerSearchLoading.value = false
+  }
+}
+
+function selectCleaner(c: CleanerSearchResult) {
+  selectedCleaner.value = c
+}
+
+async function submitReassign() {
+  if (!selectedCleaner.value) return
+  const bookingId = reassignBookingInfo.value?.id ?? reassignBookingIdInput.value.trim()
+  if (!bookingId) {
+    reassignError.value = 'Please enter a booking ID.'
+    return
+  }
+  reassignLoading.value = true
+  reassignError.value = ''
+  try {
+    await reassignBooking(bookingId, selectedCleaner.value.user_id)
+    closeReassignModal()
+    await loadBookings()
+  } catch (e) {
+    reassignError.value = e instanceof Error ? e.message : 'Reassignment failed.'
+  } finally {
+    reassignLoading.value = false
   }
 }
 
@@ -831,5 +1003,209 @@ function formatNoShowAction(action: string): string {
   line-height: 1.4;
   color: var(--secondary, #5e5e5e);
   margin: 0;
+}
+
+/* ── Reassign button (per row) ──────────────────────────────── */
+.btn-reassign {
+  padding: 0.375rem 0.75rem;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--primary, #000000);
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  white-space: nowrap;
+}
+
+.btn-reassign:hover {
+  background-color: var(--surface-variant, #e2e2e2);
+}
+
+/* ── Reassign modal body ────────────────────────────────────── */
+.reassign-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.reassign-booking-info {
+  background: var(--surface-container, #eeeeee);
+  padding: 1rem;
+}
+
+.reassign-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  position: relative;
+}
+
+.reassign-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--secondary, #5e5e5e);
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.reassign-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary, #000000);
+  margin: 0.25rem 0 0;
+}
+
+.reassign-sub {
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0.125rem 0 0;
+}
+
+.reassign-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  font-size: 14px;
+  color: var(--primary, #000000);
+  background: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.reassign-input:focus {
+  border-color: var(--primary, #000000);
+}
+
+.reassign-available-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.reassign-available-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-find-cleaners {
+  padding: 0.375rem 0.75rem;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--primary, #000000);
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-find-cleaners:hover:not(:disabled) {
+  background-color: var(--surface-variant, #e2e2e2);
+}
+
+.btn-find-cleaners:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cleaner-search-loading {
+  font-size: 13px;
+  color: var(--secondary, #5e5e5e);
+  padding: 0.5rem 0;
+}
+
+.cleaner-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.625rem;
+  max-height: 18rem;
+  overflow-y: auto;
+}
+
+@media (min-width: 480px) {
+  .cleaner-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.cleaner-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.cleaner-card:hover {
+  border-color: var(--primary, #000000);
+}
+
+.cleaner-card--selected {
+  border-color: var(--primary, #000000);
+  background: var(--surface-container, #eeeeee);
+}
+
+.cleaner-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary, #000000);
+}
+
+.cleaner-card__city {
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
+}
+
+.cleaner-card__rating {
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
+  margin-top: 0.25rem;
+}
+
+.reassign-error {
+  font-size: 13px;
+  color: #ba1a1a;
+  margin: 0;
+}
+
+.btn-modal-cancel {
+  padding: 0.5rem 1rem;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--primary, #000000);
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  cursor: pointer;
+}
+
+.btn-modal-cancel:hover {
+  background: var(--surface-variant, #e2e2e2);
+}
+
+.btn-modal-confirm {
+  padding: 0.5rem 1rem;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--primary, #000000);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-modal-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-modal-confirm:hover:not(:disabled) {
+  opacity: 0.85;
 }
 </style>

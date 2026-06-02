@@ -9,6 +9,7 @@ export const adminDashboardLinks: DashboardLinkItem[] = [
   { name: 'AdminApprovals', label: 'Applications', icon: 'person_check' },
   { name: 'AdminSubscription', label: 'Platform Fees', icon: 'account_balance_wallet' },
   { name: 'AdminFinancials', label: 'Financials', icon: 'list_alt' },
+  { name: 'AdminFinancialAudit', label: 'Financial Audit', icon: 'fact_check' },
   { name: 'BookingManagement', label: 'Booking Management', icon: 'admin_panel_settings' },
 ]
 

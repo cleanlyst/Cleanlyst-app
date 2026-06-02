@@ -149,7 +149,7 @@
               :disabled="actionLoading"
               @click="endJob"
             >
-              {{ actionLoading && activeAction === 'end' ? 'Finishing…' : 'Complete Cleaning' }}
+              {{ actionLoading && activeAction === 'end' ? 'Finishing…' : 'End Cleaning' }}
             </button>
             <button
               v-if="booking.status === 'awaiting_customer_payment'"
@@ -410,7 +410,7 @@ function isWithinStartWindow(currentBooking: BookingDetailRow): boolean {
   if (!isPaidAndStartable(currentBooking)) return false
   const start = new Date(currentBooking.scheduled_start)
   const now = new Date()
-  return now.getTime() >= start.getTime() - 30 * 60 * 1000
+  return now.getTime() >= start.getTime() - 60 * 60 * 1000
 }
 
 async function refreshBooking() {

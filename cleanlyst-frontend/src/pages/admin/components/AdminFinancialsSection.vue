@@ -41,6 +41,7 @@
               <span v-else>{{ formatPence(metrics.platformFeeYtdPence) }}</span>
             </span>
           </div>
+          <span class="font-caption text-caption text-secondary">Booking fees + commission</span>
         </div>
 
         <div
@@ -117,9 +118,9 @@
             <thead>
               <tr class="bg-surface-container border-b border-outline-variant text-secondary">
                 <th class="px-6 py-4 font-label-md text-label-md">Payment ID</th>
+                <th class="px-6 py-4 font-label-md text-label-md">Service</th>
                 <th class="px-6 py-4 font-label-md text-label-md">Date</th>
                 <th class="px-6 py-4 font-label-md text-label-md">Amount</th>
-                <th class="px-6 py-4 font-label-md text-label-md">Type</th>
                 <th class="px-6 py-4 font-label-md text-label-md">Status</th>
               </tr>
             </thead>
@@ -138,32 +139,29 @@
               <tr
                 v-else
                 v-for="tx in transactions"
-                :key="tx.id"
-                class="hover:bg-surface-container-low transition-colors"
+                :key="tx.paymentId"
+                class="hover:bg-surface-container-low transition-colors cursor-pointer"
+                @click="openTransactionDetail(tx)"
               >
                 <td class="px-6 py-4 font-label-md text-body text-primary font-mono text-sm">
-                  {{ shortId(tx.id) }}
+                  {{ shortId(tx.paymentId) }}
                 </td>
                 <td class="px-6 py-4 font-body text-body text-secondary">
-                  {{ formatDate(tx.created_at) }}
+                  {{ tx.serviceTitle ?? '—' }}
+                </td>
+                <td class="px-6 py-4 font-body text-body text-secondary">
+                  {{ formatDate(tx.createdAt) }}
                 </td>
                 <td class="px-6 py-4 font-label-md text-body text-primary">
-                  {{ formatPence(tx.amount_cents) }}
-                </td>
-                <td class="px-6 py-4">
-                  <span
-                    class="px-2 py-1 bg-surface-container-high font-caption text-caption rounded"
-                  >
-                    {{ formatStatus(tx.status) }}
-                  </span>
+                  {{ formatPence(tx.amountCents) }}
                 </td>
                 <td class="px-6 py-4">
                   <span
                     :class="[
                       'flex items-center gap-1.5 font-caption text-caption',
-                      tx.status === 'released'
+                      tx.paymentStatus === 'released'
                         ? 'text-green-700'
-                        : tx.status === 'refunded' || tx.status === 'failed'
+                        : tx.paymentStatus === 'refunded' || tx.paymentStatus === 'failed'
                           ? 'text-red-600'
                           : 'text-secondary',
                     ]"
@@ -171,14 +169,14 @@
                     <span
                       :class="[
                         'w-1.5 h-1.5 rounded-full',
-                        tx.status === 'released'
+                        tx.paymentStatus === 'released'
                           ? 'bg-green-600'
-                          : tx.status === 'refunded' || tx.status === 'failed'
+                          : tx.paymentStatus === 'refunded' || tx.paymentStatus === 'failed'
                             ? 'bg-error'
                             : 'bg-outline',
                       ]"
                     ></span>
-                    {{ txStatusLabel(tx.status) }}
+                    {{ txStatusLabel(tx.paymentStatus) }}
                   </span>
                 </td>
               </tr>
@@ -188,41 +186,124 @@
       </section>
     </main>
   </div>
+
+  <!-- Transaction Detail Modal -->
+  <AppModal v-model="showDetail" title="Transaction Detail" size="lg">
+    <div v-if="selectedTx" class="tx-detail">
+      <div class="tx-detail-grid">
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Transaction ID</span>
+          <span class="tx-detail-value font-mono">{{ shortId(selectedTx.paymentId) }}</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Booking ID</span>
+          <span class="tx-detail-value font-mono">{{ shortId(selectedTx.bookingId) }}</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Customer</span>
+          <span class="tx-detail-value">{{ selectedTx.customerName ?? '—' }}</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Cleaner</span>
+          <span class="tx-detail-value">{{ selectedTx.cleanerName ?? '—' }}</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Service</span>
+          <span class="tx-detail-value">{{ selectedTx.serviceTitle ?? '—' }}</span>
+        </div>
+      </div>
+
+      <div class="tx-detail-divider"></div>
+
+      <div class="tx-detail-breakdown">
+        <h3 class="tx-detail-section-title">Breakdown</h3>
+        <div class="tx-detail-breakdown-rows">
+          <div class="tx-detail-breakdown-row">
+            <span>Cleaning Fee</span>
+            <span>{{ formatPence(selectedTx.servicePriceCents) }}</span>
+          </div>
+          <div class="tx-detail-breakdown-row">
+            <span>Booking Fee</span>
+            <span>{{ formatPence(selectedTx.bookingFeeCents) }}</span>
+          </div>
+          <div class="tx-detail-breakdown-row tx-detail-breakdown-row--total">
+            <span>Total Customer Paid</span>
+            <span>{{ formatPence(selectedTx.amountCents) }}</span>
+          </div>
+        </div>
+        <div class="tx-detail-breakdown-rows" style="margin-top: 1rem;">
+          <div class="tx-detail-breakdown-row tx-detail-breakdown-row--deduct">
+            <span>Commission Deducted</span>
+            <span>{{ formatPence(selectedTx.commissionCents) }}</span>
+          </div>
+          <div class="tx-detail-breakdown-row">
+            <span>Cleaner Payout</span>
+            <span>{{ formatPence(selectedTx.cleanerPayoutCents) }}</span>
+          </div>
+          <div class="tx-detail-breakdown-row tx-detail-breakdown-row--platform">
+            <span>Platform Revenue</span>
+            <span>{{ formatPence(selectedTx.bookingFeeCents + selectedTx.commissionCents) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tx-detail-divider"></div>
+
+      <div class="tx-detail-grid">
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Payment Status</span>
+          <span class="tx-detail-value">{{ txStatusLabel(selectedTx.paymentStatus) }}</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Booking Status</span>
+          <span class="tx-detail-value">{{ formatStatus(selectedTx.bookingStatus ?? '') }}</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Created</span>
+          <span class="tx-detail-value">{{ formatDate(selectedTx.createdAt) }}</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Completed</span>
+          <span class="tx-detail-value">{{
+            selectedTx.completedAt ? formatDate(selectedTx.completedAt) : '—'
+          }}</span>
+        </div>
+      </div>
+    </div>
+    <template #footer>
+      <button
+        class="px-4 py-2 border border-outline-variant text-label-md text-primary hover:bg-surface-container transition-colors"
+        type="button"
+        @click="showDetail = false"
+      >
+        Close
+      </button>
+    </template>
+  </AppModal>
 </template>
 
 <script lang="ts" setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
 import { formatPence, formatDate, formatStatus } from '@/utils/format'
+import AppModal from '@/components/ui/AppModal.vue'
+import {
+  getAdminFinancialMetrics,
+  getAdminTransactions,
+  getAdminRevenueChart,
+  type AdminFinancialMetrics,
+  type AdminTransactionRow,
+} from '@/services/financialService'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const currentYear = new Date().getFullYear()
-
-interface FinancialMetrics {
-  revenueYtdPence: number
-  revenueYtdCount: number
-  platformFeeYtdPence: number
-  pendingPayoutPence: number
-  pendingPayoutCleaners: number
-}
-
-interface AmountRow {
-  amount_cents: number | null
-}
-
-interface Transaction {
-  id: string
-  amount_cents: number
-  status: string
-  created_at: string
-}
 
 const metricsLoading = ref(true)
 const chartLoading = ref(true)
 const txLoading = ref(true)
 const errorMessage = ref('')
 
-const metrics = ref<FinancialMetrics>({
+const metrics = ref<AdminFinancialMetrics>({
   revenueYtdPence: 0,
   revenueYtdCount: 0,
   platformFeeYtdPence: 0,
@@ -231,7 +312,10 @@ const metrics = ref<FinancialMetrics>({
 })
 
 const chartData = ref<number[]>(Array(12).fill(0))
-const transactions = ref<Transaction[]>([])
+const transactions = ref<AdminTransactionRow[]>([])
+
+const showDetail = ref(false)
+const selectedTx = ref<AdminTransactionRow | null>(null)
 
 let paymentsChannel: ReturnType<ReturnType<typeof requireSupabase>['channel']> | null = null
 
@@ -246,6 +330,9 @@ onMounted(async () => {
       loadChart()
       loadTransactions()
     })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'payouts' }, () => {
+      loadMetrics()
+    })
     .subscribe()
 })
 
@@ -256,36 +343,8 @@ onBeforeUnmount(() => {
 async function loadMetrics() {
   metricsLoading.value = true
   try {
-    const supabase = requireSupabase()
     const ytdStart = `${currentYear}-01-01T00:00:00Z`
-
-    const [paymentsResult, releasedFeesResult] = await Promise.all([
-      supabase
-        .from('payments')
-        .select('amount_cents')
-        .in('status', ['captured', 'released'])
-        .gte('created_at', ytdStart),
-      supabase
-        .from('payments')
-        .select('platform_fee_cents, cleaner_payout_cents')
-        .eq('status', 'released')
-        .gte('created_at', ytdStart),
-    ])
-
-    const allPayments = (paymentsResult.data ?? []) as AmountRow[]
-    const revenueYtdPence = allPayments.reduce((s: number, r) => s + (r.amount_cents ?? 0), 0)
-
-    const releasedFees = (releasedFeesResult.data ?? []) as Array<{ platform_fee_cents: number | null; cleaner_payout_cents: number | null }>
-    const platformFeeYtdPence = releasedFees.reduce((s: number, r) => s + (r.platform_fee_cents ?? 0), 0)
-    const pendingPayoutPence = releasedFees.reduce((s: number, r) => s + (r.cleaner_payout_cents ?? 0), 0)
-
-    metrics.value = {
-      revenueYtdPence,
-      revenueYtdCount: allPayments.length,
-      platformFeeYtdPence,
-      pendingPayoutPence,
-      pendingPayoutCleaners: 0,
-    }
+    metrics.value = await getAdminFinancialMetrics(ytdStart)
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load financial metrics.'
   } finally {
@@ -296,25 +355,7 @@ async function loadMetrics() {
 async function loadChart() {
   chartLoading.value = true
   try {
-    const supabase = requireSupabase()
-    const { data, error } = await supabase
-      .from('payments')
-      .select('amount_cents, captured_at, created_at')
-      .in('status', ['captured', 'released'])
-      .gte('created_at', `${currentYear}-01-01T00:00:00Z`)
-      .lt('created_at', `${currentYear + 1}-01-01T00:00:00Z`)
-
-    if (error) throw error
-
-    const monthly = Array(12).fill(0) as number[]
-    for (const row of data ?? []) {
-      const dateStr = row.captured_at ?? row.created_at
-      if (dateStr) {
-        const month = new Date(dateStr).getMonth()
-        monthly[month] += row.amount_cents ?? 0
-      }
-    }
-    chartData.value = monthly
+    chartData.value = await getAdminRevenueChart(currentYear)
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load chart data.'
   } finally {
@@ -325,20 +366,17 @@ async function loadChart() {
 async function loadTransactions() {
   txLoading.value = true
   try {
-    const supabase = requireSupabase()
-    const { data, error } = await supabase
-      .from('payments')
-      .select('id, amount_cents, status, created_at')
-      .order('created_at', { ascending: false })
-      .limit(10)
-
-    if (error) throw error
-    transactions.value = (data ?? []) as Transaction[]
+    transactions.value = await getAdminTransactions(10)
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load transactions.'
   } finally {
     txLoading.value = false
   }
+}
+
+function openTransactionDetail(tx: AdminTransactionRow) {
+  selectedTx.value = tx
+  showDetail.value = true
 }
 
 function chartBarHeight(value: number): string {
@@ -384,5 +422,85 @@ function txStatusLabel(status: string): string {
   50% {
     opacity: 0.4;
   }
+}
+
+/* ── Transaction detail modal ────────────────────────────── */
+.tx-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.tx-detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tx-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.tx-detail-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--secondary, #5e5e5e);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+.tx-detail-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary, #000000);
+  text-align: right;
+}
+
+.tx-detail-divider {
+  border-top: 1px solid var(--outline-variant, #c4c7c7);
+}
+
+.tx-detail-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--secondary, #5e5e5e);
+  margin-bottom: 0.75rem;
+}
+
+.tx-detail-breakdown-rows {
+  background: var(--surface-container, #eeeeee);
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tx-detail-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--primary, #000000);
+}
+
+.tx-detail-breakdown-row--total {
+  font-weight: 700;
+  border-top: 1px solid var(--outline-variant, #c4c7c7);
+  padding-top: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.tx-detail-breakdown-row--deduct {
+  color: var(--secondary, #5e5e5e);
+}
+
+.tx-detail-breakdown-row--platform {
+  font-weight: 600;
+  color: var(--primary, #000000);
 }
 </style>

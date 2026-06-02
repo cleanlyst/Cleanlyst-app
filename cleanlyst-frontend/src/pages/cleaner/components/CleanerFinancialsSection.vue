@@ -63,18 +63,24 @@
           <span class="th-label th-label--right">Net payout</span>
           <span class="th-label">Status</span>
         </div>
-        <div v-for="b in recentBookings" :key="b.id" class="transaction-row">
+        <div
+          v-for="b in recentBookings"
+          :key="b.bookingId"
+          class="transaction-row"
+          style="cursor: pointer;"
+          @click="openTxDetail(b)"
+        >
           <div class="tx-service">
             <span class="material-symbols-outlined tx-icon">cleaning_services</span>
-            {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
+            {{ b.serviceTitle ?? 'Cleaning Booking' }}
           </div>
-          <div class="tx-date">{{ formatDate(b.scheduled_start) }}</div>
-          <div class="tx-amount">{{ b.booking_financials ? formatCurrencyVal(b.booking_financials.service_price_cents) : '—' }}</div>
-          <div class="tx-amount tx-amount--deducted">{{ b.booking_financials ? '− ' + formatCurrencyVal(b.booking_financials.cleaner_commission_cents) : '—' }}</div>
-          <div class="tx-amount">{{ jobNetPayout(b) }}</div>
+          <div class="tx-date">{{ formatDate(b.scheduledStart) }}</div>
+          <div class="tx-amount">{{ b.servicePriceCents != null ? formatCurrencyVal(b.servicePriceCents) : '—' }}</div>
+          <div class="tx-amount tx-amount--deducted">{{ b.commissionCents != null ? '− ' + formatCurrencyVal(b.commissionCents) : '—' }}</div>
+          <div class="tx-amount">{{ b.cleanerPayoutCents != null ? formatCurrencyVal(b.cleanerPayoutCents) : '—' }}</div>
           <div class="tx-status">
-            <span class="status-pill" :class="txStatusClass(b.status)">
-              {{ txStatusLabel(b.status) }}
+            <span class="status-pill" :class="txStatusClass(b.bookingStatus)">
+              {{ txStatusLabel(b.bookingStatus) }}
             </span>
           </div>
         </div>
@@ -105,6 +111,70 @@
       </div>
     </section>
   </main>
+
+  <!-- Transaction Detail Modal -->
+  <AppModal v-model="showTxDetail" title="Earnings Detail" size="md">
+    <div v-if="selectedTx" class="tx-detail">
+      <div class="tx-detail-grid">
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Transaction ID</span>
+          <span class="tx-detail-value font-mono"
+            >#{{ selectedTx.bookingId.slice(0, 8).toUpperCase() }}</span
+          >
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Service</span>
+          <span class="tx-detail-value">{{ selectedTx.serviceTitle ?? '—' }}</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Customer</span>
+          <span class="tx-detail-value">{{ selectedTx.customerName ?? '—' }}</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Completed</span>
+          <span class="tx-detail-value">{{
+            selectedTx.completedAt ? formatDate(selectedTx.completedAt) : '—'
+          }}</span>
+        </div>
+        <div class="tx-detail-row">
+          <span class="tx-detail-label">Payment Status</span>
+          <span class="tx-detail-value">{{ selectedTx.paymentStatus ?? '—' }}</span>
+        </div>
+      </div>
+
+      <div class="tx-detail-divider"></div>
+
+      <div class="tx-detail-breakdown-rows">
+        <div class="tx-detail-breakdown-row">
+          <span>Cleaning Fee</span>
+          <span>{{
+            selectedTx.servicePriceCents != null
+              ? formatCurrencyVal(selectedTx.servicePriceCents)
+              : '—'
+          }}</span>
+        </div>
+        <div class="tx-detail-breakdown-row tx-detail-breakdown-row--deduct">
+          <span>Commission Deduction</span>
+          <span>{{
+            selectedTx.commissionCents != null
+              ? '− ' + formatCurrencyVal(selectedTx.commissionCents)
+              : '—'
+          }}</span>
+        </div>
+        <div class="tx-detail-breakdown-row tx-detail-breakdown-row--total">
+          <span>Net Earnings</span>
+          <span>{{
+            selectedTx.cleanerPayoutCents != null
+              ? formatCurrencyVal(selectedTx.cleanerPayoutCents)
+              : '—'
+          }}</span>
+        </div>
+      </div>
+    </div>
+    <template #footer>
+      <button class="btn-modal-close" type="button" @click="showTxDetail = false">Close</button>
+    </template>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
@@ -113,29 +183,18 @@ import type { RealtimeSubscription } from '@/lib/realtime'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { subscribeToTable, unsubscribe } from '@/lib/realtime'
-
-interface BookingFinancialSnapshot {
-  service_price_cents: number | null
-  cleaner_commission_cents: number | null
-  cleaner_payout_cents: number | null
-}
-
-interface BookingRecord {
-  id: string
-  service_title_snapshot: string | null
-  scheduled_start: string
-  status: string
-  cleaner_payout_cents: number | null
-  booking_financials: BookingFinancialSnapshot | null
-}
+import AppModal from '@/components/ui/AppModal.vue'
+import { getCleanerTransactions, type CleanerTransactionRow } from '@/services/financialService'
 
 const auth = useAuthStore()
 const loading = ref(true)
 const totalEarningsCents = ref(0)
 const thisMonthEarningsCents = ref(0)
 const pendingPayoutCents = ref(0)
-const recentBookings = ref<BookingRecord[]>([])
+const recentBookings = ref<CleanerTransactionRow[]>([])
 const realtimeChannel = ref<RealtimeSubscription | null>(null)
+const showTxDetail = ref(false)
+const selectedTx = ref<CleanerTransactionRow | null>(null)
 
 const currency = computed(() => auth.cleanerProfile?.currency ?? 'GBP')
 
@@ -151,33 +210,27 @@ const thisMonthEarnings = computed(() => formatCurrency(thisMonthEarningsCents.v
 const pendingEarnings = computed(() => formatCurrency(pendingPayoutCents.value))
 
 const thisMonthCompleted = computed(
-  () => recentBookings.value.filter((b) => b.status === 'completed').length,
+  () => recentBookings.value.filter((b) => b.bookingStatus === 'completed').length,
 )
 
 const upcomingCount = computed(
   () =>
     recentBookings.value.filter((b) =>
-      ['awaiting_customer_payment', 'payment_authorized', 'in_progress'].includes(b.status),
+      ['awaiting_customer_payment', 'payment_authorized', 'in_progress'].includes(b.bookingStatus),
     ).length,
 )
 
 const avgPerJob = computed(() => {
   const paid = recentBookings.value.filter(
-    (b) => b.status === 'completed' && b.cleaner_payout_cents,
+    (b) => b.bookingStatus === 'completed' && b.cleanerPayoutCents,
   )
   if (paid.length === 0) return formatCurrency(0)
-  const total = paid.reduce((sum, b) => sum + (b.cleaner_payout_cents ?? 0), 0)
+  const total = paid.reduce((sum, b) => sum + (b.cleanerPayoutCents ?? 0), 0)
   return formatCurrency(Math.round(total / paid.length))
 })
 
 function formatCurrencyVal(cents: number | null | undefined): string {
   return cents != null ? formatCurrency(cents) : '—'
-}
-
-function jobNetPayout(b: BookingRecord): string {
-  const payout =
-    b.booking_financials?.cleaner_payout_cents ?? b.cleaner_payout_cents
-  return payout != null ? formatCurrency(payout) : '—'
 }
 
 function formatDate(value: string): string {
@@ -218,68 +271,62 @@ async function loadFinancials() {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-  const [allCompletedResult, monthCompletedResult, pendingResult, recentResult] = await Promise.all(
-    [
-      supabase
-        .from('bookings')
-        .select('cleaner_payout_cents')
-        .eq('cleaner_id', auth.userId)
-        .eq('status', 'completed'),
+  const [allCompletedResult, monthCompletedResult, pendingResult, recentRows] = await Promise.all([
+    // Use booking_financials as source so totals match cleaner_earnings_ledger exactly.
+    supabase
+      .from('bookings')
+      .select('booking_financials(cleaner_payout_cents)')
+      .eq('cleaner_id', auth.userId)
+      .eq('status', 'completed'),
 
-      supabase
-        .from('bookings')
-        .select('cleaner_payout_cents')
-        .eq('cleaner_id', auth.userId)
-        .eq('status', 'completed')
-        .gte('scheduled_start', startOfMonth),
+    supabase
+      .from('bookings')
+      .select('booking_financials(cleaner_payout_cents)')
+      .eq('cleaner_id', auth.userId)
+      .eq('status', 'completed')
+      .gte('scheduled_start', startOfMonth),
 
-      supabase
-        .from('bookings')
-        .select('cleaner_payout_cents')
-        .eq('cleaner_id', auth.userId)
-        .in('status', [
-          'estimate_proposed',
-          'awaiting_customer_payment',
-          'payment_authorized',
-          'in_progress',
-          'completion_pending_customer',
-        ]),
+    // Pending (no ledger row yet) — use bookings snapshot directly.
+    supabase
+      .from('bookings')
+      .select('cleaner_payout_cents')
+      .eq('cleaner_id', auth.userId)
+      .in('status', [
+        'estimate_proposed',
+        'awaiting_customer_payment',
+        'payment_authorized',
+        'in_progress',
+        'completion_pending_customer',
+      ]),
 
-      supabase
-        .from('bookings')
-        .select('id, service_title_snapshot, scheduled_start, status, cleaner_payout_cents, booking_financials(service_price_cents, cleaner_commission_cents, cleaner_payout_cents)')
-        .eq('cleaner_id', auth.userId)
-        .in('status', [
-          'completed',
-          'payment_authorized',
-          'in_progress',
-          'awaiting_customer_payment',
-        ])
-        .order('scheduled_start', { ascending: false })
-        .limit(10),
-    ],
-  )
+    getCleanerTransactions(auth.userId!),
+  ])
 
-  totalEarningsCents.value = (allCompletedResult.data ?? []).reduce(
-    (sum, b) => sum + (b.cleaner_payout_cents ?? 0),
+  type BfRow = { booking_financials: { cleaner_payout_cents: number | null } | Array<{ cleaner_payout_cents: number | null }> | null }
+  const extractPayout = (b: BfRow) => {
+    const bf = Array.isArray(b.booking_financials) ? b.booking_financials[0] : b.booking_financials
+    return bf?.cleaner_payout_cents ?? 0
+  }
+
+  totalEarningsCents.value = (allCompletedResult.data ?? [] as BfRow[]).reduce(
+    (sum, b) => sum + extractPayout(b as BfRow),
     0,
   )
-  thisMonthEarningsCents.value = (monthCompletedResult.data ?? []).reduce(
-    (sum, b) => sum + (b.cleaner_payout_cents ?? 0),
+  thisMonthEarningsCents.value = (monthCompletedResult.data ?? [] as BfRow[]).reduce(
+    (sum, b) => sum + extractPayout(b as BfRow),
     0,
   )
   pendingPayoutCents.value = (pendingResult.data ?? []).reduce(
-    (sum, b) => sum + (b.cleaner_payout_cents ?? 0),
+    (sum, b) => sum + ((b as { cleaner_payout_cents: number | null }).cleaner_payout_cents ?? 0),
     0,
   )
-  recentBookings.value = ((recentResult.data ?? []) as unknown[]).map((raw) => {
-    const row = raw as Record<string, unknown>
-    const bf = Array.isArray(row.booking_financials)
-      ? (row.booking_financials[0] as BookingFinancialSnapshot | undefined) ?? null
-      : (row.booking_financials as BookingFinancialSnapshot | null) ?? null
-    return { ...(row as Omit<BookingRecord, 'booking_financials'>), booking_financials: bf }
-  })
+  recentBookings.value = recentRows
   loading.value = false
+}
+
+function openTxDetail(b: CleanerTransactionRow) {
+  selectedTx.value = b
+  showTxDetail.value = true
 }
 
 onMounted(async () => {
@@ -701,5 +748,86 @@ onBeforeUnmount(() => unsubscribe(realtimeChannel.value))
   .transaction-row > .tx-amount:first-of-type {
     display: none;
   }
+}
+
+/* ── Transaction detail modal ─────────────────────────────────── */
+.tx-detail {
+  padding: 0.25rem 0;
+}
+
+.tx-detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tx-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.tx-detail-label {
+  color: var(--secondary, #5e5e5e);
+  font-weight: 400;
+}
+
+.tx-detail-value {
+  color: var(--primary, #000000);
+  font-weight: 500;
+  text-align: right;
+}
+
+.font-mono {
+  font-family: monospace;
+}
+
+.tx-detail-divider {
+  border: none;
+  border-top: 1px solid var(--surface-variant, #e2e2e2);
+  margin: 1.25rem 0;
+}
+
+.tx-detail-breakdown-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.tx-detail-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary, #000000);
+}
+
+.tx-detail-breakdown-row--deduct {
+  color: #c62828;
+}
+
+.tx-detail-breakdown-row--total {
+  font-size: 16px;
+  font-weight: 700;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--surface-variant, #e2e2e2);
+  margin-top: 0.25rem;
+}
+
+.btn-modal-close {
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background-color: var(--surface-container-lowest, #ffffff);
+  color: var(--primary, #000000);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: background-color 0.1s;
+}
+
+.btn-modal-close:hover {
+  background-color: var(--surface-container, #eeeeee);
 }
 </style>

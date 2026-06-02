@@ -22,13 +22,7 @@
           >
             Book a cleaner
           </router-link>
-          <router-link
-            v-if="auth.isAuthenticated && auth.hasRole('customer')"
-            :to="{ name: 'CustomerBookings' }"
-            :class="navLinkClass('CustomerBookings')"
-          >
-            My bookings
-          </router-link>
+          
           <router-link :to="{ name: 'About' }" :class="navLinkClass('About')">
             About Us
           </router-link>
@@ -117,13 +111,7 @@
           >
             Book a cleaner
           </router-link>
-          <router-link
-            v-if="auth.isAuthenticated && auth.hasRole('customer')"
-            :to="{ name: 'CustomerBookings' }"
-            :class="navLinkClass('CustomerBookings')"
-          >
-            My bookings
-          </router-link>
+          
           <router-link
             v-if="showDashboardLink"
             :to="dashboardRoute"

@@ -7,6 +7,10 @@
     "dev:backend": "node -e \"console.log('Using hosted Supabase backend at https://wklmgkqgnwhllnywhfhb.supabase.co')\"",
     "stop:backend": "cd cleanlyst-backend && npx supabase stop",
     "type-check": "npm --prefix cleanlyst-frontend run type-check",
-    "build": "npm --prefix cleanlyst-frontend run build"
+    "build": "npm --prefix cleanlyst-frontend run build",
+    "test:e2e": "npm --prefix cleanlyst-frontend run test:e2e",
+    "test:e2e:headed": "npm --prefix cleanlyst-frontend run test:e2e:headed",
+    "test:e2e:debug": "npm --prefix cleanlyst-frontend run test:e2e:debug",
+    "test:e2e:install": "npm --prefix cleanlyst-frontend run test:e2e:install"
   }
 }

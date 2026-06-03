@@ -37,6 +37,15 @@ export function getBookingStatusLabel(booking: StatusLabelInput, role: BookingRo
     case 'in_progress':
       return role === 'customer' ? 'Cleaner has started cleaning' : 'Cleaning in progress'
 
+    case 'paid':
+      return role === 'customer' ? 'Confirmed & Paid' : role === 'cleaner' ? 'Ready to Start' : 'Paid'
+
+    case 'payout_released':
+      return 'Payout Released'
+
+    case 'cleaner_cancelled':
+      return role === 'customer' ? 'Cleaner Unavailable' : role === 'admin' ? 'Cleaner Cancelled' : 'You Cancelled'
+
     case 'cleaner_no_show':
       if (role === 'cleaner') return 'Booking marked as no-show'
       if (role === 'admin') return 'Cleaner no-show'
@@ -73,6 +82,7 @@ export function getStatusPillClass(status: string): string {
   if (
     [
       'accepted',
+      'paid',
       'payment_authorized',
       'paid_pending_start',
       'scheduled',
@@ -82,8 +92,8 @@ export function getStatusPillClass(status: string): string {
     ].includes(status)
   )
     return 'status-pill--active'
-  if (status === 'completed') return 'status-pill--completed'
-  if (['cancelled', 'declined', 'cleaner_declined', 'disputed', 'refunded'].includes(status))
+  if (['completed', 'payout_released'].includes(status)) return 'status-pill--completed'
+  if (['cancelled', 'declined', 'cleaner_declined', 'cleaner_cancelled', 'disputed', 'refunded'].includes(status))
     return 'status-pill--cancelled'
   return ''
 }

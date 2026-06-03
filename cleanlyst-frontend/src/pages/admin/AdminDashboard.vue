@@ -5,6 +5,7 @@
     <AdminPlatformFeesSection v-if="activeRouteName === 'AdminSubscription'" />
     <AdminFinancialsSection v-if="activeRouteName === 'AdminFinancials'" />
     <AdminFinancialAuditSection v-if="activeRouteName === 'AdminFinancialAudit'" />
+    <AdminBookingAuditSection v-if="activeRouteName === 'AdminBookingAudit'" />
     <BookingManagement v-if="activeRouteName === 'BookingManagement'" />
     <AdminBookingDetailsSection v-if="activeRouteName === 'AdminBookingDetails'" />
   </DashboardLayout>
@@ -22,6 +23,7 @@ import AdminFinancialsSection from './components/AdminFinancialsSection.vue'
 import BookingManagement from './components/BookingManagement.vue'
 import AdminBookingDetailsSection from './components/AdminBookingDetailsSection.vue'
 import AdminFinancialAuditSection from './components/AdminFinancialAuditSection.vue'
+import AdminBookingAuditSection from './components/AdminBookingAuditSection.vue'
 
 const route = useRoute()
 const activeRouteName = computed(() =>

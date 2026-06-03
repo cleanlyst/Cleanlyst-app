@@ -60,6 +60,9 @@ export function getBookingDisplayStatus(
       role === 'cleaner' ? 'Booking marked as no-show' : 'Replacement cleaner requested',
     disputed: 'Disputed',
     refunded: 'Refunded',
+    paid: role === 'cleaner' ? 'Ready to Start' : 'Confirmed & Paid',
+    payout_released: 'Payout Released',
+    cleaner_cancelled: role === 'customer' ? 'Cleaner Unavailable' : 'Cancelled',
   }
 
   return (

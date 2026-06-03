@@ -235,7 +235,7 @@ async function handleStartBooking(id: string) {
 }
 
 function canStartCleaning(booking: { status: string; payment_status: string | null; scheduled_start: string }): boolean {
-  if (booking.status !== 'accepted' || booking.payment_status !== 'captured') return false
+  if (!['accepted', 'paid'].includes(booking.status) || booking.payment_status !== 'captured') return false
   const start = new Date(booking.scheduled_start)
   if (Number.isNaN(start.valueOf())) return false
   return Date.now() >= start.getTime() - 60 * 60 * 1000

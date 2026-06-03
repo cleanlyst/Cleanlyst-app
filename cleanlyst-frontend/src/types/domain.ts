@@ -17,6 +17,9 @@ export type BookingStatus =
   | 'cleaner_declined'
   | 'cleaner_no_show'
   | 'cancelled'
+  | 'paid'
+  | 'payout_released'
+  | 'cleaner_cancelled'
 
 export type ApplicationStatus =
   | 'draft'

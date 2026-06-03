@@ -304,6 +304,12 @@ const router = createRouter({
       component: () => import('../pages/admin/AdminDashboard.vue'),
     },
     {
+      path: '/admin/dashboard/booking-audit',
+      name: 'AdminBookingAudit',
+      meta: { title: 'Booking Audit', requiresAuth: true, requiresRole: 'admin' },
+      component: () => import('../pages/admin/AdminDashboard.vue'),
+    },
+    {
       path: '/admin/dashboard/bookingmanagement',
       name: 'BookingManagement',
       meta: { title: 'Booking Management', requiresAuth: true, requiresRole: 'admin' },

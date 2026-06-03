@@ -133,6 +133,11 @@
               {{ actionLoading && activeAction === 'cancel' ? 'Cancelling…' : 'Cancel Booking' }}
             </button>
 
+            <div v-if="canCancel" class="status-info">
+              <span class="material-symbols-outlined status-info-icon">info</span>
+              Cancellations more than 24 hours before your booking receive a full refund. Within 24 hours, a refund is subject to admin review.
+            </div>
+
             <div v-if="canReportNoShow" class="status-info">
               <span class="material-symbols-outlined status-info-icon">warning</span>
               Your cleaner appears not to have started this booking.
@@ -174,6 +179,8 @@
           </router-link>
         </section>
       </div>
+
+      <BookingTimeline v-if="booking" :booking-id="bookingId" />
 
       <!-- No-show modal -->
       <div v-if="noShowModalOpen" class="modal-backdrop" @click.self="closeNoShowModal">
@@ -385,10 +392,11 @@ import {
   reportCleanerNoShow,
   type BookingDetailRow,
 } from '@/services/bookingService'
+import { cancelAsCustomer } from '@/services/bookingLifecycleService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
+import BookingTimeline from '@/components/BookingTimeline.vue'
 import { formatDate, formatDateTime, formatPence } from '@/utils/format'
 import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
-import { cancelBooking as cancelBookingRequest } from '@/services/bookingService'
 
 const auth = useAuthStore()
 const messagesStore = useMessagesStore()
@@ -421,13 +429,15 @@ let noShowClock: ReturnType<typeof setInterval> | null = null
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
 const canCancel = computed(() =>
-  ['pending_request', 'accepted', 'estimate_proposed'].includes(booking.value?.status ?? ''),
+  ['pending_request', 'accepted', 'paid', 'estimate_proposed', 'awaiting_customer_payment'].includes(
+    booking.value?.status ?? '',
+  ),
 )
 
 const canReportNoShow = computed(() => {
   const currentBooking = booking.value
   if (!currentBooking) return false
-  if (currentBooking.status !== 'accepted') return false
+  if (!['accepted', 'paid'].includes(currentBooking.status)) return false
   if (currentBooking.started_at || currentBooking.completed_at) return false
   if (currentBooking.no_show_action) return false
   const start = new Date(currentBooking.scheduled_start)
@@ -439,6 +449,7 @@ function isTerminal(status: string): boolean {
   return [
     'completed',
     'cancelled',
+    'cleaner_cancelled',
     'declined',
     'cleaner_declined',
     'disputed',
@@ -450,11 +461,13 @@ function statusInfo(status: string): string {
   const map: Record<string, string> = {
     pending_request: 'Your request has been sent. Waiting for the cleaner to respond.',
     accepted: 'Your cleaner has accepted. They will start at the scheduled time.',
+    paid: 'Payment confirmed. Your cleaner will start at the scheduled time.',
     paid_pending_start: 'Payment confirmed. Your cleaner will start soon.',
     scheduled: 'Your cleaner will start soon.',
     payment_authorized: 'Your cleaner will start soon.',
     in_progress: 'Cleaner is currently cleaning.',
     cleaner_no_show: "We'll help find another available cleaner.",
+    cleaner_cancelled: 'Your cleaner is unable to attend. We are working to arrange a replacement or refund.',
     cancelled:
       booking.value?.no_show_action === 'refund_requested'
         ? 'Refund processed successfully'
@@ -512,7 +525,7 @@ async function cancelBooking() {
   successMessage.value = ''
   errorMessage.value = ''
   try {
-    await cancelBookingRequest(bookingId)
+    await cancelAsCustomer(bookingId)
     successMessage.value = 'Booking cancelled.'
     await refreshBooking()
   } catch (e) {

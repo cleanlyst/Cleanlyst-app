@@ -545,6 +545,36 @@ export async function reassignBooking(
   return booking
 }
 
+export async function cancelBookingCustomer(
+  bookingId: string,
+  reason?: string,
+): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('cancel_booking_customer', {
+    p_booking_id: bookingId,
+    p_reason: reason ?? null,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to cancel booking.')
+  return booking
+}
+
+export async function cleanerCannotAttend(
+  bookingId: string,
+  reason?: string,
+): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('cleaner_cannot_attend', {
+    p_booking_id: bookingId,
+    p_reason: reason ?? null,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to mark cannot attend.')
+  return booking
+}
+
 export async function proposeEstimate(
   bookingId: string,
   quoteCents: number,

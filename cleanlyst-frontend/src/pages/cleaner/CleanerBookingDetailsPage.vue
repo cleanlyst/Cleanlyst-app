@@ -92,7 +92,7 @@
               type="button"
               class="btn-start"
               :disabled="actionLoading"
-              @click="acceptBooking"
+              @click="handleAcceptBooking"
             >
               {{ actionLoading && activeAction === 'accept' ? 'Accepting…' : 'Accept booking' }}
             </button>
@@ -126,22 +126,34 @@
             </button>
 
             <button
-              v-if="isPaidAndStartable(booking) && !isWithinStartWindow(booking)"
+              v-if="booking.status === 'cleaner_cancelled'"
               type="button"
               class="btn-secondary"
               disabled
             >
-              Available in {{ countdownText(booking.scheduled_start) }}
+              You marked this as cannot attend
             </button>
+
+            <template v-if="isPaidAndStartable(booking) || booking.status === 'paid'">
+              <button
+                v-if="!isWithinStartWindow(booking)"
+                type="button"
+                class="btn-secondary"
+                disabled
+              >
+                Available in {{ countdownText(booking.scheduled_start) }}
+              </button>
+            </template>
             <button
-              v-if="isPaidAndStartable(booking) && isWithinStartWindow(booking)"
+              v-if="(isPaidAndStartable(booking) || booking.status === 'paid') && isWithinStartWindow(booking)"
               type="button"
               class="btn-start"
               :disabled="actionLoading"
-              @click="startCleaning"
+              @click="handleStartCleaning"
             >
               {{ actionLoading && activeAction === 'start' ? 'Starting…' : 'Start Cleaning' }}
             </button>
+
             <button
               v-if="booking.status === 'in_progress'"
               type="button"
@@ -158,6 +170,16 @@
               disabled
             >
               Awaiting customer payment
+            </button>
+
+            <button
+              v-if="cannotAttend(booking) && booking.status !== 'cleaner_cancelled'"
+              type="button"
+              class="btn-decline"
+              :disabled="actionLoading"
+              @click="cannotAttendModalOpen = true"
+            >
+              I Cannot Attend
             </button>
 
             <button
@@ -224,6 +246,8 @@
           </div>
         </form>
       </section>
+
+      <BookingTimeline v-if="booking" :booking-id="bookingId" />
 
       <AppModal v-model="editModalOpen" title="Edit booking details" size="md">
         <div class="modal-field">
@@ -296,6 +320,33 @@
         </template>
       </AppModal>
 
+      <AppModal v-model="cannotAttendModalOpen" title="I Cannot Attend" size="md">
+        <p class="modal-hint">
+          You are marking yourself as unable to attend this booking. Admin will be notified immediately and will arrange a replacement or refund for the customer.
+        </p>
+        <div class="modal-field">
+          <label class="modal-label" for="cannotAttendReason">Reason (optional)</label>
+          <textarea
+            id="cannotAttendReason"
+            rows="3"
+            class="modal-textarea"
+            v-model="cannotAttendReason"
+            placeholder="e.g. Emergency — I am unable to make this booking"
+          />
+        </div>
+        <template #footer>
+          <button type="button" class="btn-action" @click="cannotAttendModalOpen = false">Cancel</button>
+          <button
+            type="button"
+            class="btn-decline"
+            :disabled="actionLoading"
+            @click="confirmCannotAttend"
+          >
+            {{ actionLoading && activeAction === 'cannot_attend' ? 'Submitting…' : 'Confirm — I Cannot Attend' }}
+          </button>
+        </template>
+      </AppModal>
+
       <AppModal v-model="declineModalOpen" title="Decline booking" size="md">
         <p class="modal-hint">Optionally provide a reason for the customer.</p>
         <div class="modal-field">
@@ -332,17 +383,25 @@ import { useMessagesStore } from '@/stores/messages'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { cleanerDashboardLinks } from '@/pages/dasboardLinks'
 import AppModal from '@/components/ui/AppModal.vue'
+import BookingTimeline from '@/components/BookingTimeline.vue'
 import { getSupabaseClient } from '@/services/supabaseClient'
 import type { RealtimeSubscription } from '@/lib/realtime'
 import {
   getBookingById,
   updateBookingDetails,
-  transitionBookingState,
-  completeBooking,
-  startBooking as startBookingRequest,
   proposeEstimate,
   type BookingDetailRow,
 } from '@/services/bookingService'
+import {
+  acceptBooking,
+  declineBooking,
+  startCleaning,
+  completeCleaning,
+  markCannotAttend,
+  canStartCleaning,
+  isWithinStartWindow as _isWithinStartWindow,
+  cannotAttend,
+} from '@/services/bookingLifecycleService'
 import { formatDate, formatDateTime, formatPence } from '@/utils/format'
 import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
 import { upsertAvailabilityOverride } from '@/services/availabilityService'
@@ -361,6 +420,8 @@ const editEstimatedHours = ref<number | null>(null)
 const editNotes = ref<string | null>(null)
 const declineModalOpen = ref(false)
 const declineReason = ref('')
+const cannotAttendModalOpen = ref(false)
+const cannotAttendReason = ref('')
 const estimateModalOpen = ref(false)
 const estimateAmount = ref<number | null>(null)
 const estimateNote = ref('')
@@ -389,9 +450,8 @@ function orderTimeRange(start: string, end: string | null) {
   return `${startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — ${endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
 }
 
-function countdownText(startValue: string) {
-  const start = new Date(startValue)
-  const diffMs = start.getTime() - Date.now()
+function countdownText(startValue: string): string {
+  const diffMs = new Date(startValue).getTime() - Date.now()
   if (diffMs <= 0) return '0m'
   const minutes = Math.floor(diffMs / 60000)
   const hours = Math.floor(minutes / 60)
@@ -401,16 +461,11 @@ function countdownText(startValue: string) {
 }
 
 function isPaidAndStartable(currentBooking: BookingDetailRow): boolean {
-  return (
-    (currentBooking.status === 'accepted' && currentBooking.payment_status === 'captured')
-  )
+  return canStartCleaning(currentBooking)
 }
 
 function isWithinStartWindow(currentBooking: BookingDetailRow): boolean {
-  if (!isPaidAndStartable(currentBooking)) return false
-  const start = new Date(currentBooking.scheduled_start)
-  const now = new Date()
-  return now.getTime() >= start.getTime() - 60 * 60 * 1000
+  return _isWithinStartWindow(currentBooking)
 }
 
 async function refreshBooking() {
@@ -432,14 +487,14 @@ async function refreshBooking() {
   }
 }
 
-async function acceptBooking() {
+async function handleAcceptBooking() {
   if (!booking.value) return
   actionLoading.value = true
   activeAction.value = 'accept'
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await transitionBookingState(bookingId, 'accepted')
+    await acceptBooking(bookingId)
 
     // Block the cleaner's calendar for the booking date so they won't appear
     // in customer searches during that day.
@@ -465,13 +520,33 @@ async function confirmDecline() {
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await transitionBookingState(bookingId, 'declined', declineReason.value || undefined)
+    await declineBooking(bookingId, declineReason.value || undefined)
     declineModalOpen.value = false
     declineReason.value = ''
     successMessage.value = 'Booking declined'
     await refreshBooking()
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to decline booking.'
+  } finally {
+    actionLoading.value = false
+    activeAction.value = null
+  }
+}
+
+async function confirmCannotAttend() {
+  if (!booking.value) return
+  actionLoading.value = true
+  activeAction.value = 'cannot_attend'
+  errorMessage.value = ''
+  successMessage.value = ''
+  try {
+    await markCannotAttend(bookingId, cannotAttendReason.value || undefined)
+    cannotAttendModalOpen.value = false
+    cannotAttendReason.value = ''
+    successMessage.value = 'Marked as cannot attend. Admin has been notified.'
+    await refreshBooking()
+  } catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : 'Failed to mark cannot attend.'
   } finally {
     actionLoading.value = false
     activeAction.value = null
@@ -500,14 +575,14 @@ async function confirmProposeEstimate() {
   }
 }
 
-async function startCleaning() {
+async function handleStartCleaning() {
   if (!booking.value) return
   actionLoading.value = true
   activeAction.value = 'start'
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await startBookingRequest(bookingId)
+    await startCleaning(bookingId)
     successMessage.value = 'Cleaning in progress'
     await refreshBooking()
   } catch (e) {
@@ -525,7 +600,7 @@ async function endJob() {
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await completeBooking(bookingId)
+    await completeCleaning(bookingId)
     successMessage.value = 'Job completed. Earnings credited.'
     await refreshBooking()
   } catch (e) {

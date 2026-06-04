@@ -46,6 +46,9 @@ export interface BookingRequestInput {
   currency?: string
   notes?: string | null
   durationMinutes?: number | null
+  propertyType?: string | null
+  bedrooms?: string | null
+  bathrooms?: string | null
   financials?: BookingFinancialsSnapshot | null
 }
 
@@ -194,6 +197,9 @@ export async function createBookingRequest(input: BookingRequestInput): Promise<
       payment_status: 'unpaid',
       duration_minutes: input.durationMinutes ?? null,
       notes: input.notes ?? null,
+      property_type_snapshot: input.propertyType ?? null,
+      bedrooms_snapshot: input.bedrooms ?? null,
+      bathrooms_snapshot: input.bathrooms ?? null,
     })
     .select('id')
     .single()

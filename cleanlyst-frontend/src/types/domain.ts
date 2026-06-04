@@ -40,6 +40,9 @@ export interface CustomerPreferences {
   has_pets: boolean | null
   preferred_cleaner_gender: string | null
   room_count: number | null
+  property_type: string | null
+  bedrooms: string | null
+  bathrooms: string | null
   notes: string | null
   setup_completed_at: string | null
 }

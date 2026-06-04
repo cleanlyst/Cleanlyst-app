@@ -59,14 +59,16 @@
             <h2 class="card-heading">Property & Access</h2>
             <dl class="prefs-dl">
               <div class="prefs-dl-row">
-                <dt class="prefs-dt">Rooms</dt>
-                <dd class="prefs-dd">
-                  {{
-                    store.preferences.room_count != null
-                      ? `${store.preferences.room_count} room${store.preferences.room_count !== 1 ? 's' : ''}`
-                      : '—'
-                  }}
-                </dd>
+                <dt class="prefs-dt">Property Type</dt>
+                <dd class="prefs-dd">{{ propertyTypeLabel(store.preferences.property_type) }}</dd>
+              </div>
+              <div class="prefs-dl-row">
+                <dt class="prefs-dt">Bedrooms</dt>
+                <dd class="prefs-dd">{{ bedroomsLabel(store.preferences.bedrooms) }}</dd>
+              </div>
+              <div class="prefs-dl-row">
+                <dt class="prefs-dt">Bathrooms</dt>
+                <dd class="prefs-dd">{{ bathroomsLabel(store.preferences.bathrooms) }}</dd>
               </div>
               <div class="prefs-dl-row">
                 <dt class="prefs-dt">Pets</dt>
@@ -156,13 +158,35 @@
           <h2 class="card-heading">Property & Access</h2>
 
           <div class="form-group">
-            <label class="form-label" for="room_count">Number of Rooms</label>
-            <select id="room_count" v-model="form.room_count" class="form-select">
-              <option :value="null">Select…</option>
-              <option v-for="n in 10" :key="n" :value="n">
-                {{ n }} {{ n === 1 ? 'room' : 'rooms' }}
+            <label class="form-label" for="property_type">Property Type</label>
+            <select id="property_type" v-model="form.property_type" class="form-select">
+              <option value="">Select…</option>
+              <option v-for="opt in PROPERTY_TYPE_OPTIONS" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
               </option>
             </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="bedrooms">Bedrooms</label>
+              <select id="bedrooms" v-model="form.bedrooms" class="form-select">
+                <option value="">Select…</option>
+                <option v-for="opt in BEDROOMS_OPTIONS" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="bathrooms">Bathrooms</label>
+              <select id="bathrooms" v-model="form.bathrooms" class="form-select">
+                <option value="">Select…</option>
+                <option v-for="opt in BATHROOMS_OPTIONS" :key="opt.value" :value="opt.value">
+                  {{ opt.label }}
+                </option>
+              </select>
+            </div>
           </div>
 
           <div class="form-group">
@@ -243,6 +267,42 @@ import { onMounted, reactive, ref } from 'vue'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { UK_CITIES } from '@/utils/ukCities'
 
+const PROPERTY_TYPE_OPTIONS = [
+  { value: 'flat_apartment', label: 'Flat / Apartment' },
+  { value: 'terraced_house', label: 'Terraced House' },
+  { value: 'semi_detached', label: 'Semi Detached House' },
+  { value: 'detached_house', label: 'Detached House' },
+  { value: 'bungalow', label: 'Bungalow' },
+  { value: 'other', label: 'Other' },
+]
+
+const BEDROOMS_OPTIONS = [
+  { value: 'studio', label: 'Studio' },
+  { value: '1', label: '1' },
+  { value: '2', label: '2' },
+  { value: '3', label: '3' },
+  { value: '4', label: '4' },
+  { value: '5', label: '5' },
+  { value: '6', label: '6' },
+  { value: '7', label: '7' },
+  { value: '8', label: '8' },
+  { value: '9', label: '9' },
+  { value: '10+', label: '10+' },
+]
+
+const BATHROOMS_OPTIONS = [
+  { value: '1', label: '1' },
+  { value: '2', label: '2' },
+  { value: '3', label: '3' },
+  { value: '4', label: '4' },
+  { value: '5', label: '5' },
+  { value: '6', label: '6' },
+  { value: '7', label: '7' },
+  { value: '8', label: '8' },
+  { value: '9', label: '9' },
+  { value: '10+', label: '10+' },
+]
+
 const genderOptions = [
   { value: 'no_preference', label: 'No preference' },
   { value: 'female', label: 'Female' },
@@ -262,11 +322,27 @@ const form = reactive({
   address_line_2: '' as string | null,
   city: '' as string | null,
   postcode: '' as string | null,
-  room_count: null as number | null,
+  property_type: '' as string | null,
+  bedrooms: '' as string | null,
+  bathrooms: '' as string | null,
   has_pets: false,
   preferred_cleaner_gender: 'no_preference' as string | null,
   notes: '' as string | null,
 })
+
+function propertyTypeLabel(value: string | null | undefined): string {
+  return PROPERTY_TYPE_OPTIONS.find((o) => o.value === value)?.label ?? '—'
+}
+
+function bedroomsLabel(value: string | null | undefined): string {
+  if (!value) return '—'
+  return BEDROOMS_OPTIONS.find((o) => o.value === value)?.label ?? value
+}
+
+function bathroomsLabel(value: string | null | undefined): string {
+  if (!value) return '—'
+  return BATHROOMS_OPTIONS.find((o) => o.value === value)?.label ?? value
+}
 
 function syncFromStore() {
   const p = store.preferences
@@ -275,7 +351,9 @@ function syncFromStore() {
   form.address_line_2 = p.address_line_2 ?? ''
   form.city = p.city ?? ''
   form.postcode = p.postcode ?? ''
-  form.room_count = p.room_count ?? null
+  form.property_type = p.property_type ?? ''
+  form.bedrooms = p.bedrooms ?? ''
+  form.bathrooms = p.bathrooms ?? ''
   form.has_pets = p.has_pets ?? false
   form.preferred_cleaner_gender = p.preferred_cleaner_gender ?? 'no_preference'
   form.notes = p.notes ?? ''
@@ -317,7 +395,9 @@ async function handleSave() {
     address_line_2: form.address_line_2 || null,
     city: form.city || null,
     postcode: form.postcode || null,
-    room_count: form.room_count,
+    property_type: form.property_type || null,
+    bedrooms: form.bedrooms || null,
+    bathrooms: form.bathrooms || null,
     has_pets: form.has_pets,
     preferred_cleaner_gender: form.preferred_cleaner_gender,
     notes: form.notes || null,

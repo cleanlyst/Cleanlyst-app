@@ -147,9 +147,9 @@
               class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
             >
               <option value="" disabled>Select type</option>
-              <option value="flat">Flat</option>
-              <option value="house">House</option>
-              <option value="airbnb">Airbnb</option>
+              <option v-for="opt in PROPERTY_TYPE_OPTIONS" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+              </option>
             </select>
           </div>
           <div class="grid grid-cols-2 gap-4">
@@ -164,7 +164,13 @@
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
-                <option value="4">4+</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10+">10+</option>
               </select>
             </div>
             <div>
@@ -177,7 +183,13 @@
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
-                <option value="4">4+</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10+">10+</option>
               </select>
             </div>
           </div>
@@ -536,12 +548,27 @@ interface BookableService {
 
 const STEP_LABELS = ['Service', 'Schedule', 'Property', 'Cleaners', 'Summary']
 
+const PROPERTY_TYPE_OPTIONS = [
+  { value: 'flat_apartment', label: 'Flat / Apartment' },
+  { value: 'terraced_house', label: 'Terraced House' },
+  { value: 'semi_detached', label: 'Semi Detached House' },
+  { value: 'detached_house', label: 'Detached House' },
+  { value: 'bungalow', label: 'Bungalow' },
+  { value: 'other', label: 'Other' },
+]
+
 const BEDROOMS_SIZE_SLUG: Record<string, string> = {
   studio: 'studio',
   '1': '1bed',
   '2': '2bed',
   '3': '3bed',
   '4': '4bed',
+  '5': '4bed',
+  '6': '4bed',
+  '7': '4bed',
+  '8': '4bed',
+  '9': '4bed',
+  '10+': '4bed',
 }
 
 const router = useRouter()
@@ -612,8 +639,7 @@ const locationText = computed(() =>
 )
 
 const propertyLabel = computed(() => {
-  const typeMap: Record<string, string> = { flat: 'Flat', house: 'House', airbnb: 'Airbnb' }
-  const type = typeMap[propertyType.value] ?? ''
+  const type = PROPERTY_TYPE_OPTIONS.find((o) => o.value === propertyType.value)?.label ?? ''
   const bed = bedrooms.value === 'studio' ? 'Studio' : bedrooms.value ? `${bedrooms.value} bed` : ''
   const bath = bathrooms.value ? `${bathrooms.value} bath` : ''
   return [type, bed, bath].filter(Boolean).join(', ')
@@ -864,6 +890,9 @@ async function confirmAndPay() {
       currency: selectedCleaner.value.currency,
       notes: fullNotes,
       durationMinutes,
+      propertyType: propertyType.value || null,
+      bedrooms: bedrooms.value || null,
+      bathrooms: bathrooms.value || null,
       financials: pricing
         ? {
             servicePriceCents: pricing.servicePriceCents,
@@ -915,6 +944,9 @@ onMounted(async () => {
     addressCity.value = p.city ?? ''
     addressPostcode.value = p.postcode ?? ''
     notes.value = p.notes ?? ''
+    propertyType.value = p.property_type ?? ''
+    bedrooms.value = p.bedrooms ?? ''
+    bathrooms.value = p.bathrooms ?? ''
   }
 })
 </script>

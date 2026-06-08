@@ -46,6 +46,11 @@ export function getBookingStatusLabel(booking: StatusLabelInput, role: BookingRo
     case 'cleaner_cancelled':
       return role === 'customer' ? 'Cleaner Unavailable' : role === 'admin' ? 'Cleaner Cancelled' : 'You Cancelled'
 
+    case 'reassign_requested':
+      if (role === 'admin') return 'Reassignment Requested'
+      if (role === 'cleaner') return 'Booking reassigned'
+      return 'Finding new cleaner'
+
     case 'cleaner_no_show':
       if (role === 'cleaner') return 'Booking marked as no-show'
       if (role === 'admin') return 'Cleaner no-show'
@@ -89,6 +94,7 @@ export function getStatusPillClass(status: string): string {
       'in_progress',
       'completion_pending_customer',
       'cleaner_no_show',
+      'reassign_requested',
     ].includes(status)
   )
     return 'status-pill--active'

@@ -284,6 +284,14 @@ export interface BookingDetailRow extends BookingListRow {
   requires_additional_payment: boolean
   additional_payment_cents: number | null
   initial_quote_cents: number | null
+  // Reassignment tracking
+  original_cleaner_id?: string | null
+  reassigned_at?: string | null
+  reassigned_by?: string | null
+  reassignment_requested_at?: string | null
+  original_cleaner_name?: string | null
+  reassigned_by_name?: string | null
+  current_cleaner_name?: string | null
   payments?: Array<{ status: string; amount_cents: number | null; captured_at: string | null }>
   customer: { id: string; full_name: string; avatar_url: string | null } | null | undefined
   booking_financials?: {
@@ -331,6 +339,15 @@ function normalizeBookingFinancials(
     cleaner_commission_percent: n(r.cleaner_commission_percent),
     currency: r.currency === null || r.currency === undefined ? null : String(r.currency),
   }
+}
+
+function extractProfileName(raw: unknown): string | null {
+  if (!raw) return null
+  const arr = Array.isArray(raw) ? raw : [raw]
+  if (arr.length === 0) return null
+  const first = arr[0] as Record<string, unknown> | null
+  if (!first) return null
+  return first.full_name ? String(first.full_name) : null
 }
 
 function normalizeBookingDetailRow(raw: unknown): BookingDetailRow | null {
@@ -383,6 +400,26 @@ function normalizeBookingDetailRow(raw: unknown): BookingDetailRow | null {
         ? null
         : Number(row.cleaner_payout_cents),
     currency: row.currency === null || row.currency === undefined ? null : String(row.currency),
+    // Reassignment tracking
+    original_cleaner_id:
+      row.original_cleaner_id === null || row.original_cleaner_id === undefined
+        ? null
+        : String(row.original_cleaner_id),
+    reassigned_at:
+      row.reassigned_at === null || row.reassigned_at === undefined
+        ? null
+        : String(row.reassigned_at),
+    reassigned_by:
+      row.reassigned_by === null || row.reassigned_by === undefined
+        ? null
+        : String(row.reassigned_by),
+    reassignment_requested_at:
+      row.reassignment_requested_at === null || row.reassignment_requested_at === undefined
+        ? null
+        : String(row.reassignment_requested_at),
+    original_cleaner_name: extractProfileName(row.original_cleaner),
+    reassigned_by_name: extractProfileName(row.reassigned_by_profile),
+    current_cleaner_name: extractProfileName(row.current_cleaner),
     payments: normalizePayments(row.payments),
     booking_financials: normalizeBookingFinancials(row.booking_financials),
     customer: normalizeCustomerRelationship(row.customer),
@@ -396,6 +433,9 @@ export async function getBookingById(bookingId: string): Promise<BookingDetailRo
     .select(
       `*,
       customer:profiles!customer_id(id, full_name, avatar_url),
+      original_cleaner:profiles!original_cleaner_id(full_name),
+      current_cleaner:profiles!cleaner_id(full_name),
+      reassigned_by_profile:profiles!reassigned_by(full_name),
       payments(status, amount_cents, captured_at),
       booking_financials(service_price_cents, booking_fee_cents, cleaner_commission_cents, cleaner_payout_cents, platform_revenue_cents, booking_fee_percent, cleaner_commission_percent, currency)`,
     )
@@ -578,6 +618,17 @@ export async function cleanerCannotAttend(
   if (error) throw error
   const booking = normalizeBookingDetailRow(data)
   if (!booking) throw new Error('Failed to mark cannot attend.')
+  return booking
+}
+
+export async function requestReassignment(bookingId: string): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('request_reassignment', {
+    p_booking_id: bookingId,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to request reassignment.')
   return booking
 }
 

@@ -13,10 +13,22 @@
     <!-- Reassign Modal -->
     <AppModal v-model="showReassignModal" title="Reassign Cleaner" size="lg">
       <div class="reassign-modal-body">
+        <!-- Active booking warning -->
+        <div v-if="reassignBookingInfo?.status === 'in_progress'" class="reassign-warning">
+          <span class="material-symbols-outlined reassign-warning__icon">warning</span>
+          <div>
+            <p class="reassign-warning__title">This booking is currently active</p>
+            <p class="reassign-warning__body">Reassigning may disrupt an in-progress service. Confirm only if necessary.</p>
+          </div>
+        </div>
+
         <div v-if="reassignBookingInfo" class="reassign-booking-info">
           <p class="reassign-label">Booking</p>
           <p class="reassign-value">#{{ reassignBookingInfo.id.slice(0, 8).toUpperCase() }} — {{ reassignBookingInfo.service_title_snapshot ?? 'Cleaning Booking' }}</p>
           <p class="reassign-sub">{{ formatDate(reassignBookingInfo.scheduled_start ?? '') }} · {{ formatTimeRange(reassignBookingInfo.scheduled_start, reassignBookingInfo.scheduled_end) }}</p>
+          <p v-if="reassignBookingInfo.cleaner_name" class="reassign-sub">
+            Current cleaner: {{ reassignBookingInfo.cleaner_name }}
+          </p>
         </div>
         <div v-if="!reassignBookingInfo" class="reassign-field">
           <label class="reassign-label" for="reassign-booking-id">Booking ID</label>
@@ -53,10 +65,16 @@
             >
               <span class="cleaner-card__name">{{ c.profiles?.full_name ?? c.business_name ?? '—' }}</span>
               <span class="cleaner-card__city">{{ c.profiles?.city ?? '—' }}</span>
-              <span class="cleaner-card__rating">★ {{ c.average_rating > 0 ? c.average_rating.toFixed(1) : '—' }} ({{ c.review_count }} reviews)</span>
+              <span class="cleaner-card__rating">
+                ★ {{ c.average_rating > 0 ? c.average_rating.toFixed(1) : '—' }}
+                · {{ c.review_count }} completed jobs
+              </span>
+              <span class="cleaner-card__available">✓ Available</span>
             </button>
           </div>
-          <p v-else-if="cleanerSearched && !cleanerSearchLoading" class="reassign-sub">No available cleaners found for this time slot.</p>
+          <div v-else-if="cleanerSearched && !cleanerSearchLoading" class="cleaner-empty">
+            <p class="cleaner-empty__msg">No available replacement cleaners found.</p>
+          </div>
         </div>
         <p v-if="reassignError" class="reassign-error">{{ reassignError }}</p>
       </div>
@@ -144,8 +162,14 @@
         </div>
         <div class="row-actions">
           <span class="col-value">{{ formatPence(booking.quote_cents) }}</span>
+          <span
+            v-if="booking.original_cleaner_id && !REASSIGNABLE_STATUSES.has(booking.status)"
+            class="badge-reassigned"
+          >
+            Reassigned
+          </span>
           <button
-            v-if="booking.no_show_action === 'replacement_requested'"
+            v-else-if="REASSIGNABLE_STATUSES.has(booking.status)"
             class="btn-reassign"
             type="button"
             @click="openReassignForBooking(booking)"
@@ -256,7 +280,18 @@ const TABS = [
   { label: 'Completed', value: 'completed' },
   { label: 'Cancelled', value: 'cancelled' },
   { label: 'No-shows', value: 'cleaner_no_show' },
+  { label: 'Reassign', value: 'reassign_requested' },
 ]
+
+const REASSIGNABLE_STATUSES = new Set([
+  'cleaner_no_show',
+  'accepted',
+  'in_progress',
+  'paid',
+  'cleaner_cancelled',
+  'reassign_requested',
+  'pending_request',
+])
 
 interface BookingRow {
   id: string
@@ -270,6 +305,8 @@ interface BookingRow {
   cleaner_name: string | null
   cleaner_id: string | null
   no_show_action: string | null
+  original_cleaner_id: string | null
+  reassigned_at: string | null
 }
 
 interface BookingQueryRow {
@@ -282,6 +319,8 @@ interface BookingQueryRow {
   quote_cents: number | null
   no_show_action: string | null
   cleaner_id: string | null
+  original_cleaner_id: string | null
+  reassigned_at: string | null
   customer?: {
     full_name?: string | null
   } | null
@@ -370,7 +409,7 @@ async function loadBookings() {
       .select(
         `id, status, scheduled_start, scheduled_end,
          service_title_snapshot, category_snapshot, quote_cents,
-         no_show_action, cleaner_id,
+         no_show_action, cleaner_id, original_cleaner_id, reassigned_at,
          customer:customer_id(full_name),
          cleaner:cleaner_id(full_name)`,
         { count: 'exact' },
@@ -418,6 +457,8 @@ async function loadBookings() {
       cleaner_name: row.cleaner?.full_name ?? null,
       cleaner_id: row.cleaner_id ?? null,
       no_show_action: row.no_show_action ?? null,
+      original_cleaner_id: row.original_cleaner_id ?? null,
+      reassigned_at: row.reassigned_at ?? null,
     }))
   } catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'Failed to load bookings.'
@@ -512,7 +553,11 @@ async function findAvailableCleaners() {
       availabilityTime: timeStr,
       serviceCategory: reassignBookingInfo.value.category_snapshot ?? undefined,
     })
-    cleanerResults.value = results
+    // Exclude the current cleaner from replacement candidates
+    const currentCleanerId = reassignBookingInfo.value.cleaner_id
+    cleanerResults.value = currentCleanerId
+      ? results.filter((c) => c.user_id !== currentCleanerId)
+      : results
     cleanerSearched.value = true
   } catch {
     cleanerResults.value = []
@@ -1173,6 +1218,71 @@ function formatNoShowAction(action: string): string {
   font-size: 13px;
   color: #ba1a1a;
   margin: 0;
+}
+
+/* ── Reassign warning (active booking) ──────────────────────── */
+.reassign-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #fff3e0;
+  border: 1px solid #ffcc02;
+  padding: 0.875rem 1rem;
+}
+
+.reassign-warning__icon {
+  color: #e65100;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.reassign-warning__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #bf360c;
+  margin: 0 0 0.2rem;
+}
+
+.reassign-warning__body {
+  font-size: 12px;
+  color: #e65100;
+  margin: 0;
+}
+
+/* ── Already-reassigned badge ───────────────────────────────── */
+.badge-reassigned {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+  white-space: nowrap;
+}
+
+/* ── Cleaner card available indicator ──────────────────────── */
+.cleaner-card__available {
+  font-size: 11px;
+  color: #2e7d32;
+  font-weight: 600;
+  margin-top: 0.125rem;
+}
+
+/* ── No cleaners found ──────────────────────────────────────── */
+.cleaner-empty {
+  padding: 1rem;
+  background: var(--surface-container, #eeeeee);
+}
+
+.cleaner-empty__msg {
+  font-size: 13px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0 0 0.5rem;
 }
 
 .btn-modal-cancel {

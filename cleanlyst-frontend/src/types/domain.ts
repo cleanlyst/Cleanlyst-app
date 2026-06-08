@@ -20,6 +20,7 @@ export type BookingStatus =
   | 'paid'
   | 'payout_released'
   | 'cleaner_cancelled'
+  | 'reassign_requested'
 
 export type ApplicationStatus =
   | 'draft'

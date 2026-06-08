@@ -503,7 +503,10 @@ async function submitReview(action: 'approved' | 'rejected' | 'needs_info') {
       await reviewCleanerApplication(appId, action, undefined, reviewNotes.value || undefined)
       // Update the row in-place (stays in list under 'needs_info' status)
       const idx = applications.value.findIndex((a) => a.id === appId)
-      if (idx !== -1) applications.value[idx] = { ...applications.value[idx], status: 'needs_info' }
+      const existing = applications.value[idx]
+      if (idx !== -1 && existing !== undefined) {
+        applications.value[idx] = { ...existing, status: 'needs_info' }
+      }
       reviewSuccess.value = 'Changes requested — the cleaner has been notified.'
     } else {
       await reviewCleanerApplication(appId, action, reviewNotes.value || undefined)

@@ -267,7 +267,8 @@ export async function getAdminRevenueChart(year: number): Promise<number[]> {
   for (const row of (data ?? []) as { amount_cents: number | null; captured_at: string | null; created_at: string | null }[]) {
     const dateStr = row.captured_at ?? row.created_at
     if (dateStr) {
-      monthly[new Date(dateStr).getMonth()] += row.amount_cents ?? 0
+      const month = new Date(dateStr).getMonth()
+      monthly[month] = (monthly[month] ?? 0) + (row.amount_cents ?? 0)
     }
   }
   return monthly

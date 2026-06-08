@@ -79,6 +79,42 @@
           </div>
 
           <div class="action-group">
+            <!-- Reassignment: cleaner cancelled — customer can request a new cleaner -->
+            <div v-if="canRequestNewCleaner" class="status-info status-info--warning">
+              <span class="material-symbols-outlined status-info-icon">person_off</span>
+              Your cleaner is unable to attend this booking.
+            </div>
+            <button
+              v-if="canRequestNewCleaner"
+              type="button"
+              class="btn-primary"
+              :disabled="reassignRequestLoading"
+              @click="requestNewCleaner"
+            >
+              {{ reassignRequestLoading ? 'Requesting…' : 'Request New Cleaner' }}
+            </button>
+            <a v-if="canRequestNewCleaner" href="mailto:support@cleanlyst.com" class="btn-support">
+              Contact Support
+            </a>
+            <p v-if="reassignRequestError" class="error-text">{{ reassignRequestError }}</p>
+
+            <!-- Reassignment: waiting for admin to assign a new cleaner -->
+            <div v-if="hasRequestedReassignment" class="status-info status-info--finding">
+              <span class="material-symbols-outlined status-info-icon">manage_search</span>
+              Finding another cleaner for your booking — we'll notify you as soon as one is confirmed.
+            </div>
+
+            <!-- Reassignment: a new cleaner has been assigned -->
+            <div v-if="hasBeenReassigned" class="reassignment-banner">
+              <span class="material-symbols-outlined reassignment-banner__icon">check_circle</span>
+              <div>
+                <p class="reassignment-banner__title">Replacement cleaner assigned</p>
+                <p class="reassignment-banner__body">
+                  A replacement cleaner has been assigned to your booking. Your service will continue as scheduled.
+                </p>
+              </div>
+            </div>
+
             <!-- estimate_proposed: cleaner raised price and customer owes more -->
             <div v-if="booking.status === 'estimate_proposed' && booking.requires_additional_payment" class="estimate-card">
               <p class="estimate-label">Revised Quote — Additional Payment Required</p>
@@ -390,6 +426,7 @@ import {
   transitionBookingState,
   recordAdditionalPayment,
   reportCleanerNoShow,
+  requestReassignment,
   type BookingDetailRow,
 } from '@/services/bookingService'
 import { cancelAsCustomer } from '@/services/bookingLifecycleService'
@@ -425,6 +462,8 @@ const noShowSuccess = ref('')
 const replacementCleaners = ref<CleanerSearchResult[]>([])
 const currentTime = ref(Date.now())
 let noShowClock: ReturnType<typeof setInterval> | null = null
+const reassignRequestLoading = ref(false)
+const reassignRequestError = ref('')
 
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
@@ -443,6 +482,27 @@ const canReportNoShow = computed(() => {
   const start = new Date(currentBooking.scheduled_start)
   if (Number.isNaN(start.valueOf())) return false
   return currentTime.value > start.getTime() + 30 * 60 * 1000
+})
+
+// Customer can request a new cleaner when theirs cancelled and no request yet made
+const canRequestNewCleaner = computed(() => {
+  const b = booking.value
+  if (!b) return false
+  return b.status === 'cleaner_cancelled' && !b.reassignment_requested_at
+})
+
+// Customer already submitted a reassignment request
+const hasRequestedReassignment = computed(() => {
+  const b = booking.value
+  if (!b) return false
+  return b.status === 'reassign_requested' || (b.status === 'cleaner_cancelled' && !!b.reassignment_requested_at)
+})
+
+// Admin completed the reassignment (booking is now active again with a new cleaner)
+const hasBeenReassigned = computed(() => {
+  const b = booking.value
+  if (!b) return false
+  return !!b.original_cleaner_id && ['accepted', 'paid', 'in_progress', 'pending_request'].includes(b.status)
 })
 
 function isTerminal(status: string): boolean {
@@ -467,13 +527,27 @@ function statusInfo(status: string): string {
     payment_authorized: 'Your cleaner will start soon.',
     in_progress: 'Cleaner is currently cleaning.',
     cleaner_no_show: "We'll help find another available cleaner.",
-    cleaner_cancelled: 'Your cleaner is unable to attend. We are working to arrange a replacement or refund.',
+    reassign_requested: "We are finding a replacement cleaner for you. We'll notify you when one is confirmed.",
     cancelled:
       booking.value?.no_show_action === 'refund_requested'
         ? 'Refund processed successfully'
         : 'This booking has been cancelled.',
   }
   return map[status] ?? ''
+}
+
+async function requestNewCleaner() {
+  if (!booking.value || reassignRequestLoading.value) return
+  reassignRequestLoading.value = true
+  reassignRequestError.value = ''
+  try {
+    const updated = await requestReassignment(bookingId)
+    booking.value = updated
+  } catch (e) {
+    reassignRequestError.value = e instanceof Error ? e.message : 'Failed to request a new cleaner.'
+  } finally {
+    reassignRequestLoading.value = false
+  }
 }
 
 
@@ -937,6 +1011,66 @@ onBeforeUnmount(() => {
   color: var(--secondary, #5e5e5e);
   background: var(--surface-container, #eeeeee);
   padding: 0.75rem 1rem;
+}
+
+.status-info--warning {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.status-info--finding {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.reassignment-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  padding: 1rem;
+}
+
+.reassignment-banner__icon {
+  color: #2e7d32;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.reassignment-banner__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1b5e20;
+  margin: 0 0 0.25rem;
+}
+
+.reassignment-banner__body {
+  font-size: 13px;
+  color: #2e7d32;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.btn-support {
+  display: block;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  color: var(--secondary, #5e5e5e);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.btn-support:hover {
+  background: var(--surface-variant, #e2e2e2);
 }
 
 .status-info-icon {

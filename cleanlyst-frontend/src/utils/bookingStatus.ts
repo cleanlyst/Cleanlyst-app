@@ -63,6 +63,7 @@ export function getBookingDisplayStatus(
     paid: role === 'cleaner' ? 'Ready to Start' : 'Confirmed & Paid',
     payout_released: 'Payout Released',
     cleaner_cancelled: role === 'customer' ? 'Cleaner Unavailable' : 'Cancelled',
+    reassign_requested: role === 'customer' ? 'Finding new cleaner' : 'Reassignment requested',
   }
 
   return (

@@ -182,17 +182,24 @@ export async function ensureUserWithProfile(email: string, password: string, ful
     await upsertCustomerPreferences(user.id)
   }
 
-  if (role === 'admin') {
-    await upsertAdminProfile(user.id)
-  }
+  // Note: admin role is already handled by upsertProfile above.
+  // upsertAdminProfile was redundant and overwrote full_name with null,
+  // violating the NOT NULL constraint on a fresh database.
 
   return user
 }
 
 export async function seedTestData() {
   await ensureUserWithProfile(TEST_ENV.E2E_CUSTOMER_EMAIL, TEST_ENV.E2E_CUSTOMER_PASSWORD, 'E2E Customer', 'customer')
-  await ensureUserWithProfile(TEST_ENV.E2E_CLEANER_EMAIL, TEST_ENV.E2E_CLEANER_PASSWORD, 'E2E Cleaner', 'cleaner_active')
+  const cleanerUser = await ensureUserWithProfile(TEST_ENV.E2E_CLEANER_EMAIL, TEST_ENV.E2E_CLEANER_PASSWORD, 'E2E Cleaner', 'cleaner_active')
   await ensureUserWithProfile(TEST_ENV.E2E_ADMIN_EMAIL, TEST_ENV.E2E_ADMIN_PASSWORD, 'E2E Admin', 'admin')
+
+  // Clear any lingering availability overrides so future test dates are not blocked.
+  // Overrides are set when a cleaner accepts a booking; without cleanup they accumulate
+  // across test runs and prevent the E2E cleaner from appearing in searches.
+  if (cleanerUser?.id) {
+    await serviceClient.from('availability_overrides').delete().eq('cleaner_id', cleanerUser.id)
+  }
 }
 
 export async function findLatestBookingForCustomer(customerId: string) {
@@ -259,11 +266,24 @@ export async function findAllCompletedBookingsWithFinancials(): Promise<
 }
 
 export async function cleanupBookingsForCustomer(customerId: string): Promise<void> {
-  const { error } = await serviceClient
+  // Collect booking IDs first so we can clean up FK-dependent child tables.
+  const { data: rows } = await serviceClient
     .from('bookings')
-    .delete()
+    .select('id')
     .eq('customer_id', customerId)
-    .in('status', ['pending_request', 'accepted', 'paid', 'cancelled', 'cleaner_cancelled', 'declined'])
+  const ids = ((rows ?? []) as { id: string }[]).map((r) => r.id)
+  if (ids.length === 0) return
+
+  // Delete child records that reference bookings (foreign key constraints).
+  // The transactions table has transactions_booking_id_fkey; other tables
+  // (payments, payouts, booking_status_events) should cascade or be handled here.
+  await serviceClient.from('transactions').delete().in('booking_id', ids)
+  await serviceClient.from('payouts').delete().in('booking_id', ids)
+  await serviceClient.from('payments').delete().in('booking_id', ids)
+  await serviceClient.from('booking_status_events').delete().in('booking_id', ids)
+  await serviceClient.from('notifications').delete().in('booking_id', ids)
+
+  const { error } = await serviceClient.from('bookings').delete().eq('customer_id', customerId)
   if (error) throw error
 }
 

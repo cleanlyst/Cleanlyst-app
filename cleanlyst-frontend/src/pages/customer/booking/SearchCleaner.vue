@@ -117,8 +117,9 @@
         <h2 class="font-h2 text-h2 text-primary">Schedule</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block font-label-md text-label-md text-primary mb-2">Date</label>
+            <label for="booking-date" class="block font-label-md text-label-md text-primary mb-2">Date</label>
             <input
+              id="booking-date"
               v-model="bookingDate"
               type="date"
               :min="minDate"
@@ -126,8 +127,9 @@
             />
           </div>
           <div>
-            <label class="block font-label-md text-label-md text-primary mb-2">Start Time</label>
+            <label for="booking-time" class="block font-label-md text-label-md text-primary mb-2">Start Time</label>
             <input
+              id="booking-time"
               v-model="bookingTime"
               type="time"
               class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
@@ -141,8 +143,9 @@
         <h2 class="font-h2 text-h2 text-primary">Property Details</h2>
         <div class="space-y-4">
           <div>
-            <label class="block font-label-md text-label-md text-primary mb-2">Property Type</label>
+            <label for="booking-property-type" class="block font-label-md text-label-md text-primary mb-2">Property Type</label>
             <select
+              id="booking-property-type"
               v-model="propertyType"
               class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
             >
@@ -154,8 +157,9 @@
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block font-label-md text-label-md text-primary mb-2">Bedrooms</label>
+              <label for="booking-bedrooms" class="block font-label-md text-label-md text-primary mb-2">Bedrooms</label>
               <select
+                id="booking-bedrooms"
                 v-model="bedrooms"
                 class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
               >
@@ -174,8 +178,9 @@
               </select>
             </div>
             <div>
-              <label class="block font-label-md text-label-md text-primary mb-2">Bathrooms</label>
+              <label for="booking-bathrooms" class="block font-label-md text-label-md text-primary mb-2">Bathrooms</label>
               <select
+                id="booking-bathrooms"
                 v-model="bathrooms"
                 class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
               >
@@ -447,11 +452,12 @@
 
           <button
             class="w-full py-4 bg-primary text-white font-label-md disabled:opacity-50 flex items-center justify-center gap-2"
-            :disabled="paying"
+            :disabled="paying || loadingServices"
+            data-testid="confirm-pay-btn"
             @click="confirmAndPay"
           >
-            <span v-if="paying" class="loading-spinner-sm"></span>
-            {{ paying ? 'Processing…' : 'Confirm and Pay' }}
+            <span v-if="paying || loadingServices" class="loading-spinner-sm"></span>
+            {{ paying ? 'Processing…' : loadingServices ? 'Loading…' : 'Confirm and Pay' }}
           </button>
           <p class="text-center text-caption font-caption text-secondary">
             Payment held securely. Released to cleaner after job completion.
@@ -624,6 +630,7 @@ const cleanerBasePrices = ref<Map<string, number>>(new Map())
 const cleanerServices = ref<BookableService[]>([])
 const paying = ref(false)
 const payError = ref('')
+const loadingServices = ref(false)
 const currentPricing = ref<PricingResult | null>(null)
 // Pre-loaded at step 4 so cleaner card estimates include the correct fee
 const platformFeePercent = ref(7)
@@ -821,11 +828,18 @@ async function loadCleanerBasePrices(cleanerIds: string[]) {
 async function selectCleaner(c: CleanerSearchResult) {
   selectedCleaner.value = c
   step.value = 5
-  // Load services FIRST so subtotalPence reflects the actual service price
-  // before loadPricing() runs — eliminates the race condition that caused
-  // totalPence to be computed against the hourly-rate estimate.
-  await loadCleanerServices(c.user_id)
-  await loadPricing()
+  loadingServices.value = true
+  try {
+    // Load services FIRST so subtotalPence reflects the actual service price
+    // before loadPricing() runs — eliminates the race condition that caused
+    // totalPence to be computed against the hourly-rate estimate.
+    // The button is disabled while loadingServices is true, preventing
+    // confirmAndPay from running before services are available.
+    await loadCleanerServices(c.user_id)
+    await loadPricing()
+  } finally {
+    loadingServices.value = false
+  }
 }
 
 async function loadCleanerServices(cleanerId: string) {

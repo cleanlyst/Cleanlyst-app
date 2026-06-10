@@ -119,6 +119,7 @@ const router = useRouter()
 const UPCOMING_STATUSES = [
   'pending_request',
   'accepted',
+  'paid',            // EPIC 4: upfront-payment bookings auto-advance here after acceptance
   'paid_pending_start',
   'estimate_proposed',
   'awaiting_customer_payment',
@@ -126,6 +127,7 @@ const UPCOMING_STATUSES = [
   'in_progress',
   'completion_pending_customer',
   'cleaner_no_show',
+  'reassign_requested',
 ]
 
 const PAST_STATUSES = ['completed', 'declined', 'cleaner_declined', 'cancelled', 'disputed', 'refunded']
@@ -173,6 +175,7 @@ function statusClass(status: string): string {
   if (['pending_request', 'accepted', 'estimate_proposed'].includes(status)) return 'pill--pending'
   if (
     [
+      'paid',
       'paid_pending_start',
       'scheduled',
       'payment_authorized',
@@ -180,6 +183,7 @@ function statusClass(status: string): string {
       'awaiting_customer_payment',
       'completion_pending_customer',
       'cleaner_no_show',
+      'reassign_requested',
     ].includes(status)
   )
     return 'pill--active'

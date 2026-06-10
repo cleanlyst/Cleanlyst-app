@@ -45,6 +45,7 @@ import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useCleanerBookings } from '@/composables/useCleanerBookings'
 import { completeBooking, startBooking as startBookingRequest } from '@/services/bookingService'
+import { upsertAvailabilityOverride } from '@/services/availabilityService'
 import { subscribeToTable, unsubscribe } from '@/lib/realtime'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { cleanerDashboardLinks } from '@/pages/dasboardLinks'
@@ -169,9 +170,27 @@ async function acceptBooking(id: string) {
   actionLoadingId.value = id
   try {
     await transition(id, 'accepted')
+
+    // Block the cleaner's calendar for the booking date so they won't appear
+    // in customer searches during that day. Non-fatal — acceptance already succeeded.
+    const booking = bookings.value.find((b) => b.id === id)
+    if (booking?.scheduled_start && auth.userId) {
+      const bookingDate = booking.scheduled_start.slice(0, 10)
+      await upsertAvailabilityOverride(auth.userId, bookingDate, false, 'Booking accepted').catch(
+        () => {
+          // Override is a best-effort block; do not surface this to the cleaner
+        },
+      )
+    }
+
     await loadBookings()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to accept booking.'
+    // Supabase wraps network errors as plain objects (not Error instances),
+    // so check .message on any thrown value.
+    const msg = (e instanceof Error ? e.message : null)
+      ?? (e !== null && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : null)
+      ?? 'Failed to accept booking.'
+    errorMessage.value = msg
   } finally {
     actionLoadingId.value = null
   }

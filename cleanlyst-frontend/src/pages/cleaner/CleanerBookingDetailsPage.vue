@@ -91,6 +91,7 @@
               v-if="booking.status === 'pending_request'"
               type="button"
               class="btn-start"
+              data-testid="accept-booking-btn"
               :disabled="actionLoading"
               @click="handleAcceptBooking"
             >
@@ -148,6 +149,7 @@
               v-if="(isPaidAndStartable(booking) || booking.status === 'paid') && isWithinStartWindow(booking)"
               type="button"
               class="btn-start"
+              data-testid="start-cleaning-btn"
               :disabled="actionLoading"
               @click="handleStartCleaning"
             >
@@ -158,6 +160,7 @@
               v-if="booking.status === 'in_progress'"
               type="button"
               class="btn-start"
+              data-testid="end-cleaning-btn"
               :disabled="actionLoading"
               @click="endJob"
             >

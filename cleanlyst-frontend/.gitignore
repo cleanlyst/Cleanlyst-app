@@ -11,8 +11,22 @@ node_modules
 .DS_Store
 dist
 dist-ssr
-coverage
+coverage/
 *.local
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+
+# Visual snapshots
+__snapshots__/
+__screenshots__/
+
+# Playwright traces/videos
+*.webm
+trace.zip
+trace.*
 
 # Environment variables
 .env
@@ -27,6 +41,7 @@ coverage
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 *.suo
 *.ntvs*
@@ -41,9 +56,6 @@ coverage
 # Cypress
 /cypress/videos/
 /cypress/screenshots/
-
-# Vitest
-__screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs

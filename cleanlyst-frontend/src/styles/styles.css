@@ -456,7 +456,6 @@ button:disabled,
 .status-pill--pending {
   background: #ffffff;
   color: #4c6c4a;
-  border: 1px solid #ffcc80;
 }
 
 .status-pill--active {

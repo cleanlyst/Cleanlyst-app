@@ -96,6 +96,7 @@
               v-if="b.status === 'pending_request'"
               class="btn-start"
               type="button"
+              data-testid="accept-booking-btn"
               @click="handleAcceptBooking(b.id)"
             >
               Accept
@@ -104,6 +105,7 @@
               v-if="b.status === 'pending_request'"
               class="btn-decline"
               type="button"
+              data-testid="decline-booking-btn"
               @click="handleDeclineBooking(b.id)"
             >
               Decline
@@ -112,6 +114,7 @@
               v-if="canStartCleaning(b)"
               class="btn-start"
               type="button"
+              data-testid="start-cleaning-btn"
               @click="handleStartBooking(b.id)"
             >
               Start Cleaning
@@ -120,6 +123,7 @@
               v-if="b.status === 'in_progress'"
               class="btn-start"
               type="button"
+              data-testid="end-cleaning-btn"
               @click="handleMarkCompleted(b.id)"
             >
               End Cleaning

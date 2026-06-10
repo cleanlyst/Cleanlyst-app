@@ -21,6 +21,20 @@ out
 .nuxt
 .output
 
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+
+# Visual snapshots
+__snapshots__/
+__screenshots__/
+
+# Playwright traces/videos
+*.webm
+trace.zip
+trace.*
+
 # Logs
 logs
 *.log
@@ -36,6 +50,7 @@ Thumbs.db
 # Editor
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .idea
 *.suo
 *.ntvs*
@@ -44,6 +59,6 @@ Thumbs.db
 *.sw?
 
 # Misc
-coverage
+coverage/
 *.tsbuildinfo
 .eslintcache

@@ -14,6 +14,7 @@ export function useCleanerBookings() {
     accepted: bookings.value.filter((b) =>
       [
         'accepted',
+        'paid',              // EPIC 4: upfront-payment bookings live here after acceptance
         'paid_pending_start',
         'estimate_proposed',
         'awaiting_customer_payment',

@@ -20,6 +20,7 @@ export function useCustomerBookings() {
     accepted: bookings.value.filter((b) =>
       [
         'accepted',
+        'paid',              // EPIC 4: upfront-payment bookings live here after acceptance
         'paid_pending_start',
         'estimate_proposed',
         'awaiting_customer_payment',
@@ -27,6 +28,7 @@ export function useCustomerBookings() {
         'in_progress',
         'completion_pending_customer',
         'cleaner_no_show',
+        'reassign_requested',
       ].includes(b.status),
     ).length,
     completed: bookings.value.filter((b) => b.status === 'completed').length,

@@ -24,14 +24,16 @@ const TAB_STATUSES: Record<BookingTab, string[] | null> = {
   ],
   active: [
     'accepted',
+    'paid',           // EPIC 4: upfront-payment bookings auto-advance from accepted → paid
     'paid_pending_start',
     'scheduled',
     'in_progress',
     'completion_pending_customer',
     'cleaner_no_show',
+    'reassign_requested', // waiting for replacement cleaner
   ],
   completed: ['completed'],
-  cancelled: ['cancelled', 'declined', 'cleaner_declined', 'disputed', 'refunded'],
+  cancelled: ['cancelled', 'declined', 'cleaner_declined', 'disputed', 'refunded', 'cleaner_cancelled'],
 }
 
 export interface BookingListItem {

@@ -7,6 +7,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 dotenv.config({ path: path.resolve(__dirname, '.env.playwright') })
 
+const isCI = !!process.env.CI
+const shouldWriteReports = isCI || process.env.PLAYWRIGHT_WRITE_REPORTS === 'true'
+
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60_000,
@@ -14,14 +17,16 @@ export default defineConfig({
     timeout: 5000,
   },
   fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: [
-    ['html', { outputFolder: 'playwright-report', open: 'never' }],
-    ['json', { outputFile: 'test-results/results.json' }],
-    ['list'],
-  ],
+  forbidOnly: isCI,
+  retries: isCI ? 1 : 0,
+  workers: isCI ? 1 : undefined,
+  reporter: shouldWriteReports
+    ? [
+        ['html', { outputFolder: 'playwright-report', open: 'never' }],
+        ['json', { outputFile: 'test-results/results.json' }],
+        ['list'],
+      ]
+    : [['list']],
   use: {
     baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL ?? 'http://127.0.0.1:5173',
     headless: true,

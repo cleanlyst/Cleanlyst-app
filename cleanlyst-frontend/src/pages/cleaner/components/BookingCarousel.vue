@@ -119,6 +119,7 @@
                 <button
                   class="btn-primary"
                   type="button"
+                  data-testid="accept-booking-btn"
                   :disabled="loadingId === b.id"
                   @click="emit('accept', b.id)"
                 >
@@ -128,6 +129,7 @@
                 <button
                   class="btn-outline"
                   type="button"
+                  data-testid="decline-booking-btn"
                   :disabled="loadingId === b.id"
                   @click="emit('decline', b.id)"
                 >
@@ -139,6 +141,7 @@
                 <button
                   class="btn-primary"
                   type="button"
+                  data-testid="start-cleaning-btn"
                   :disabled="loadingId === b.id"
                   @click="emit('start', b.id)"
                 >
@@ -151,6 +154,7 @@
                 <button
                   class="btn-primary"
                   type="button"
+                  data-testid="end-cleaning-btn"
                   :disabled="loadingId === b.id"
                   @click="emit('end', b.id)"
                 >

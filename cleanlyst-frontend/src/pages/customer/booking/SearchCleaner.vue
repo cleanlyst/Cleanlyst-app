@@ -784,7 +784,10 @@ async function loadAvailableCleaners() {
   cleanerBasePrices.value = new Map()
   loadPlatformFeePercent()
   try {
-    const params: Parameters<typeof searchCleaners>[0] = { limit: 15 }
+    const params: Parameters<typeof searchCleaners>[0] = {
+      limit: 15,
+      serviceSlug: selectedServiceSlug.value,
+    }
     if (bookingDate.value) params.availabilityDate = bookingDate.value
     if (bookingDate.value && bookingTime.value) params.availabilityTime = bookingTime.value
     cleaners.value = await searchCleaners(params)

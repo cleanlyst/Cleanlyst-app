@@ -1,4 +1,5 @@
 import { getSupabaseClient } from './supabaseClient'
+import { CORE_SERVICE_MATCH_KEYWORDS } from '@/utils/serviceCatalog'
 
 export interface CleanerSearchResult {
   user_id: string
@@ -18,11 +19,47 @@ export interface CleanerSearchResult {
 export interface CleanerSearchParams {
   city?: string
   serviceCategory?: string
+  serviceSlug?: string
   minRating?: number
   availabilityDate?: string // YYYY-MM-DD format
   availabilityTime?: string // HH:MM format – only used when availabilityDate is also set
+  durationMinutes?: number
   limit?: number
   offset?: number
+}
+
+function normalizeTimeForQuery(time: string): string {
+  return time.length === 5 ? `${time}:00` : time
+}
+
+function buildServiceMatchFilter(serviceSlug?: string, serviceCategory?: string): string | null {
+  if (serviceSlug) {
+    const keywords = CORE_SERVICE_MATCH_KEYWORDS[serviceSlug] ?? []
+    const terms = keywords.map((keyword) => keyword.trim()).filter(Boolean)
+    if (terms.length > 0) {
+      return terms
+        .flatMap((term) => [
+          `title.ilike.%${term}%`,
+          `category.ilike.%${term}%`,
+          `description.ilike.%${term}%`,
+        ])
+        .join(',')
+    }
+  }
+
+  return serviceCategory ? `category.eq.${serviceCategory}` : null
+}
+
+function getRequestedWindow(
+  availabilityDate?: string,
+  availabilityTime?: string,
+  durationMinutes = 180,
+): { start: string; end: string } | null {
+  if (!availabilityDate || !availabilityTime) return null
+  const start = new Date(`${availabilityDate}T${availabilityTime}:00`)
+  if (Number.isNaN(start.valueOf())) return null
+  const end = new Date(start.getTime() + durationMinutes * 60_000)
+  return { start: start.toISOString(), end: end.toISOString() }
 }
 
 export async function searchCleaners(
@@ -34,19 +71,26 @@ export async function searchCleaners(
     offset = 0,
     minRating,
     serviceCategory,
+    serviceSlug,
     availabilityDate,
     availabilityTime,
+    durationMinutes,
   } = params
 
-  // When filtering by service category, first collect cleaner IDs that offer it.
+  // When filtering by service, first collect cleaner IDs that offer the specific
+  // MVP service. Category-only filtering is retained for older call sites.
   // services.cleaner_id = profiles.id = cleaner_profiles.user_id
   let allowedCleanerIds: string[] | null = null
-  if (serviceCategory) {
-    const { data: svcRows, error: svcErr } = await supabase
+  const serviceFilter = buildServiceMatchFilter(serviceSlug, serviceCategory)
+  if (serviceFilter) {
+    let serviceQuery = supabase
       .from('services')
       .select('cleaner_id')
-      .eq('category', serviceCategory)
       .eq('active', true)
+
+    serviceQuery = serviceQuery.or(serviceFilter)
+
+    const { data: svcRows, error: svcErr } = await serviceQuery
     if (svcErr) throw svcErr
     allowedCleanerIds = (svcRows ?? []).map((r) => r.cleaner_id as string)
     if (allowedCleanerIds.length === 0) return []
@@ -84,7 +128,8 @@ export async function searchCleaners(
       .eq('active', true)
 
     if (availabilityTime) {
-      slotsQuery = slotsQuery.lte('start_time', availabilityTime).gt('end_time', availabilityTime)
+      const normalizedTime = normalizeTimeForQuery(availabilityTime)
+      slotsQuery = slotsQuery.lte('start_time', normalizedTime).gt('end_time', normalizedTime)
     }
 
     const { data: slotRows, error: slotErr } = await slotsQuery
@@ -95,6 +140,25 @@ export async function searchCleaners(
     excludedOverrideIds.forEach((id) => availableIds.delete(id))
 
     availableCleanerIds = Array.from(availableIds)
+
+    const requestedWindow = getRequestedWindow(availabilityDate, availabilityTime, durationMinutes)
+    if (requestedWindow && availableCleanerIds.length > 0) {
+      const conflictChecks = await Promise.all(
+        availableCleanerIds.map(async (cleanerId) => {
+          const { data, error } = await supabase.rpc('cleaner_has_booking_conflict', {
+            p_cleaner_id: cleanerId,
+            p_start: requestedWindow.start,
+            p_end: requestedWindow.end,
+          })
+          if (error) throw error
+          return { cleanerId, hasConflict: data === true }
+        }),
+      )
+      availableCleanerIds = conflictChecks
+        .filter((result) => !result.hasConflict)
+        .map((result) => result.cleanerId)
+    }
+
     if (availableCleanerIds.length === 0) return []
   }
 
@@ -117,6 +181,7 @@ export async function searchCleaners(
     `,
     )
     .eq('status', 'approved')
+    .eq('is_available', true)
     .range(offset, offset + limit - 1)
     .order('average_rating', { ascending: false })
 

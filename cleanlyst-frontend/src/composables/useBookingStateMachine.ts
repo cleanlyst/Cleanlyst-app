@@ -5,7 +5,7 @@ const transitions: Partial<Record<BookingStatus, BookingStatus[]>> = {
   pending_request: ['accepted', 'declined', 'cleaner_declined', 'cancelled', 'estimate_proposed'],
   accepted: ['paid', 'in_progress', 'cancelled'],
   paid: ['in_progress', 'cancelled', 'cleaner_cancelled'],
-  in_progress: ['completed', 'completion_pending_customer', 'disputed'],
+  in_progress: ['completion_pending_customer', 'disputed'],
   completed: ['disputed', 'payout_released'],
   payout_released: [],
 

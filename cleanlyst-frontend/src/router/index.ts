@@ -281,6 +281,7 @@ const router = createRouter({
     },
     {
       path: '/admin/dashboard/approvals',
+      alias: ['/admin/dashboard/cleaners'],
       name: 'AdminApprovals',
       meta: { title: 'Approvals', requiresAuth: true, requiresRole: 'admin' },
       component: () => import('../pages/admin/AdminDashboard.vue'),
@@ -311,6 +312,7 @@ const router = createRouter({
     },
     {
       path: '/admin/dashboard/bookingmanagement',
+      alias: ['/admin/dashboard/bookings'],
       name: 'BookingManagement',
       meta: { title: 'Booking Management', requiresAuth: true, requiresRole: 'admin' },
       component: () => import('../pages/admin/AdminDashboard.vue'),

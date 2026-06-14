@@ -53,7 +53,7 @@
         </div>
         <div class="detail-block">
           <span class="detail-label">Payment</span>
-          <p class="detail-value">{{ booking.payment_status ?? 'Unknown' }}</p>
+          <p class="detail-value">{{ formatPaymentStatus(booking.payment_status) }}</p>
         </div>
         <div class="detail-block">
           <span class="detail-label">Location</span>
@@ -244,6 +244,18 @@ function getRouteParam(value: unknown): string {
 
 function isReassignable(status: string): boolean {
   return REASSIGNABLE_STATUSES.has(status)
+}
+
+function formatPaymentStatus(ps: string | null | undefined): string {
+  switch (ps) {
+    case 'captured': return 'Payment Received'
+    case 'released': return 'Released to Cleaner'
+    case 'refunded': return 'Refunded'
+    case 'pending': return 'Pending'
+    case 'failed': return 'Payment Failed'
+    case 'authorized': return 'Authorized'
+    default: return ps ? ps.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Unknown'
+  }
 }
 
 function formatTimeRange(start: string | null | undefined, end: string | null | undefined): string {

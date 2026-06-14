@@ -24,6 +24,7 @@ async function createBookingViaUI(page: import('@playwright/test').Page) {
   await page.getByLabel('Date').fill(futureDate(3))
   await page.getByLabel('Start Time').fill('11:00')
   await page.getByRole('button', { name: /continue/i }).click()
+  await page.getByLabel('Property Type').selectOption('terraced_house')
   await page.getByLabel('Bedrooms').selectOption('2')
   await page.getByLabel('Bathrooms').selectOption('1')
   await page.getByPlaceholder('Address line 1').fill('12 Wigan Lane')

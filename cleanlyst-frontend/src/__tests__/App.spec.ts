@@ -15,6 +15,6 @@ describe('App', () => {
       },
     })
 
-    expect(wrapper.find('.navbar').exists()).toBe(true)
+    expect(wrapper.find('.app-header').exists()).toBe(true)
   })
 })

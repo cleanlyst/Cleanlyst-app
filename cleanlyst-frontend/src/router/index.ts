@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { pinia } from '@/stores'
 import type { Role } from '@/stores/auth'
+import { isProductionEnvironment } from '@/config/environment'
 
 const CLEANER_PROTECTED_ROUTES = [
   'CleanerDashboard',
@@ -343,16 +344,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore(pinia)
 
-  const hostname = window.location.hostname.toLowerCase()
-
-  const lockedDomains = [
-    'cleanlyst.co.uk',
-    'www.cleanlyst.co.uk',
-    'cleanlyst.app',
-    'www.cleanlyst.app',
-  ]
-
-  const isLockedDomain = lockedDomains.includes(hostname)
+  const isLockedDomain = isProductionEnvironment()
 
   // 🔒 GLOBAL LOCK: force coming soon page
   const lockedDomainAllowedRoutes = ['ComingSoon', 'PrivacyPolicy', 'TermsOfService']

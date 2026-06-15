@@ -1,20 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
+import { getSupabaseConfig } from '@/config/supabase'
+import { logEnvironmentInfo } from '@/config/environment'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
+logEnvironmentInfo()
 
-export const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey)
+const { url, key } = getSupabaseConfig()
 
-export const supabaseConfigError = hasSupabaseConfig
-  ? null
-  : 'Missing Supabase environment variables. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to a .env file in cleanlyst-frontend.'
+export const supabase = createClient(url, key)
 
-export const supabase = hasSupabaseConfig ? createClient(supabaseUrl!, supabaseAnonKey!) : null
+// Kept for backward compatibility — always true after config validation above
+export const hasSupabaseConfig = true
+export const supabaseConfigError = null
 
 export function requireSupabase() {
-  if (!supabase) {
-    throw new Error(supabaseConfigError ?? 'Supabase is not configured.')
-  }
-
   return supabase
 }

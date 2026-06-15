@@ -9,9 +9,19 @@ const envPath = path.resolve(projectRoot, '.env.playwright')
 
 dotenv.config({ path: envPath })
 
+const PRODUCTION_DOMAINS = ['cleanlyst.co.uk', 'www.cleanlyst.co.uk', 'cleanlyst.app', 'www.cleanlyst.app']
+
+const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL ?? 'http://127.0.0.1:5173'
+const testHostname = new URL(baseUrl).hostname
+if (PRODUCTION_DOMAINS.includes(testHostname)) {
+  throw new Error(
+    `Playwright cannot run against production. PLAYWRIGHT_TEST_BASE_URL="${baseUrl}" resolves to a production domain.`,
+  )
+}
+
 const requiredEnv = [
-  'SUPABASE_URL',
-  'SUPABASE_SERVICE_ROLE_KEY',
+  'SUPABASE_STAGING_URL',
+  'SUPABASE_STAGING_SERVICE_ROLE_KEY',
   'E2E_CUSTOMER_EMAIL',
   'E2E_CUSTOMER_PASSWORD',
   'E2E_CLEANER_EMAIL',
@@ -25,16 +35,16 @@ if (missingEnv.length > 0) {
   throw new Error(`Missing required environment variables in ${envPath}: ${missingEnv.join(', ')}`)
 }
 
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string
+const serviceRoleKey = process.env.SUPABASE_STAGING_SERVICE_ROLE_KEY as string
 if (serviceRoleKey.includes('publishable') || serviceRoleKey.startsWith('sbp_') || serviceRoleKey.startsWith('sb_publishable_')) {
   throw new Error(
-    `SUPABASE_SERVICE_ROLE_KEY appears to be a publishable key. Use the Supabase service role key instead of a publishable API key in ${envPath}.`,
+    `SUPABASE_STAGING_SERVICE_ROLE_KEY appears to be a publishable key. Use the Supabase service role key instead of a publishable API key in ${envPath}.`,
   )
 }
 
 export const TEST_ENV = {
-  SUPABASE_URL: process.env.SUPABASE_URL as string,
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY as string,
+  SUPABASE_URL: process.env.SUPABASE_STAGING_URL as string,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_STAGING_SERVICE_ROLE_KEY as string,
   E2E_CUSTOMER_EMAIL: process.env.E2E_CUSTOMER_EMAIL as string,
   E2E_CUSTOMER_PASSWORD: process.env.E2E_CUSTOMER_PASSWORD as string,
   E2E_CLEANER_EMAIL: process.env.E2E_CLEANER_EMAIL as string,

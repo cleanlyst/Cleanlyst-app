@@ -375,8 +375,6 @@ async function saveProfile() {
       country: profileForm.country || null,
     }
 
-    console.debug('[CustomerSettingsSection] saveProfile payload', payload)
-
     const supabase = requireSupabase()
     const { data, error } = await supabase
       .from('profiles')
@@ -384,8 +382,6 @@ async function saveProfile() {
       .eq('id', auth.userId)
       .select('*')
       .single()
-
-    console.debug('[CustomerSettingsSection] saveProfile response', { data, error })
 
     if (error) throw error
     if (!data) {

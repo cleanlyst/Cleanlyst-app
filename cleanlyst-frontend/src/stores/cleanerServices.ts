@@ -87,7 +87,6 @@ export const useCleanerServicesStore = defineStore('cleanerServices', () => {
         pricing_model: 'fixed' as const,
         active: true,
       }))
-      console.debug('[cleanerServices] addMany payload', rows)
       const { error: err } = await supabase.from('services').insert(rows)
       if (err) {
         console.error('[cleanerServices] insert error', err)
@@ -105,7 +104,6 @@ export const useCleanerServicesStore = defineStore('cleanerServices', () => {
         console.error('[cleanerServices] refresh error', fetchErr)
         throw fetchErr
       }
-      console.debug('[cleanerServices] refreshed services', fresh)
       services.value = (fresh ?? []) as CleanerService[]
       _sort()
     } catch (e) {

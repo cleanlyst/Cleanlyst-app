@@ -228,16 +228,6 @@ export async function createBookingRequest(input: BookingRequestInput): Promise<
     })
     if (finError) {
       // Non-fatal: server-side fallback in record_initial_payment will write the snapshot.
-      console.warn('[Pricing] booking_financials client write failed (server will retry):', finError.message)
-    } else {
-      console.log('[Pricing] booking_financials snapshot written:', {
-        bookingId: booking.id,
-        servicePriceCents: f.servicePriceCents,
-        bookingFeeCents: f.bookingFeeCents,
-        commissionCents: f.cleanerCommissionCents,
-        cleanerPayoutCents: f.cleanerPayoutCents,
-        platformRevenueCents: f.platformRevenueCents,
-      })
     }
   }
 
@@ -474,12 +464,6 @@ export async function completeBooking(bookingId: string): Promise<BookingDetailR
   if (error) throw error
   const booking = normalizeBookingDetailRow(data)
   if (!booking) throw new Error('Failed to complete booking.')
-  console.log('[Booking] Completed:', {
-    bookingId,
-    cleanerPayoutCents: booking.cleaner_payout_cents,
-    quoteCents: booking.quote_cents,
-    bookingFinancials: booking.booking_financials,
-  })
   return booking
 }
 
@@ -544,13 +528,6 @@ export async function processPaymentDirect(bookingId: string): Promise<BookingDe
   })
 
   if (error) throw new Error(error.message ?? 'Payment processing failed')
-
-  const pr = paymentResult as { quote_cents?: number; payment_status?: string } | null
-  console.log('[Payment] record_initial_payment completed:', {
-    bookingId,
-    amountCents: pr?.quote_cents,
-    paymentStatus: pr?.payment_status,
-  })
 
   const updated = await getBookingById(bookingId)
   if (!updated) throw new Error('Payment recorded but failed to fetch updated booking.')

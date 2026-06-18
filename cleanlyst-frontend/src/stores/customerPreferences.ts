@@ -38,8 +38,6 @@ export const useCustomerPreferencesStore = defineStore('customerPreferences', {
         ...payload,
       }
 
-      console.debug('[customerPreferences] save payload', body)
-
       let data = null
       let error = null
 
@@ -70,8 +68,6 @@ export const useCustomerPreferencesStore = defineStore('customerPreferences', {
           error = fallback.error
         }
       }
-
-      console.debug('[customerPreferences] save response', { data, error })
 
       if (error) throw error
       if (!data) throw new Error('Failed to persist customer preferences.')

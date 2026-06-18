@@ -14,7 +14,7 @@
           <!-- Guest: acquisition CTAs -->
           <template v-if="isGuest">
             <router-link :to="{ name: 'SignupCustomer' }" class="button-primary">
-              Book a cleaner
+              Book Cleaner
             </router-link>
             <router-link :to="{ name: 'SignupCleaner' }" class="button-secondary">
               Join as a cleaner
@@ -24,7 +24,7 @@
           <!-- Customer: booking CTA only -->
           <template v-else-if="isCustomer">
             <router-link :to="{ name: 'BookCleaner' }" class="button-primary">
-              Book a cleaner
+              Book Cleaner
             </router-link>
           </template>
 
@@ -70,20 +70,15 @@
             </p>
           </div>
           <div class="service-grid">
-            <router-link
+            <article
               v-for="svc in customerServices"
               :key="svc.slug"
-              :to="{ name: 'BookCleaner', query: { service: svc.slug } }"
               class="service-card"
             >
               <span class="material-symbols-outlined service-card__icon">{{ svc.icon }}</span>
               <h3 class="service-card__title">{{ svc.title }}</h3>
               <p class="service-card__copy">{{ svc.description }}</p>
-              <span class="service-card__cta">
-                Book now
-                <span class="material-symbols-outlined service-card__arrow">arrow_forward</span>
-              </span>
-            </router-link>
+            </article>
           </div>
         </template>
 
@@ -175,7 +170,7 @@
           </p>
           <div class="callout-actions">
             <router-link :to="{ name: 'SignupCustomer' }" class="button-primary">
-              Book a cleaner
+              Book Cleaner
             </router-link>
             <router-link :to="{ name: 'SignupCleaner' }" class="button-secondary">
               Join as a cleaner
@@ -192,7 +187,7 @@
           </p>
           <div class="callout-actions">
             <router-link :to="{ name: 'BookCleaner' }" class="button-primary">
-              Book a cleaner
+              Book Cleaner
             </router-link>
           </div>
         </template>
@@ -237,6 +232,12 @@ const { isGuest, isCustomer, isCleaner, dashboardRouteName } = useRolePermission
 
 const customerServices = [
   {
+    slug: 'standard-cleaning',
+    icon: 'home',
+    title: 'Standard Cleaning',
+    description: 'Regular cleaning for homes that need a reliable maintenance clean.',
+  },
+  {
     slug: 'deep-cleaning',
     icon: 'cleaning_services',
     title: 'Deep Cleaning',
@@ -247,12 +248,6 @@ const customerServices = [
     icon: 'key',
     title: 'End of Tenancy',
     description: 'Move-out ready. Get your deposit back with a comprehensive tenancy clean.',
-  },
-  {
-    slug: 'regular-cleaning',
-    icon: 'home',
-    title: 'Regular Home Cleaning',
-    description: 'Weekly or fortnightly visits to keep your home consistently fresh.',
   },
   {
     slug: 'airbnb-turnover',

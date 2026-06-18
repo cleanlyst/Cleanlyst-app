@@ -382,7 +382,7 @@
                 <p class="font-label-md text-label-md text-on-surface">{{ svc.title }}</p>
                 <p class="text-caption font-caption text-on-surface-variant">{{ svc.category }} · {{ svc.duration_minutes ? `${svc.duration_minutes}min` : 'TBC' }}</p>
               </div>
-              <span class="font-label-md text-label-md text-on-surface">{{ formatPence(svc.base_price_pence) }}</span>
+              <span class="font-label-md text-label-md text-on-surface">{{ formatPence(svc.base_price_cents) }}</span>
             </div>
           </div>
         </section>

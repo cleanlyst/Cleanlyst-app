@@ -6,8 +6,7 @@ import { useBooking } from "@/hooks/useBooking";
 
 export default function ScheduleScreen() {
   const router = useRouter();
-  const draft = useBooking((state) => state.draft);
-  const setDraft = useBooking((state) => state.setDraft);
+  const { draft, setDraft } = useBooking();
 
   const defaultDate = new Date().toISOString().slice(0, 10);
   const [bookingDate, setBookingDate] = useState(defaultDate);

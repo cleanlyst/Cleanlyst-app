@@ -3,8 +3,6 @@ export type Cleaner = {
   name: string;
   businessName: string | null;
   bio: string | null;
-  hourlyRate: number;
-  hourlyRateCents: number | null;
   currency: string | null;
   rating: number;
   averageRating: number;

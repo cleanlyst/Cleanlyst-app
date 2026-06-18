@@ -11,7 +11,7 @@ export default function ServiceSelectScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ cleanerId?: string }>();
   const cleanerId = typeof params.cleanerId === "string" ? params.cleanerId : undefined;
-  const setDraft = useBooking((state) => state.setDraft);
+  const { setDraft } = useBooking();
 
   const [cleanerName, setCleanerName] = useState<string | null>(null);
   const [services, setServices] = useState<CleanerServiceOption[]>([]);
@@ -60,14 +60,13 @@ export default function ServiceSelectScreen() {
       cleanerPayoutCents: service.base_price_cents,
       currency: "GBP",
       duration: service.duration_minutes,
-      hourlyRateCents: null,
     });
     router.push("/(booking)/schedule");
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Choose a service</Text>
+      <Text style={styles.title}>Service</Text>
       <Text style={styles.subtitle}>
         {cleanerName ? `Booking with ${cleanerName}` : "Select a cleaner to continue."}
       </Text>
@@ -76,7 +75,7 @@ export default function ServiceSelectScreen() {
       ) : error ? (
         <Text style={[styles.statusText, styles.errorText]}>{error}</Text>
       ) : services.length === 0 ? (
-        <Text style={styles.statusText}>This cleaner has no active services available.</Text>
+        <Text style={styles.statusText}>This cleaner has no MVP services available.</Text>
       ) : (
         <FlatList
           data={services}

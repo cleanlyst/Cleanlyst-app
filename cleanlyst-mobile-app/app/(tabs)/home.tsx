@@ -12,7 +12,7 @@ export default function HomeScreen() {
         Find cleaners, manage bookings, and track live status in one place.
       </Text>
       <Button
-        title="Find cleaners"
+        title="Book Cleaner"
         onPress={() => router.push("/(tabs)/cleaners")}
       />
     </View>

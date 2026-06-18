@@ -15,11 +15,11 @@ export type BookingStatus =
 
 export type BookingDraft = {
   cleanerId?: string;
-  cleanerName?: string;
+  cleanerName?: string | null;
   serviceId?: string;
   serviceTitleSnapshot?: string;
   serviceCategorySnapshot?: string;
-  serviceDescriptionSnapshot?: string;
+  serviceDescriptionSnapshot?: string | null;
   quoteCents?: number;
   cleanerPayoutCents?: number;
   currency?: string;
@@ -27,7 +27,6 @@ export type BookingDraft = {
   scheduledStart?: string;
   scheduledEnd?: string;
   duration?: number;
-  hourlyRateCents?: number;
   address?: string;
   notes?: string;
 };

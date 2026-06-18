@@ -12,9 +12,34 @@ export interface CleanerServiceOption {
   active: boolean;
 }
 
+const MVP_SERVICE_KEYWORDS: Record<string, string[]> = {
+  "standard-cleaning": ["standard", "regular", "maintenance"],
+  "deep-cleaning": ["deep", "deep clean", "deep-cleaning", "deep cleaning"],
+  "airbnb-turnover": ["airbnb", "holiday let", "turnover", "changeover", "vacation rental"],
+  "end-of-tenancy": [
+    "end of tenancy",
+    "move-in",
+    "move-out",
+    "moveout",
+    "movein",
+    "tenancy",
+    "move in",
+    "move out",
+  ],
+};
+
+function isMvpService(service: CleanerServiceOption): boolean {
+  const searchable = [service.title, service.category, service.description ?? ""]
+    .join(" ")
+    .toLowerCase();
+
+  return Object.values(MVP_SERVICE_KEYWORDS).some((keywords) =>
+    keywords.some((keyword) => searchable.includes(keyword.toLowerCase())),
+  );
+}
+
 function mapCleanerRecord(record: Record<string, unknown>): Cleaner {
   const profile = record.profiles as Record<string, unknown> | null;
-  const hourlyRateCents = record.hourly_rate_cents as number | null;
 
   return {
     id: String(record.user_id ?? ''),
@@ -24,8 +49,6 @@ function mapCleanerRecord(record: Record<string, unknown>): Cleaner {
         ? null
         : String(record.business_name),
     bio: record.bio === null || record.bio === undefined ? null : String(record.bio),
-    hourlyRate: hourlyRateCents ? hourlyRateCents / 100 : 0,
-    hourlyRateCents: hourlyRateCents ?? null,
     currency: record.currency === null || record.currency === undefined ? null : String(record.currency),
     rating: Number(record.average_rating ?? 0),
     averageRating: Number(record.average_rating ?? 0),
@@ -47,7 +70,7 @@ export async function searchCleaners(query: string): Promise<Cleaner[]> {
   let queryBuilder = supabase
     .from('cleaner_profiles')
     .select(
-      `user_id, business_name, bio, hourly_rate_cents, currency, average_rating, review_count, service_radius_km, profiles!inner(full_name, avatar_url, city)`,
+      `user_id, business_name, bio, currency, average_rating, review_count, service_radius_km, profiles!inner(full_name, avatar_url, city)`,
     )
     .eq('status', 'approved')
     .order('average_rating', { ascending: false })
@@ -70,7 +93,7 @@ export async function getCleanerPublicProfile(cleanerId: string): Promise<Cleane
   const { data, error } = await supabase
     .from('cleaner_profiles')
     .select(
-      `user_id, business_name, bio, hourly_rate_cents, currency, average_rating, review_count, service_radius_km, profiles!inner(full_name, avatar_url, city)`,
+      `user_id, business_name, bio, currency, average_rating, review_count, service_radius_km, profiles!inner(full_name, avatar_url, city)`,
     )
     .eq('user_id', cleanerId)
     .maybeSingle();
@@ -84,7 +107,7 @@ export async function getCleanerServices(
   cleanerId: string,
 ): Promise<CleanerServiceOption[]> {
   const { data, error } = await supabase
-    .from<CleanerServiceOption>('services')
+    .from('services')
     .select('id, cleaner_id, title, category, description, base_price_cents, duration_minutes, active')
     .eq('cleaner_id', cleanerId)
     .eq('active', true)
@@ -92,5 +115,5 @@ export async function getCleanerServices(
     .order('title');
 
   if (error) throw error;
-  return (data ?? []) as CleanerServiceOption[];
+  return ((data ?? []) as CleanerServiceOption[]).filter(isMvpService);
 }

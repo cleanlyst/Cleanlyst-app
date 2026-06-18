@@ -31,8 +31,8 @@ export default function CleanersScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Cleanlyst cleaners</Text>
-      <Text style={styles.subtitle}>Search approved cleaners and begin your booking request.</Text>
+      <Text style={styles.title}>Book Cleaner</Text>
+      <Text style={styles.subtitle}>Choose an approved cleaner for your MVP cleaning service.</Text>
       <View style={styles.searchRow}>
         <TextInput
           style={styles.searchInput}

@@ -12,7 +12,7 @@ export default function CleanerCard({ cleaner, onPress }: CleanerCardProps) {
       <View>
         <Text style={styles.name}>{cleaner.name}</Text>
         <Text style={styles.details}>
-          {cleaner.rating.toFixed(1)} ★ · £{cleaner.hourlyRate}/hr
+          {cleaner.rating.toFixed(1)} ★ · {cleaner.reviewCount} reviews
         </Text>
       </View>
     </Pressable>

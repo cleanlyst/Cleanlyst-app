@@ -147,7 +147,6 @@ async function handleSubmit(drafts: ServiceDraft[]) {
     wizardError.value = 'Authentication error — please refresh the page and try again.'
     return
   }
-  console.debug('[CleanerServicesPricingSection] submitting drafts', drafts)
   wizardError.value = null
   wizardSuccess.value = false
   try {

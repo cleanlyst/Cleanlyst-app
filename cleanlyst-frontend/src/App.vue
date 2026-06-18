@@ -16,11 +16,11 @@
             Dashboard
           </router-link>
           <router-link
-            v-if="auth.isAuthenticated && auth.hasRole('customer')"
+            v-if="auth.isAuthenticated && auth.hasRole('customer') && route.name !== 'BookCleaner'"
             :to="{ name: 'BookCleaner' }"
             :class="navLinkClass('BookCleaner')"
           >
-            Book a cleaner
+            Book Cleaner
           </router-link>
           
           <router-link :to="{ name: 'About' }" :class="navLinkClass('About')">
@@ -105,11 +105,11 @@
             Home
           </router-link>
           <router-link
-            v-if="auth.isAuthenticated && auth.hasRole('customer')"
+            v-if="auth.isAuthenticated && auth.hasRole('customer') && route.name !== 'BookCleaner'"
             :to="{ name: 'BookCleaner' }"
             :class="navLinkClass('BookCleaner')"
           >
-            Book a cleaner
+            Book Cleaner
           </router-link>
           
           <router-link

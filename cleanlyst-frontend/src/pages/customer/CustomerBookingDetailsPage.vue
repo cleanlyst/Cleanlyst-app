@@ -720,7 +720,7 @@ async function loadReassignCleanerPrices(cleanerIds: string[]) {
   const supabase = getSupabaseClient()
   const { data } = await supabase
     .from('services')
-    .select('cleaner_id, base_price_pence, title, category')
+    .select('cleaner_id, base_price_cents, title, category')
     .in('cleaner_id', cleanerIds)
     .eq('active', true)
   if (!data) return
@@ -730,7 +730,7 @@ async function loadReassignCleanerPrices(cleanerIds: string[]) {
     const existing = map.get(svc.cleaner_id)
     const isMatch = (svc.category ?? '').toLowerCase() === targetCategory
     if (!existing || isMatch) {
-      map.set(svc.cleaner_id, { price: svc.base_price_pence, title: svc.title })
+      map.set(svc.cleaner_id, { price: svc.base_price_cents, title: svc.title })
     }
   }
   reassignCleanerPrices.value = map

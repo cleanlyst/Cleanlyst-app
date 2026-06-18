@@ -88,8 +88,8 @@
         >
         <h3>Transparent Pricing</h3>
         <p>
-          Know the cost before you book. Clear hourly rates and upfront pricing mean no surprises
-          when your cleaner arrives.
+          Know the cost before you book. Clear service pricing means no surprises when your cleaner
+          arrives.
         </p>
       </div>
     </section>

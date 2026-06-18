@@ -402,7 +402,6 @@ async function handleSave() {
     preferred_cleaner_gender: form.preferred_cleaner_gender,
     notes: form.notes || null,
   }
-  console.debug('[CustomerPreferencesSection] handleSave payload', payload)
   try {
     await store.save(payload)
     saveStatus.value = 'success'

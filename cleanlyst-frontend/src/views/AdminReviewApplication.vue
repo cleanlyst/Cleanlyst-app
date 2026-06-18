@@ -67,7 +67,7 @@
                   >Professional Summary</label
                 >
                 <p class="font-body text-body leading-relaxed">
-                  Experienced residential and commercial cleaner with over 8 years in the industry.
+                  Experienced home cleaner with over 8 years in the industry.
                   Specialized in eco-friendly cleaning solutions and high-end residential
                   maintenance. Previously managed a small team of three cleaners for corporate
                   office contracts.

@@ -35,9 +35,9 @@ export default function BookingConfirmScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Confirm booking</Text>
+      <Text style={styles.title}>Confirm Booking</Text>
       <Text style={styles.body}>
-        Review the final details before sending your booking request to the cleaner.
+        Review the final details before placing your booking.
       </Text>
       <View style={styles.summary}>
         <Text style={styles.sectionTitle}>Cleaner</Text>
@@ -50,7 +50,7 @@ export default function BookingConfirmScreen() {
         <Text>{draft.notes ?? "None"}</Text>
       </View>
       <Button
-        title={saving ? "Sending request…" : "Confirm request"}
+        title={saving ? "Placing booking…" : "Confirm Booking"}
         onPress={handleConfirm}
         disabled={saving}
       />

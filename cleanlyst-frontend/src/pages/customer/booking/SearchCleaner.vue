@@ -48,7 +48,7 @@
         </div>
       </section>
 
-      <!-- Step 1: Service + Add-ons -->
+      <!-- Step 1: Service -->
       <section v-if="step === 1" class="max-w-2xl mx-auto space-y-8">
         <h2 class="font-h2 text-h2 text-primary">Choose the service you need</h2>
 
@@ -78,37 +78,6 @@
             <p class="font-label-md text-label-md text-primary">{{ svc.name }}</p>
             <p class="text-caption font-caption text-secondary line-clamp-2">{{ svc.description }}</p>
           </button>
-        </div>
-
-        <div class="space-y-3">
-          <h3 class="font-label-md text-label-md text-primary">Optional Add-ons</h3>
-          <label
-            v-for="addon in ADDON_CATEGORY.subServices"
-            :key="addon.slug"
-            :class="[
-              'flex items-center gap-4 p-4 border cursor-pointer transition-colors',
-              selectedAddOns.includes(addon.slug)
-                ? 'border-primary bg-surface-variant'
-                : 'border-outline-variant bg-white hover:border-primary',
-            ]"
-          >
-            <input
-              type="checkbox"
-              :value="addon.slug"
-              v-model="selectedAddOns"
-              class="w-4 h-4 accent-zinc-900"
-            />
-            <span class="material-symbols-outlined text-xl text-primary">{{
-              addon.icon ?? 'add'
-            }}</span>
-            <div class="flex-1">
-              <p class="font-label-md text-label-md text-primary">{{ addon.name }}</p>
-              <p class="text-caption font-caption text-secondary">{{ addon.description }}</p>
-            </div>
-            <span class="font-label-md text-label-md text-primary">
-              + {{ formatPence(ADD_ON_PRICES_PENCE[addon.slug] ?? 0) }}
-            </span>
-          </label>
         </div>
       </section>
 
@@ -257,7 +226,7 @@
         </div>
       </section>
 
-      <!-- Step 4: Available Cleaners -->
+      <!-- Step 4: Cleaner -->
       <section v-else-if="step === 4" class="max-w-5xl mx-auto space-y-6">
         <h2 class="font-h2 text-h2 text-primary">Available Cleaners</h2>
 
@@ -332,7 +301,7 @@
                   <div class="font-h2 text-h2">
                     {{ estimatedCostForCleaner(c) > 0 ? formatPence(estimatedCostForCleaner(c)) : '—' }}
                   </div>
-                  <div class="text-secondary text-caption font-caption">est. total</div>
+                  <div class="text-secondary text-caption font-caption">service price</div>
                 </div>
               </div>
               <p v-if="c.bio" class="text-sm text-on-surface-variant line-clamp-2">{{ c.bio }}</p>
@@ -352,10 +321,10 @@
         </div>
       </section>
 
-      <!-- Step 5: Booking Summary + Payment -->
+      <!-- Step 5: Payment -->
       <section v-else-if="step === 5" class="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div class="lg:col-span-7 space-y-6">
-          <h2 class="font-h2 text-h2 text-primary">Booking Summary</h2>
+          <h2 class="font-h2 text-h2 text-primary">Payment</h2>
 
           <!-- Selected cleaner -->
           <div class="border border-outline-variant p-5 flex items-center gap-4">
@@ -392,10 +361,6 @@
               <span class="text-secondary">Service</span>
               <span class="text-primary font-medium">{{ selectedServiceLabel }}</span>
             </div>
-            <div v-if="selectedAddOns.length > 0" class="flex justify-between text-sm">
-              <span class="text-secondary">Add-ons</span>
-              <span class="text-primary font-medium">{{ selectedAddOns.map(addonName).join(', ') }}</span>
-            </div>
             <div class="flex justify-between text-sm">
               <span class="text-secondary">Date</span>
               <span class="text-primary font-medium">{{ formatDateDisplay(bookingDate) }}</span>
@@ -419,14 +384,6 @@
             <div class="flex justify-between text-sm">
               <span class="text-secondary">{{ selectedServiceLabel }}</span>
               <span class="text-primary font-medium">{{ formatPence(basePricePence) }}</span>
-            </div>
-            <div
-              v-for="slug in selectedAddOns"
-              :key="slug"
-              class="flex justify-between text-sm"
-            >
-              <span class="text-secondary">{{ addonName(slug) }}</span>
-              <span class="text-primary font-medium">+ {{ formatPence(ADD_ON_PRICES_PENCE[slug] ?? 0) }}</span>
             </div>
             <div class="pt-3 border-t border-outline-variant space-y-2">
               <div class="flex justify-between text-sm">
@@ -536,11 +493,8 @@ import { formatPence } from '@/utils/format'
 import { isCityEnabled, ROLLOUT_UNAVAILABLE_MESSAGE } from '@/config/rollout'
 import { fetchPlatformSettings, getPricing, type PricingResult } from '@/services/pricingEngine'
 import {
-  ADDON_CATEGORY,
-  ADD_ON_PRICES_PENCE,
   CORE_SERVICE_CATEGORY,
   CORE_SERVICE_MATCH_KEYWORDS,
-  PROPERTY_SIZE_OPTIONS,
 } from '@/utils/serviceCatalog'
 
 interface BookableService {
@@ -553,7 +507,7 @@ interface BookableService {
   base_price_cents: number
 }
 
-const STEP_LABELS = ['Service', 'Schedule', 'Property', 'Cleaners', 'Summary']
+const STEP_LABELS = ['Service', 'Schedule', 'Property', 'Cleaner', 'Payment']
 
 const PROPERTY_TYPE_OPTIONS = [
   { value: 'flat_apartment', label: 'Flat / Apartment' },
@@ -564,20 +518,6 @@ const PROPERTY_TYPE_OPTIONS = [
   { value: 'other', label: 'Other' },
 ]
 
-const BEDROOMS_SIZE_SLUG: Record<string, string> = {
-  studio: 'studio',
-  '1': '1bed',
-  '2': '2bed',
-  '3': '3bed',
-  '4': '4bed',
-  '5': '4bed',
-  '6': '4bed',
-  '7': '4bed',
-  '8': '4bed',
-  '9': '4bed',
-  '10+': '4bed',
-}
-
 const router = useRouter()
 const auth = useAuthStore()
 const prefsStore = useCustomerPreferencesStore()
@@ -587,7 +527,6 @@ const paymentSuccess = ref(false)
 
 // Step 1
 const selectedServiceSlug = ref('')
-const selectedAddOns = ref<string[]>([])
 
 // Step 2
 function localDateStr(d: Date): string {
@@ -700,16 +639,10 @@ const matchedService = computed(() =>
 
 const basePricePence = computed(() => {
   if (!matchedService.value) return 0
-  const sizeSlug = BEDROOMS_SIZE_SLUG[bedrooms.value] ?? '2bed'
-  const multiplier = PROPERTY_SIZE_OPTIONS.find((o) => o.value === sizeSlug)?.multiplier ?? 1.0
-  return Math.round(matchedService.value.base_price_cents * multiplier)
+  return matchedService.value.base_price_cents
 })
 
-const addOnsTotalPence = computed(() =>
-  selectedAddOns.value.reduce((sum, slug) => sum + (ADD_ON_PRICES_PENCE[slug] ?? 0), 0),
-)
-
-const subtotalPence = computed(() => basePricePence.value + addOnsTotalPence.value)
+const subtotalPence = computed(() => basePricePence.value)
 
 // Always derived from the CURRENT subtotal using the known fee %, never from a
 // potentially-stale currentPricing object that may have been computed for a
@@ -733,17 +666,8 @@ function displayName(c: CleanerSearchResult): string {
   return c.business_name ?? c.profiles?.full_name ?? 'Cleaner'
 }
 
-function addonName(slug: string): string {
-  return ADDON_CATEGORY.subServices.find((s) => s.slug === slug)?.name ?? slug
-}
-
 function estimatedCostForCleaner(c: CleanerSearchResult): number {
-  const basePrice = cleanerBasePrices.value.get(c.user_id)
-  if (!basePrice) return 0
-  const sizeSlug = BEDROOMS_SIZE_SLUG[bedrooms.value] ?? '2bed'
-  const multiplier = PROPERTY_SIZE_OPTIONS.find((o) => o.value === sizeSlug)?.multiplier ?? 1.0
-  const subtotal = Math.round(basePrice * multiplier) + addOnsTotalPence.value
-  return Math.round(subtotal * (1 + platformFeePercent.value / 100))
+  return cleanerBasePrices.value.get(c.user_id) ?? 0
 }
 
 function formatDateDisplay(date: string): string {
@@ -775,7 +699,7 @@ async function loadPricing() {
   }
 }
 
-// Re-fetch if add-ons change while on the summary step
+// Re-fetch if the selected service price changes while on the payment step
 watch(subtotalPence, () => {
   if (step.value === 5) loadPricing()
 })
@@ -859,8 +783,8 @@ async function selectCleaner(c: CleanerSearchResult) {
   loadingServices.value = true
   try {
     // Load services FIRST so subtotalPence reflects the actual service price
-    // before loadPricing() runs — eliminates the race condition that caused
-    // totalPence to be computed against the hourly-rate estimate.
+    // before loadPricing() runs, so the payment total uses the selected
+    // service's base price.
     // The button is disabled while loadingServices is true, preventing
     // confirmAndPay from running before services are available.
     await loadCleanerServices(c.user_id)
@@ -905,17 +829,8 @@ async function confirmAndPay() {
     const scheduledStart = new Date(`${bookingDate.value}T${bookingTime.value}:00`)
     const scheduledEnd = new Date(scheduledStart.getTime() + durationMinutes * 60000)
 
-    const addOnNote =
-      selectedAddOns.value.length > 0
-        ? `Add-ons: ${selectedAddOns.value.map(addonName).join(', ')}`
-        : null
-    const fullNotes = [notes.value, addOnNote].filter(Boolean).join('\n') || null
-
-    const titleSnapshot =
-      selectedServiceLabel.value +
-      (selectedAddOns.value.length > 0
-        ? ' + ' + selectedAddOns.value.map(addonName).join(', ')
-        : '')
+    const fullNotes = notes.value || null
+    const titleSnapshot = selectedServiceLabel.value
 
     const booking = await createBookingRequest({
       customerId: auth.userId,

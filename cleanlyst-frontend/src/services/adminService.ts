@@ -55,7 +55,7 @@ export interface AdminCleanerService {
   title: string
   category: string | null
   description: string | null
-  base_price_pence: number
+  base_price_cents: number
   duration_minutes: number | null
   active: boolean
 }
@@ -122,16 +122,12 @@ export async function reviewCleanerApplication(
     }
   }
 
-  console.log('Reviewing cleaner application:', { applicationId, action, notes, requestedInfo })
-
   const { data, error } = await supabase.rpc('admin_review_cleaner_application', {
     p_application_id: applicationId,
     p_action: action,
     p_notes: action === 'rejected' ? (notes?.trim() ?? null) : (notes ?? null),
     p_requested_info: requestedInfo ?? null,
   })
-
-  console.log('Review response:', { data, error })
 
   if (error) {
     if (error.message.toLowerCase().includes('not found')) {

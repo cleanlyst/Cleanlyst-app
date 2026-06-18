@@ -14,8 +14,8 @@ export default function PricingScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Review pricing</Text>
-      <Text style={styles.body}>Confirm the booking details before sending your request.</Text>
+      <Text style={styles.title}>Payment</Text>
+      <Text style={styles.body}>Review the service price before confirming your booking.</Text>
       <View style={styles.summary}>
         <Text style={styles.sectionTitle}>Cleaner</Text>
         <Text>{draft.cleanerName ?? "Cleaner selected"}</Text>
@@ -26,7 +26,7 @@ export default function PricingScreen() {
         <Text style={styles.sectionTitle}>Total</Text>
         <Text style={styles.total}>{formatCents(totalCents)}</Text>
       </View>
-      <Button title="Continue to confirmation" onPress={() => router.push("/(booking)/confirm")} />
+      <Button title="Continue" onPress={() => router.push("/(booking)/confirm")} />
     </View>
   );
 }

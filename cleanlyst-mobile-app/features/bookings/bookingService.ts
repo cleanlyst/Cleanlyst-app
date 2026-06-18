@@ -30,7 +30,6 @@ export async function createBookingRequest(
       status: 'pending_request',
       payment_status: 'unpaid',
       duration_minutes: draft.duration ?? null,
-      hourly_rate_cents: draft.hourlyRateCents ?? null,
       notes: draft.notes ?? null,
     })
     .select('id')

@@ -48,15 +48,6 @@ export function calculateBookingPricing(
 ): PricingBreakdown {
   const result = calculatePricing(serviceAmountCents, settings)
 
-  console.log('[Pricing] Breakdown computed:', {
-    serviceAmountCents: result.servicePriceCents,
-    bookingFeeCents: result.bookingFeeCents,
-    commissionFeeCents: result.cleanerCommissionCents,
-    customerTotalCents: result.totalCustomerCents,
-    cleanerPayoutCents: result.cleanerPayoutCents,
-    platformRevenueCents: result.platformRevenueCents,
-  })
-
   return {
     serviceAmountCents: result.servicePriceCents,
     bookingFeeCents: result.bookingFeeCents,

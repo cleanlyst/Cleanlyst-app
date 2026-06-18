@@ -157,7 +157,7 @@ function handleSubmit() {
       <div>
         <h2 class="selector-title">Add Services</h2>
         <p class="selector-subtitle">
-          Select the categories you work in, then choose specific services and set your pricing.
+          Select the MVP cleaning services you offer and set fixed service pricing.
         </p>
       </div>
       <button class="btn-ghost" type="button" @click="emit('cancel')">
@@ -179,7 +179,7 @@ function handleSubmit() {
     <section class="step-section">
       <h3 class="step-label">
         <span class="step-num">1</span>
-        Select service categories
+        Select service group
       </h3>
       <div class="category-grid">
         <button
@@ -205,7 +205,7 @@ function handleSubmit() {
     <section v-if="selectedCategories.length" class="step-section">
       <h3 class="step-label">
         <span class="step-num">2</span>
-        Choose services &amp; set pricing
+        Choose MVP services &amp; set pricing
       </h3>
 
       <div class="sub-section-list">

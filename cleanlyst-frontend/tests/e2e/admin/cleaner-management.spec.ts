@@ -296,7 +296,7 @@ test.describe('Admin — Process Refund modal', () => {
   test('closing modal hides it', async ({ page }) => {
     await page.getByTestId('open-refund-modal').click()
     await expect(page.getByRole('heading', { name: /process refund/i })).toBeVisible({ timeout: 5_000 })
-    await page.getByRole('button', { name: 'Cancel' }).click()
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click()
     await expect(page.getByRole('heading', { name: /process refund/i })).not.toBeVisible()
   })
 })

@@ -7,6 +7,10 @@ export interface StatusLabelInput {
   no_show_action?: string | null
 }
 
+export function isCustomerPaymentRequired(booking: { status?: string; requires_additional_payment?: boolean | null }): boolean {
+  return !!booking.requires_additional_payment
+}
+
 export function getBookingStatusLabel(booking: StatusLabelInput, role: BookingRole = 'customer'): string {
   const { status, payment_status, requires_additional_payment, no_show_action } = booking
 

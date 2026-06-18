@@ -37,7 +37,7 @@
       <span class="material-symbols-outlined empty-icon">event_busy</span>
       <p class="empty-label">No upcoming bookings</p>
       <p class="empty-desc">
-        <router-link :to="{ name: 'BookCleaner' }" class="empty-link">Book a cleaner</router-link>
+        <router-link :to="{ name: 'BookCleaner' }" class="empty-link">Book Cleaner</router-link>
         to get started.
       </p>
     </div>
@@ -215,8 +215,7 @@
 import { computed, ref } from 'vue'
 import type { PropType } from 'vue'
 import { formatDate, formatPence } from '@/utils/format'
-import { isCustomerPaymentRequired } from '@/utils/bookingStatus'
-import { getBookingStatusLabel } from '@/utils/bookingStatusLabel'
+import { isCustomerPaymentRequired, getBookingStatusLabel } from '@/utils/bookingStatusLabel'
 import { recordAdditionalPayment } from '@/services/bookingService'
 
 interface CarouselBooking {

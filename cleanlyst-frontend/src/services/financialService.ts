@@ -117,8 +117,6 @@ export async function getAdminFinancialMetrics(ytdStart: string): Promise<AdminF
   const pendingPayoutPence = pending.reduce((s, r) => s + (r.cleaner_payout_cents ?? 0), 0)
   const uniqueCleaners = new Set(pending.map((p) => p.cleaner_id))
 
-  console.log('[AdminMetrics]', { revenueYtdPence, revenueYtdCount, platformFeeYtdPence, pendingPayoutPence })
-
   return {
     revenueYtdPence,
     revenueYtdCount,
@@ -238,13 +236,6 @@ export async function getCleanerTransactions(
       customerName: customer?.full_name ? String(customer.full_name) : null,
     }
   })
-
-  console.log('[CleanerEarnings] Transactions loaded:', rows.map(r => ({
-    bookingId: r.bookingId.slice(0, 8),
-    servicePriceCents: r.servicePriceCents,
-    commissionCents: r.commissionCents,
-    cleanerPayoutCents: r.cleanerPayoutCents,
-  })))
 
   return rows
 }

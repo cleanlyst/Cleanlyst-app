@@ -17,7 +17,7 @@ export default function JobDetailsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Job details</Text>
+      <Text style={styles.title}>Property</Text>
       <TextInput
         style={styles.input}
         placeholder="Address"
@@ -26,7 +26,7 @@ export default function JobDetailsScreen() {
       />
       <TextInput
         style={[styles.input, styles.multiline]}
-        placeholder="Special notes"
+        placeholder="Notes"
         value={notes}
         onChangeText={setNotes}
         multiline

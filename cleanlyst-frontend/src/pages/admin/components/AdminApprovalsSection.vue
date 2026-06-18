@@ -213,6 +213,32 @@
       </section>
     </main>
 
+    <!-- Document Preview Modal -->
+    <div v-if="docPreview" class="modal-backdrop doc-preview-backdrop" @click.self="docPreview = null">
+      <div class="doc-preview-box">
+        <div class="modal-header">
+          <h2 class="font-label-md text-label-md truncate mr-4">{{ docPreview.fileName }}</h2>
+          <button class="modal-close" @click="docPreview = null">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="doc-preview-body">
+          <img
+            v-if="isImage(docPreview.mimeType)"
+            :src="docPreview.url"
+            :alt="docPreview.fileName"
+            class="max-w-full max-h-full object-contain"
+          />
+          <iframe
+            v-else-if="isPdf(docPreview.mimeType)"
+            :src="docPreview.url"
+            class="w-full h-full border-0"
+            title="Document Preview"
+          />
+        </div>
+      </div>
+    </div>
+
     <!-- Review Modal -->
     <div v-if="reviewModal" class="modal-backdrop" @click.self="closeReview">
       <div class="modal-box">
@@ -233,15 +259,43 @@
           </div>
 
           <!-- Document status in modal -->
-          <div class="mb-4 border border-outline-variant rounded p-3 space-y-2">
-            <p class="font-label-md text-label-md mb-2">Documents</p>
-            <div v-for="doc in modalDocStatus" :key="doc.type" class="flex items-center justify-between text-caption">
-              <span class="text-on-surface">{{ doc.label }}</span>
-              <span :class="doc.submitted ? 'text-green-700 font-medium' : 'text-on-surface-variant'">
-                {{ doc.submitted ? 'Submitted' : 'Pending' }}
-              </span>
+          <div class="mb-4 border border-outline-variant rounded overflow-hidden">
+            <p class="font-label-md text-label-md px-3 py-2 border-b border-outline-variant bg-surface-container-low">Documents</p>
+            <div v-if="modalLoadingDocs" class="px-3 py-4 text-caption text-on-surface-variant text-center">
+              Loading documents…
+            </div>
+            <div
+              v-else
+              v-for="entry in modalDocStatus"
+              :key="entry.type"
+              class="flex items-start justify-between gap-3 px-3 py-3 border-b border-outline-variant last:border-0"
+            >
+              <div class="min-w-0">
+                <p class="font-label-sm text-label-sm text-on-surface">{{ entry.label }}</p>
+                <template v-if="entry.doc">
+                  <p class="text-caption text-on-surface-variant">
+                    Uploaded: {{ formatDate(entry.doc.uploaded_at) }}
+                  </p>
+                  <p
+                    class="text-caption font-medium"
+                    :class="entry.doc.admin_verified ? 'text-green-700' : 'text-amber-700'"
+                  >
+                    {{ entry.doc.admin_verified ? 'Verified' : 'Pending Verification' }}
+                  </p>
+                </template>
+                <p v-else class="text-caption text-on-surface-variant italic">No document uploaded</p>
+              </div>
+              <button
+                v-if="entry.doc"
+                class="shrink-0 px-3 py-1.5 font-label-md text-on-primary bg-primary rounded hover:opacity-90 transition-opacity disabled:opacity-50 whitespace-nowrap"
+                :disabled="docPreviewLoading === entry.type"
+                @click="viewDocument(entry.doc!)"
+              >
+                {{ docPreviewLoading === entry.type ? 'Loading…' : 'View Document' }}
+              </button>
             </div>
           </div>
+          <p v-if="docPreviewError" class="text-caption text-red-600 mb-3">{{ docPreviewError }}</p>
 
           <div class="mb-4">
             <label for="review-notes" class="block font-label-md text-label-md mb-1">
@@ -295,6 +349,7 @@
 import { onMounted, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
 import { reviewCleanerApplication } from '@/services/adminService'
+import { getSignedCleanerDocumentUrl } from '@/services/storageService'
 import { formatDate, formatStatus } from '@/utils/format'
 
 interface CleanerApplicationQueryRow {
@@ -323,10 +378,18 @@ interface ApplicationRow {
   doc_dbs: boolean
 }
 
+interface DocumentRecord {
+  document_type: string
+  file_path: string
+  mime_type: string | null
+  uploaded_at: string
+  admin_verified: boolean
+}
+
 interface ModalDocStatus {
   type: string
   label: string
-  submitted: boolean
+  doc: DocumentRecord | null
 }
 
 const loading = ref(false)
@@ -347,6 +410,11 @@ const reviewLoading = ref<string | null>(null)
 const reviewError = ref('')
 const reviewSuccess = ref('')
 const modalDocStatus = ref<ModalDocStatus[]>([])
+const modalLoadingDocs = ref(false)
+
+const docPreview = ref<{ url: string; mimeType: string | null; fileName: string } | null>(null)
+const docPreviewLoading = ref<string | null>(null)
+const docPreviewError = ref('')
 
 let searchTimeout: ReturnType<typeof setTimeout>
 
@@ -476,20 +544,80 @@ function statusPillClass(status: string): string {
   return map[status] ?? ''
 }
 
-function openReview(app: ApplicationRow) {
+async function openReview(app: ApplicationRow) {
   reviewModal.value = app
   reviewNotes.value = ''
   reviewError.value = ''
+  reviewSuccess.value = ''
   modalDocStatus.value = [
-    { type: 'id_document', label: 'Identity', submitted: app.doc_id },
-    { type: 'insurance_document', label: 'Insurance', submitted: app.doc_insurance },
-    { type: 'dbs_document', label: 'DBS', submitted: app.doc_dbs },
+    { type: 'id_document', label: 'Identity Document', doc: null },
+    { type: 'insurance_document', label: 'Insurance Certificate', doc: null },
+    { type: 'dbs_document', label: 'DBS Certificate', doc: null },
   ]
+  modalLoadingDocs.value = true
+  try {
+    const supabase = requireSupabase()
+    const { data } = await supabase
+      .from('cleaner_application_documents')
+      .select('document_type, file_path, mime_type, uploaded_at, admin_verified')
+      .eq('application_id', app.id)
+    const byType = new Map<string, DocumentRecord>()
+    for (const d of data ?? []) byType.set(d.document_type, d as DocumentRecord)
+    modalDocStatus.value = [
+      { type: 'id_document', label: 'Identity Document', doc: byType.get('id_document') ?? null },
+      { type: 'insurance_document', label: 'Insurance Certificate', doc: byType.get('insurance_document') ?? null },
+      { type: 'dbs_document', label: 'DBS Certificate', doc: byType.get('dbs_document') ?? null },
+    ]
+  } catch {
+    // non-fatal — show placeholders
+  } finally {
+    modalLoadingDocs.value = false
+  }
 }
 
 function closeReview() {
   reviewModal.value = null
   reviewSuccess.value = ''
+  docPreview.value = null
+}
+
+function fileNameFromPath(path: string): string {
+  const last = path.split('/').pop() ?? path
+  const dashIdx = last.indexOf('-')
+  return dashIdx !== -1 ? last.slice(dashIdx + 1) : last
+}
+
+function isImage(mimeType: string | null): boolean {
+  return ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(mimeType ?? '')
+}
+
+function isPdf(mimeType: string | null): boolean {
+  return mimeType === 'application/pdf'
+}
+
+async function viewDocument(doc: DocumentRecord) {
+  docPreviewLoading.value = doc.document_type
+  docPreviewError.value = ''
+  try {
+    const url = await getSignedCleanerDocumentUrl(doc.file_path)
+    const fileName = fileNameFromPath(doc.file_path)
+    if (isImage(doc.mime_type) || isPdf(doc.mime_type)) {
+      docPreview.value = { url, mimeType: doc.mime_type, fileName }
+    } else {
+      // unsupported — trigger download
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      a.rel = 'noopener noreferrer'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    }
+  } catch (e) {
+    docPreviewError.value = e instanceof Error ? e.message : 'Failed to load document.'
+  } finally {
+    docPreviewLoading.value = null
+  }
 }
 
 async function submitReview(action: 'approved' | 'rejected' | 'needs_info') {
@@ -595,11 +723,39 @@ async function submitReview(action: 'approved' | 'rejected' | 'needs_info') {
   padding: 1rem;
 }
 
+.doc-preview-backdrop {
+  z-index: 60;
+}
+
+.doc-preview-box {
+  background: #ffffff;
+  border-radius: 0.5rem;
+  width: 100%;
+  max-width: 56rem;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.doc-preview-body {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: #f5f5f5;
+}
+
 .modal-box {
   background: #ffffff;
   border-radius: 0.5rem;
   width: 100%;
   max-width: 28rem;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
@@ -621,5 +777,7 @@ async function submitReview(action: 'approved' | 'rejected' | 'needs_info') {
 
 .modal-body {
   padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
 }
 </style>

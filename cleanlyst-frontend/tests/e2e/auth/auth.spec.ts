@@ -53,6 +53,6 @@ test.describe('Authentication and role guards', () => {
     await page.getByLabel('Password').fill('wrongpassword')
     await page.getByRole('button', { name: /log in/i }).click()
     await expect(page).toHaveURL(/auth\/login/)
-    await expect(page.locator('text=Invalid')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('text=Invalid').first()).toBeVisible({ timeout: 10_000 })
   })
 })

@@ -63,7 +63,7 @@ test.describe('Role-based route security', () => {
     await loginAs(page, TEST_ENV.E2E_ADMIN_EMAIL, TEST_ENV.E2E_ADMIN_PASSWORD)
     await page.goto('/admin/dashboard/booking-audit')
     await expect(page).toHaveURL(/admin\/dashboard/)
-    await expect(page.locator('text=Booking Audit')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Booking Audit' })).toBeVisible()
   })
 
   test('customer cannot access admin booking audit page', async ({ page }) => {

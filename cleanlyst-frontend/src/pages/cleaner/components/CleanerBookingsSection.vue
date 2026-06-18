@@ -97,6 +97,7 @@
               class="btn-start"
               type="button"
               data-testid="accept-booking-btn"
+              :data-booking-id="b.id"
               @click="handleAcceptBooking(b.id)"
             >
               Accept
@@ -106,6 +107,7 @@
               class="btn-decline"
               type="button"
               data-testid="decline-booking-btn"
+              :data-booking-id="b.id"
               @click="handleDeclineBooking(b.id)"
             >
               Decline
@@ -115,6 +117,7 @@
               class="btn-start"
               type="button"
               data-testid="start-cleaning-btn"
+              :data-booking-id="b.id"
               @click="handleStartBooking(b.id)"
             >
               Start Cleaning
@@ -124,6 +127,7 @@
               class="btn-start"
               type="button"
               data-testid="end-cleaning-btn"
+              :data-booking-id="b.id"
               @click="handleMarkCompleted(b.id)"
             >
               End Cleaning

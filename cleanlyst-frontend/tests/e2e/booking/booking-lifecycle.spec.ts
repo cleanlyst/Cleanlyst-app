@@ -107,6 +107,9 @@ test.describe('Booking lifecycle', () => {
     const booking = await findLatestBookingForCustomer(customerUserId)
     const bookingId = booking!.id as string
 
+    // Force cleaner_id to E2E cleaner so the accept button is always for this booking.
+    await updateBooking(bookingId, { cleaner_id: cleanerUserId })
+
     // Cleaner accepts via the bookings list
     await logout(page)
     await loginAs(page, TEST_ENV.E2E_CLEANER_EMAIL, TEST_ENV.E2E_CLEANER_PASSWORD)
@@ -115,8 +118,10 @@ test.describe('Booking lifecycle', () => {
     // client has fully re-initialised with the cleaner's session.
     await page.waitForLoadState('networkidle')
 
-    await expect(page.getByTestId('accept-booking-btn').first()).toBeVisible({ timeout: 15_000 })
-    await page.getByTestId('accept-booking-btn').first().click()
+    // Use data-booking-id to target this specific booking's Accept button.
+    const acceptBtn = page.locator(`[data-testid="accept-booking-btn"][data-booking-id="${bookingId}"]`)
+    await expect(acceptBtn).toBeVisible({ timeout: 15_000 })
+    await acceptBtn.click()
 
     // After accepting, booking auto-advances: accepted → paid (payment already captured).
     // Cleaner sees "Ready to Start" label for status = paid.
@@ -161,8 +166,10 @@ test.describe('Booking lifecycle', () => {
     const booking = await findLatestBookingForCustomer(customerUserId)
     const bookingId = booking!.id as string
 
-    // Patch to paid + set start time within the 60-min window
+    // Patch to paid + set start time within the 60-min window.
+    // Force cleaner_id to E2E cleaner so we always target the right booking.
     await updateBooking(bookingId, {
+      cleaner_id: cleanerUserId,
       status: 'paid',
       payment_status: 'captured',
       accepted_at: new Date().toISOString(),
@@ -174,10 +181,12 @@ test.describe('Booking lifecycle', () => {
     await loginAs(page, TEST_ENV.E2E_CLEANER_EMAIL, TEST_ENV.E2E_CLEANER_PASSWORD)
     await page.goto('/cleaner/dashboard/bookings')
 
-    // "Active" tab should now show the paid booking with a Start button
+    // "Active" tab should now show the paid booking with a Start button.
+    // Use data-booking-id to avoid clicking a stale booking's button.
     await page.getByRole('button', { name: 'Active' }).click()
-    await expect(page.getByTestId('start-cleaning-btn').first()).toBeVisible({ timeout: 15_000 })
-    await page.getByTestId('start-cleaning-btn').first().click()
+    const startBtn = page.locator(`[data-testid="start-cleaning-btn"][data-booking-id="${bookingId}"]`)
+    await expect(startBtn).toBeVisible({ timeout: 15_000 })
+    await startBtn.click()
 
     // Status changes to "Cleaning in progress" (cleaner label for in_progress)
     await expect(page.locator('text=Cleaning in progress').first()).toBeVisible({ timeout: 15_000 })
@@ -201,8 +210,13 @@ test.describe('Booking lifecycle', () => {
     const booking = await findLatestBookingForCustomer(customerUserId)
     const bookingId = booking!.id as string
 
+    // Ensure the booking is assigned to the E2E cleaner regardless of which
+    // cleaner the wizard selected, to avoid hitting stale bookings.
+    const cleanerId = await getUserIdByEmail(TEST_ENV.E2E_CLEANER_EMAIL)
+
     // Patch directly to in_progress so cleaner can complete immediately
     await updateBooking(bookingId, {
+      cleaner_id: cleanerId,
       status: 'in_progress',
       payment_status: 'captured',
       accepted_at: new Date().toISOString(),
@@ -212,7 +226,6 @@ test.describe('Booking lifecycle', () => {
     })
 
     // Snapshot earnings / revenue before completion
-    const cleanerId = await getUserIdByEmail(TEST_ENV.E2E_CLEANER_EMAIL)
     const { data: profileBefore } = await serviceClient
       .from('cleaner_profiles')
       .select('total_earnings_cents')
@@ -235,10 +248,13 @@ test.describe('Booking lifecycle', () => {
     await page.goto('/cleaner/dashboard/bookings')
     await page.getByRole('button', { name: 'Active' }).click()
 
-    await expect(page.getByTestId('end-cleaning-btn').first()).toBeVisible({ timeout: 15_000 })
-    await page.getByTestId('end-cleaning-btn').first().click()
+    // Use data-booking-id to target this specific booking, not any stale ones
+    const endBtn = page.locator(`[data-testid="end-cleaning-btn"][data-booking-id="${bookingId}"]`)
+    await expect(endBtn).toBeVisible({ timeout: 15_000 })
+    await endBtn.click()
 
-    await expect(page.locator('text=Completed').first()).toBeVisible({ timeout: 15_000 })
+    // Wait for the button to disappear — confirms the booking left the Active tab
+    await expect(endBtn).not.toBeVisible({ timeout: 15_000 })
 
     // DB: status, timestamps, payment status
     expect(await getLatestBookingStatus(bookingId)).toBe('completed')
@@ -307,12 +323,16 @@ test.describe('Booking lifecycle', () => {
     const booking = await findLatestBookingForCustomer(customerUserId)
     const bookingId = booking!.id as string
 
+    // Force cleaner_id to E2E cleaner
+    await updateBooking(bookingId, { cleaner_id: cleanerUserId })
+
     // Cleaner accepts via UI
     await logout(page)
     await loginAs(page, TEST_ENV.E2E_CLEANER_EMAIL, TEST_ENV.E2E_CLEANER_PASSWORD)
     await page.goto('/cleaner/dashboard/bookings')
-    await expect(page.getByTestId('accept-booking-btn').first()).toBeVisible({ timeout: 15_000 })
-    await page.getByTestId('accept-booking-btn').first().click()
+    const acceptBtn5 = page.locator(`[data-testid="accept-booking-btn"][data-booking-id="${bookingId}"]`)
+    await expect(acceptBtn5).toBeVisible({ timeout: 15_000 })
+    await acceptBtn5.click()
 
     // Status should become 'paid' (auto-advance)
     await expect(

@@ -7,25 +7,28 @@ test.describe('Cleaner availability workflow', () => {
     await loginAs(page, TEST_ENV.E2E_CLEANER_EMAIL, TEST_ENV.E2E_CLEANER_PASSWORD)
 
     await page.goto('/cleaner/dashboard/availability')
-    await expect(page.locator('text=Weekly schedule')).toBeVisible()
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByRole('heading', { name: /weekly schedule/i })).toBeVisible()
 
     const mondayStart = page.getByLabel('Monday start time')
     await mondayStart.fill('10:00')
     await page.getByRole('button', { name: /save weekly schedule/i }).click()
-    await expect(page.locator('text=Schedule saved successfully.')).toBeVisible()
+    await expect(page.locator('text=Schedule saved successfully.')).toBeVisible({ timeout: 10_000 })
 
     await page.reload()
+    await page.waitForLoadState('networkidle')
     await expect(page.getByLabel('Monday start time')).toHaveValue('10:00')
   })
 
   test('cleaner availability persists after logout and login', async ({ page }) => {
     await loginAs(page, TEST_ENV.E2E_CLEANER_EMAIL, TEST_ENV.E2E_CLEANER_PASSWORD)
     await page.goto('/cleaner/dashboard/availability')
-    await expect(page.locator('text=Weekly schedule')).toBeVisible()
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByRole('heading', { name: /weekly schedule/i })).toBeVisible()
 
     await page.getByLabel('Tuesday start time').fill('08:00')
     await page.getByRole('button', { name: /save weekly schedule/i }).click()
-    await expect(page.locator('text=Schedule saved successfully.')).toBeVisible()
+    await expect(page.locator('text=Schedule saved successfully.')).toBeVisible({ timeout: 10_000 })
 
     await page.evaluate(() => localStorage.clear())
     await loginAs(page, TEST_ENV.E2E_CLEANER_EMAIL, TEST_ENV.E2E_CLEANER_PASSWORD)

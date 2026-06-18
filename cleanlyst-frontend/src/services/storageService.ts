@@ -40,6 +40,18 @@ export async function getSignedDocumentUrl(path: string, expiresInSeconds = 3600
   return data.signedUrl
 }
 
+export async function getSignedCleanerDocumentUrl(
+  path: string,
+  expiresInSeconds = 3600,
+): Promise<string> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.storage
+    .from('cleaner-documents')
+    .createSignedUrl(path, expiresInSeconds)
+  if (error) throw error
+  return data.signedUrl
+}
+
 export async function uploadAvatar(userId: string, file: File): Promise<string> {
   const supabase = getSupabaseClient()
   const ext = file.name.split('.').pop() ?? 'jpg'

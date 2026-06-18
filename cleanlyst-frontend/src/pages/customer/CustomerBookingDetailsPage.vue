@@ -555,6 +555,7 @@ import { getSupabaseClient } from '@/services/supabaseClient'
 import {
   getBookingById,
   transitionBookingState,
+  completeBooking,
   recordAdditionalPayment,
   reportCleanerNoShow,
   customerReassignBooking,
@@ -762,7 +763,7 @@ async function confirmReassignment() {
   try {
     const isoStart =
       reassignDate.value && reassignTime.value
-        ? `${reassignDate.value}T${reassignTime.value}:00`
+        ? new Date(`${reassignDate.value}T${reassignTime.value}:00`).toISOString()
         : undefined
     const updated = await customerReassignBooking(
       bookingId,
@@ -809,7 +810,9 @@ async function confirmComplete() {
   successMessage.value = ''
   errorMessage.value = ''
   try {
-    await transitionBookingState(bookingId, 'completed')
+    // Must use complete_booking RPC (not the generic transition) so the payout row
+    // is created and cleaner total_earnings_cents is incremented correctly.
+    await completeBooking(bookingId)
     successMessage.value = 'Booking marked as completed.'
     await refreshBooking()
   } catch (e) {

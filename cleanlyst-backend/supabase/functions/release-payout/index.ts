@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
 
     const { data: booking, error: bookingError } = await adminClient
       .from('bookings')
-      .select('id, cleaner_id, status, cleaner_payout_cents, currency')
+      .select('id, cleaner_id, status, currency')
       .eq('id', booking_id)
       .single()
 
@@ -101,6 +101,28 @@ Deno.serve(async (req) => {
         status: 409,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+    }
+
+    // Idempotency guard: reject if payout already transferred to Stripe.
+    // Calling twice would create a duplicate Stripe transfer — the upsert below
+    // would orphan the first transfer ID while the cleaner receives double payment.
+    const { data: existingPayout } = await adminClient
+      .from('payouts')
+      .select('stripe_transfer_id, amount_cents')
+      .eq('booking_id', booking_id)
+      .maybeSingle()
+
+    if (existingPayout?.stripe_transfer_id) {
+      return new Response(
+        JSON.stringify({
+          error: 'Payout already released',
+          transfer_id: existingPayout.stripe_transfer_id,
+        }),
+        {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
     const { data: payment } = await adminClient
@@ -142,10 +164,33 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Use booking_financials as the authoritative payout amount.
+    // booking.cleaner_payout_cents is a mutable field; booking_financials is the
+    // immutable snapshot written at payment capture time and used by complete_booking.
+    const { data: financials } = await adminClient
+      .from('booking_financials')
+      .select('cleaner_payout_cents')
+      .eq('booking_id', booking_id)
+      .maybeSingle()
+
+    // Fall back to the payouts row amount if financials exist from complete_booking
+    const payoutAmountCents =
+      financials?.cleaner_payout_cents ?? existingPayout?.amount_cents ?? null
+
+    if (!payoutAmountCents || payoutAmountCents <= 0) {
+      return new Response(
+        JSON.stringify({ error: 'Cannot determine payout amount: booking_financials missing' }),
+        {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
+    }
+
     const transfer = await stripeRequest(
       'transfers',
       new URLSearchParams({
-        amount: String(booking.cleaner_payout_cents),
+        amount: String(payoutAmountCents),
         currency: String(booking.currency ?? 'GBP').toLowerCase(),
         destination: cleanerProfile.stripe_account_id,
         'metadata[booking_id]': booking.id,
@@ -158,7 +203,7 @@ Deno.serve(async (req) => {
         booking_id: booking.id,
         cleaner_id: booking.cleaner_id,
         payment_id: payment.id,
-        amount_cents: booking.cleaner_payout_cents,
+        amount_cents: payoutAmountCents,
         currency: booking.currency,
         stripe_transfer_id: transfer.id as string,
         status: 'released',

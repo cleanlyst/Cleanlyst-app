@@ -131,17 +131,6 @@ function normalizeBookingListRows(data: unknown): BookingListRow[] {
 const BOOKING_LIST_SELECT =
   'id, service_title_snapshot, scheduled_start, scheduled_end, location_text, status, payment_status, started_at, no_show_reported_at, no_show_action, created_at, quote_cents, cleaner_id, requires_additional_payment, additional_payment_cents, initial_quote_cents, customer:profiles!customer_id(id, full_name, avatar_url)'
 
-export async function getMyBookings() {
-  const supabase = getSupabaseClient()
-  const { data, error } = await supabase
-    .from('bookings')
-    .select('*')
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-  return data
-}
-
 export async function getCustomerBookings(customerId: string): Promise<BookingListRow[]> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase

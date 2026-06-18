@@ -100,6 +100,7 @@ export function useBookingList(role: 'customer' | 'cleaner') {
           .from('profiles')
           .select('id')
           .ilike('full_name', `%${term}%`)
+          .limit(100)
         if (profiles && profiles.length > 0) {
           matchingProfileIds = (profiles as ProfileRow[]).map((p) => p.id)
         }

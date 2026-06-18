@@ -137,13 +137,6 @@ const router = createRouter({
       component: () => import('../pages/customer/booking/SearchCleaner.vue'),
     },
     {
-      path: '/book-cleaner/confirm',
-      alias: '/book/confirm',
-      name: 'ConfirmBooking',
-      meta: { title: 'Booking Confirmed', requiresAuth: true, requiresRole: 'customer' },
-      component: () => import('../pages/customer/booking/ConfirmBooking.vue'),
-    },
-    {
       path: '/customer/dashboard',
       name: 'CustomerDashboard',
       meta: { title: 'Customer Dashboard', requiresAuth: true, requiresRole: 'customer' },

@@ -222,11 +222,11 @@
           </div>
         </div>
         <div class="override-grid">
-          <button class="override-card">
+          <button class="override-card" data-testid="open-refund-modal" @click="openRefundModal(null)">
             <span class="material-symbols-outlined override-card__icon">payments</span>
-            <span class="override-card__title">Force Refund</span>
+            <span class="override-card__title">Process Refund</span>
             <span class="override-card__desc"
-              >Issue full or partial refunds directly to client wallet.</span
+              >Issue full or partial refunds with reason tracking.</span
             >
           </button>
           <button class="override-card" @click="openReassignModal">
@@ -261,15 +261,168 @@
       </div>
     </div>
   </main>
+
+  <!-- ── Refund Modal ──────────────────────────────────────── -->
+  <div v-if="refundModal.open" class="modal-backdrop" @click.self="closeRefundModal">
+    <div class="modal-box refund-modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Process Refund</h2>
+        <button class="modal-close" type="button" :disabled="refundModal.loading" @click="closeRefundModal">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="refund-modal-body">
+        <!-- Booking ID input (when not opened from a specific booking) -->
+        <div v-if="!refundModal.bookingId" class="reassign-field">
+          <label class="reassign-label" for="refund-booking-id">Booking ID</label>
+          <div class="refund-id-row">
+            <input
+              id="refund-booking-id"
+              v-model="refundModal.bookingIdInput"
+              class="reassign-input refund-id-input"
+              placeholder="Paste booking ID…"
+              type="text"
+            />
+            <button class="btn-find-cleaners" type="button" :disabled="refundModal.lookupLoading" @click="lookupRefundBooking">
+              {{ refundModal.lookupLoading ? 'Loading…' : 'Look up' }}
+            </button>
+          </div>
+          <p v-if="refundModal.lookupError" class="reassign-error">{{ refundModal.lookupError }}</p>
+        </div>
+
+        <!-- Booking details -->
+        <div v-if="refundModal.booking" class="reassign-booking-info">
+          <p class="reassign-label">Booking</p>
+          <p class="reassign-value">#{{ refundModal.booking.id.slice(0, 8).toUpperCase() }} — {{ refundModal.booking.service_title_snapshot ?? 'Booking' }}</p>
+          <p class="reassign-sub">{{ formatDate(refundModal.booking.scheduled_start ?? '') }}</p>
+          <p v-if="refundModal.booking.customer_name" class="reassign-sub">Customer: {{ refundModal.booking.customer_name }}</p>
+          <p v-if="refundModal.booking.cleaner_name" class="reassign-sub">Cleaner: {{ refundModal.booking.cleaner_name }}</p>
+
+          <!-- Payment summary -->
+          <div v-if="refundModal.payment" class="refund-payment-summary">
+            <div class="refund-summary-row">
+              <span>Booking total</span>
+              <strong>{{ formatPence(refundModal.payment.amount_cents) }}</strong>
+            </div>
+            <div class="refund-summary-row">
+              <span>Platform fee</span>
+              <span>{{ formatPence(refundModal.payment.platform_fee_cents ?? 0) }}</span>
+            </div>
+            <div class="refund-summary-row">
+              <span>Cleaner payout</span>
+              <span>{{ formatPence(refundModal.payment.cleaner_payout_cents ?? 0) }}</span>
+            </div>
+            <div v-if="refundModal.payment.refund_cents" class="refund-summary-row refund-summary-row--refunded">
+              <span>Previously refunded</span>
+              <span>{{ formatPence(refundModal.payment.refund_cents) }}</span>
+            </div>
+            <div class="refund-summary-row">
+              <span>Payment status</span>
+              <span class="refund-status-badge">{{ refundModal.payment.status }}</span>
+            </div>
+          </div>
+
+          <!-- Refund type -->
+          <div class="refund-type-row">
+            <label class="reassign-label">Refund Type</label>
+            <div class="refund-type-options">
+              <label class="refund-type-option">
+                <input v-model="refundModal.refundType" type="radio" value="full" class="mr-2" />
+                Full refund ({{ refundModal.payment ? formatPence(refundModal.payment.amount_cents) : '—' }})
+              </label>
+              <label class="refund-type-option">
+                <input v-model="refundModal.refundType" type="radio" value="partial" class="mr-2" />
+                Custom amount
+              </label>
+            </div>
+          </div>
+
+          <!-- Custom amount -->
+          <div v-if="refundModal.refundType === 'partial'" class="reassign-field">
+            <label class="reassign-label" for="refund-amount">Refund Amount (£)</label>
+            <input
+              id="refund-amount"
+              v-model="refundModal.customAmountStr"
+              class="reassign-input"
+              placeholder="e.g. 25.00"
+              type="number"
+              min="0.01"
+              :max="refundModal.payment ? refundModal.payment.amount_cents / 100 : undefined"
+              step="0.01"
+            />
+            <p v-if="refundModal.customAmountStr" class="reassign-sub mt-1">
+              Customer refund: {{ formatPence(Math.round(parseFloat(refundModal.customAmountStr) * 100)) }}
+            </p>
+          </div>
+
+          <!-- Reason -->
+          <div class="reassign-field">
+            <label class="reassign-label" for="refund-reason">Reason <span class="text-red-500">*</span></label>
+            <select id="refund-reason" v-model="refundModal.reason" class="reassign-input">
+              <option value="">Select reason…</option>
+              <option value="cleaner_no_show">Cleaner no-show</option>
+              <option value="customer_cancellation">Customer cancellation</option>
+              <option value="service_issue">Service issue</option>
+              <option value="duplicate_payment">Duplicate payment</option>
+              <option value="manual_adjustment">Manual adjustment</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <!-- Notes -->
+          <div class="reassign-field">
+            <label class="reassign-label" for="refund-notes">Notes (optional)</label>
+            <textarea
+              id="refund-notes"
+              v-model="refundModal.notes"
+              class="reassign-input"
+              rows="2"
+              placeholder="Additional context for the audit log…"
+              style="resize:vertical;height:64px"
+            />
+          </div>
+
+          <!-- Result preview -->
+          <div v-if="refundModal.result" class="refund-result">
+            <span class="material-symbols-outlined refund-result__icon">check_circle</span>
+            <p class="refund-result__title">Refund processed</p>
+            <p class="refund-result__body">
+              {{ formatPence(refundModal.result.refund_cents) }} refunded to customer.
+            </p>
+          </div>
+
+          <p v-if="refundModal.error" class="reassign-error">{{ refundModal.error }}</p>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="refund-modal-footer">
+        <button class="btn-modal-cancel" type="button" :disabled="refundModal.loading" @click="closeRefundModal">
+          {{ refundModal.result ? 'Close' : 'Cancel' }}
+        </button>
+        <button
+          v-if="!refundModal.result && refundModal.booking"
+          class="btn-modal-confirm"
+          data-testid="confirm-refund-btn"
+          type="button"
+          :disabled="refundModal.loading || !refundModal.reason"
+          @click="submitRefund"
+        >
+          {{ refundModal.loading ? 'Processing…' : 'Process Refund' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
 import { formatDate, formatStatus, formatPence, formatRelativeTime } from '@/utils/format'
 import AppModal from '@/components/ui/AppModal.vue'
 import { reassignBooking } from '@/services/bookingService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
+import { processRefund, type AdminRefundResult } from '@/services/adminService'
 
 const PAGE_SIZE = 10
 
@@ -633,6 +786,177 @@ function formatNoShowAction(action: string): string {
   if (action === 'replacement_requested') return 'Replacement cleaner requested'
   if (action === 'refund_requested') return 'Refund requested'
   return formatStatus(action)
+}
+
+// ── Refund modal ───────────────────────────────────────────────────────
+
+interface PaymentInfo {
+  id: string
+  amount_cents: number
+  platform_fee_cents: number | null
+  cleaner_payout_cents: number | null
+  status: string
+  refund_cents: number | null
+}
+
+interface RefundModal {
+  open: boolean
+  bookingId: string | null
+  bookingIdInput: string
+  lookupLoading: boolean
+  lookupError: string
+  booking: BookingRow | null
+  payment: PaymentInfo | null
+  refundType: 'full' | 'partial'
+  customAmountStr: string
+  reason: string
+  notes: string
+  loading: boolean
+  error: string
+  result: AdminRefundResult | null
+}
+
+const refundModal = reactive<RefundModal>({
+  open: false,
+  bookingId: null,
+  bookingIdInput: '',
+  lookupLoading: false,
+  lookupError: '',
+  booking: null,
+  payment: null,
+  refundType: 'full',
+  customAmountStr: '',
+  reason: '',
+  notes: '',
+  loading: false,
+  error: '',
+  result: null,
+})
+
+function openRefundModal(booking: BookingRow | null) {
+  refundModal.open = true
+  refundModal.booking = booking
+  refundModal.bookingId = booking?.id ?? null
+  refundModal.bookingIdInput = ''
+  refundModal.lookupLoading = false
+  refundModal.lookupError = ''
+  refundModal.payment = null
+  refundModal.refundType = 'full'
+  refundModal.customAmountStr = ''
+  refundModal.reason = ''
+  refundModal.notes = ''
+  refundModal.loading = false
+  refundModal.error = ''
+  refundModal.result = null
+
+  if (booking) {
+    loadRefundPayment(booking.id)
+  }
+}
+
+function closeRefundModal() {
+  refundModal.open = false
+}
+
+async function loadRefundPayment(bookingId: string) {
+  try {
+    const supabase = requireSupabase()
+    const { data, error } = await supabase
+      .from('payments')
+      .select('id, amount_cents, platform_fee_cents, cleaner_payout_cents, status, refund_cents')
+      .eq('booking_id', bookingId)
+      .maybeSingle()
+    if (error) throw error
+    refundModal.payment = data as PaymentInfo | null
+  } catch {
+    // Non-critical; payment summary just won't show
+  }
+}
+
+async function lookupRefundBooking() {
+  const id = refundModal.bookingIdInput.trim()
+  if (!id) return
+  refundModal.lookupLoading = true
+  refundModal.lookupError = ''
+  refundModal.booking = null
+  refundModal.payment = null
+  try {
+    const supabase = requireSupabase()
+    const { data, error } = await supabase
+      .from('bookings')
+      .select(
+        `id, status, scheduled_start, scheduled_end,
+         service_title_snapshot, category_snapshot, quote_cents,
+         no_show_action, cleaner_id, original_cleaner_id, reassigned_at,
+         customer:customer_id(full_name),
+         cleaner:cleaner_id(full_name)`,
+      )
+      .eq('id', id)
+      .maybeSingle()
+    if (error) throw error
+    if (!data) {
+      refundModal.lookupError = 'Booking not found.'
+      return
+    }
+    const row = data as BookingQueryRow
+    refundModal.booking = {
+      id: row.id,
+      status: row.status,
+      scheduled_start: row.scheduled_start ?? null,
+      scheduled_end: row.scheduled_end ?? null,
+      service_title_snapshot: row.service_title_snapshot ?? null,
+      category_snapshot: row.category_snapshot ?? null,
+      quote_cents: row.quote_cents ?? 0,
+      customer_name: row.customer?.full_name ?? null,
+      cleaner_name: row.cleaner?.full_name ?? null,
+      cleaner_id: row.cleaner_id ?? null,
+      no_show_action: row.no_show_action ?? null,
+      original_cleaner_id: row.original_cleaner_id ?? null,
+      reassigned_at: row.reassigned_at ?? null,
+    }
+    await loadRefundPayment(id)
+  } catch (e) {
+    refundModal.lookupError = e instanceof Error ? e.message : 'Failed to look up booking.'
+  } finally {
+    refundModal.lookupLoading = false
+  }
+}
+
+async function submitRefund() {
+  const bookingId = refundModal.booking?.id
+  if (!bookingId || !refundModal.reason) return
+
+  let refundCents: number
+  if (refundModal.refundType === 'full') {
+    refundCents = refundModal.payment?.amount_cents ?? 0
+  } else {
+    refundCents = Math.round(parseFloat(refundModal.customAmountStr) * 100)
+    if (!refundCents || refundCents <= 0) {
+      refundModal.error = 'Please enter a valid refund amount.'
+      return
+    }
+    if (refundModal.payment && refundCents > refundModal.payment.amount_cents) {
+      refundModal.error = 'Refund amount exceeds the payment total.'
+      return
+    }
+  }
+
+  refundModal.loading = true
+  refundModal.error = ''
+  try {
+    const result = await processRefund(
+      bookingId,
+      refundCents,
+      refundModal.reason,
+      refundModal.notes || undefined,
+    )
+    refundModal.result = result
+    await loadBookings()
+  } catch (e) {
+    refundModal.error = e instanceof Error ? e.message : 'Failed to process refund.'
+  } finally {
+    refundModal.loading = false
+  }
 }
 </script>
 
@@ -1317,5 +1641,160 @@ function formatNoShowAction(action: string): string {
 
 .btn-modal-confirm:hover:not(:disabled) {
   opacity: 0.85;
+}
+
+/* ── Refund modal ─────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modal-box {
+  background: #ffffff;
+  max-height: 90vh;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.refund-modal-box {
+  max-width: 36rem;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--outline-variant, #c4c7c7);
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--secondary, #5e5e5e);
+  line-height: 1;
+  padding: 0.25rem;
+}
+
+.modal-close:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.refund-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.refund-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--outline-variant, #c4c7c7);
+}
+
+.refund-id-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.refund-id-input {
+  flex: 1;
+}
+
+.refund-payment-summary {
+  margin-top: 0.75rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.refund-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--secondary, #5e5e5e);
+}
+
+.refund-summary-row strong {
+  color: var(--primary, #000000);
+  font-weight: 600;
+}
+
+.refund-summary-row--refunded {
+  color: #b91c1c;
+}
+
+.refund-status-badge {
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.refund-type-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.refund-type-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.refund-type-option {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.refund-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  text-align: center;
+}
+
+.refund-result__icon {
+  font-size: 32px;
+  color: #16a34a;
+}
+
+.refund-result__title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #15803d;
+}
+
+.refund-result__body {
+  font-size: 14px;
+  margin: 0;
+  color: #166534;
 }
 </style>

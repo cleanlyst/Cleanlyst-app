@@ -132,6 +132,7 @@
               id="booking-time"
               v-model="bookingTime"
               type="time"
+              :min="minBookingTime"
               class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
             />
           </div>
@@ -589,9 +590,33 @@ const selectedServiceSlug = ref('')
 const selectedAddOns = ref<string[]>([])
 
 // Step 2
-const minDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+function localDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const mo = String(d.getMonth() + 1).padStart(2, '0')
+  const dy = String(d.getDate()).padStart(2, '0')
+  return `${y}-${mo}-${dy}`
+}
+function localTimeStr(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+const earliestBooking = new Date(Date.now() + 3 * 60 * 60 * 1000)
+const minDate = localDateStr(earliestBooking)
+const minTimeOnEarliestDay = localTimeStr(earliestBooking)
+
 const bookingDate = ref('')
 const bookingTime = ref('09:00')
+
+// Only enforce the 3-hour floor when the user picks the earliest allowed date
+const minBookingTime = computed(() =>
+  bookingDate.value === minDate ? minTimeOnEarliestDay : '00:00',
+)
+
+watch(bookingDate, (date) => {
+  if (date === minDate && bookingTime.value < minTimeOnEarliestDay) {
+    bookingTime.value = minTimeOnEarliestDay
+  }
+})
 
 // Step 3
 const propertyType = ref('')

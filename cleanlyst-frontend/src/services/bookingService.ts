@@ -578,12 +578,31 @@ export async function reassignBooking(
   bookingId: string,
   newCleanerId: string,
   note?: string,
+  newScheduledStart?: string,
 ): Promise<BookingDetailRow> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase.rpc('reassign_booking', {
     p_booking_id: bookingId,
     p_new_cleaner_id: newCleanerId,
     p_note: note ?? null,
+    p_new_scheduled_start: newScheduledStart ?? null,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to reassign booking.')
+  return booking
+}
+
+export async function customerReassignBooking(
+  bookingId: string,
+  newCleanerId: string,
+  newScheduledStart?: string,
+): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('customer_reassign_booking', {
+    p_booking_id: bookingId,
+    p_new_cleaner_id: newCleanerId,
+    p_new_scheduled_start: newScheduledStart ?? null,
   })
   if (error) throw error
   const booking = normalizeBookingDetailRow(data)

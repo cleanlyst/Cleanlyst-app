@@ -78,6 +78,7 @@
         <div class="card-top">
           <div class="card-info">
             <h3 class="card-title">{{ b.service_title_snapshot ?? 'Cleaning Booking' }}</h3>
+            <p class="card-booking-id">#{{ b.id.slice(0, 8).toUpperCase() }}</p>
             <div class="card-meta">
               <span class="meta-item">
                 <span class="material-symbols-outlined meta-icon">calendar_today</span>
@@ -557,6 +558,13 @@ function formatDate(value: string): string {
   font-weight: 500;
   line-height: 1.4;
   color: var(--on-surface, #1a1c1c);
+  margin: 0 0 0.125rem;
+}
+
+.card-booking-id {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
   margin: 0 0 0.5rem;
 }
 

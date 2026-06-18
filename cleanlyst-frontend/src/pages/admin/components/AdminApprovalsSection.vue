@@ -211,6 +211,9 @@
           <div class="font-h1 text-h1 text-on-surface">{{ underReviewCount }}</div>
         </div>
       </section>
+
+      <!-- All Cleaners -->
+      <AdminCleanerListSection />
     </main>
 
     <!-- Document Preview Modal -->
@@ -349,6 +352,7 @@
 import { onMounted, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
 import { reviewCleanerApplication } from '@/services/adminService'
+import AdminCleanerListSection from './AdminCleanerListSection.vue'
 import { getSignedCleanerDocumentUrl } from '@/services/storageService'
 import { formatDate, formatStatus } from '@/utils/format'
 

@@ -79,30 +79,22 @@
           </div>
 
           <div class="action-group">
-            <!-- Reassignment: cleaner cancelled — customer can request a new cleaner -->
-            <div v-if="canRequestNewCleaner" class="status-info status-info--warning">
+            <!-- Reassignment: cleaner cancelled / no-show / reassign requested -->
+            <div v-if="canReassign" class="status-info status-info--warning">
               <span class="material-symbols-outlined status-info-icon">person_off</span>
               Your cleaner is unable to attend this booking.
             </div>
             <button
-              v-if="canRequestNewCleaner"
+              v-if="canReassign"
               type="button"
               class="btn-primary"
-              :disabled="reassignRequestLoading"
-              @click="requestNewCleaner"
+              @click="openReassignFlow"
             >
-              {{ reassignRequestLoading ? 'Requesting…' : 'Request New Cleaner' }}
+              Find Replacement Cleaner
             </button>
-            <a v-if="canRequestNewCleaner" href="mailto:support@cleanlyst.com" class="btn-support">
+            <a v-if="canReassign" href="mailto:support@cleanlyst.com" class="btn-support">
               Contact Support
             </a>
-            <p v-if="reassignRequestError" class="error-text">{{ reassignRequestError }}</p>
-
-            <!-- Reassignment: waiting for admin to assign a new cleaner -->
-            <div v-if="hasRequestedReassignment" class="status-info status-info--finding">
-              <span class="material-symbols-outlined status-info-icon">manage_search</span>
-              Finding another cleaner for your booking — we'll notify you as soon as one is confirmed.
-            </div>
 
             <!-- Reassignment: a new cleaner has been assigned -->
             <div v-if="hasBeenReassigned" class="reassignment-banner">
@@ -233,27 +225,9 @@
             </button>
           </div>
           <div class="modal-body">
-            <p class="modal-desc">Your cleaner appears not to have started this booking.</p>
+            <p class="modal-desc">Your cleaner appears not to have started this booking. How would you like to proceed?</p>
             <p v-if="noShowError" class="modal-error">{{ noShowError }}</p>
             <p v-if="noShowSuccess" class="success-text">{{ noShowSuccess }}</p>
-
-            <div v-if="replacementCleaners.length > 0" class="replacement-list">
-              <article
-                v-for="cleaner in replacementCleaners"
-                :key="cleaner.user_id"
-                class="replacement-row"
-              >
-                <div>
-                  <p class="replacement-name">
-                    {{ cleaner.profiles?.full_name ?? cleaner.business_name ?? 'Cleaner' }}
-                  </p>
-                  <p class="replacement-meta">
-                    {{ cleaner.average_rating.toFixed(1) }} rating ·
-                    {{ cleaner.review_count }} reviews
-                  </p>
-                </div>
-              </article>
-            </div>
 
             <div class="modal-actions">
               <button
@@ -264,8 +238,8 @@
               >
                 {{
                   noShowActionLoading === 'replacement'
-                    ? 'Requesting…'
-                    : 'Request another cleaner'
+                    ? 'Searching…'
+                    : 'Find a replacement cleaner'
                 }}
               </button>
               <button
@@ -285,6 +259,163 @@
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reassign cleaner modal -->
+      <div v-if="reassignModalOpen" class="ra-backdrop" @click.self="closeReassignFlow">
+        <div class="ra-box">
+          <!-- Header -->
+          <div class="ra-header">
+            <div>
+              <p class="ra-step-label">Step {{ reassignStep }} of 3</p>
+              <h2 class="ra-title">
+                {{ reassignStep === 1 ? 'When do you need cleaning?' : reassignStep === 2 ? 'Choose a cleaner' : 'Confirm replacement' }}
+              </h2>
+            </div>
+            <button class="ra-close" type="button" :disabled="reassignConfirmLoading" @click="closeReassignFlow">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <!-- Body -->
+          <div class="ra-body">
+
+            <!-- Step 1: Date & time -->
+            <template v-if="reassignStep === 1">
+              <p class="ra-step-desc">Choose the date and time for your replacement clean. No additional payment is required.</p>
+              <div class="ra-date-grid">
+                <div>
+                  <label class="ra-field-label">Date</label>
+                  <input v-model="reassignDate" type="date" class="ra-input" :min="new Date().toISOString().slice(0, 10)" />
+                </div>
+                <div>
+                  <label class="ra-field-label">Preferred time</label>
+                  <input v-model="reassignTime" type="time" class="ra-input" />
+                </div>
+              </div>
+              <p v-if="reassignError" class="ra-error">{{ reassignError }}</p>
+            </template>
+
+            <!-- Step 2: Cleaner cards -->
+            <template v-else-if="reassignStep === 2">
+              <div v-if="reassignSearchLoading" class="ra-loading">
+                <div class="ra-spinner"></div>
+                Searching for available cleaners…
+              </div>
+              <div v-else-if="reassignCleaners.length === 0" class="ra-empty">
+                <span class="material-symbols-outlined" style="font-size:2.5rem;color:var(--secondary,#5e5e5e)">search_off</span>
+                <p>No cleaners available on that date.</p>
+                <p style="font-size:12px">Try a different date or contact support.</p>
+              </div>
+              <div v-else class="ra-cleaner-grid">
+                <div v-for="c in reassignCleaners" :key="c.user_id" class="ra-cleaner-card">
+                  <div class="ra-card-img-wrap">
+                    <img v-if="(c as any).avatar_url" :src="(c as any).avatar_url" :alt="reassignDisplayName(c)" class="ra-card-img" />
+                    <div v-else class="ra-card-img-placeholder">
+                      <span class="material-symbols-outlined" style="font-size:2rem;color:var(--secondary,#5e5e5e)">person</span>
+                    </div>
+                    <span v-if="c.average_rating >= 4.8 && c.review_count >= 5" class="ra-top-badge">Top Rated</span>
+                  </div>
+                  <div class="ra-card-body">
+                    <div class="ra-card-header">
+                      <div>
+                        <p class="ra-card-name">{{ reassignDisplayName(c) }}</p>
+                        <div class="ra-card-rating">
+                          <span class="material-symbols-outlined ra-star">star</span>
+                          {{ c.average_rating.toFixed(1) }}
+                          <span class="ra-review-count">({{ c.review_count }})</span>
+                        </div>
+                      </div>
+                      <div class="ra-card-price">
+                        <span>{{ reassignEstimatedPrice(c.user_id) }}</span>
+                        <span class="ra-price-sub">per session</span>
+                      </div>
+                    </div>
+                    <p v-if="(c as any).bio" class="ra-card-bio">{{ (c as any).bio }}</p>
+                    <div class="ra-card-footer">
+                      <div class="ra-card-meta">
+                        <span class="ra-card-service">
+                          <span class="material-symbols-outlined" style="font-size:14px">cleaning_services</span>
+                          {{ reassignServiceTitle(c.user_id) }}
+                        </span>
+                        <span class="ra-card-avail">
+                          <span class="material-symbols-outlined" style="font-size:14px">check_circle</span>
+                          Available
+                        </span>
+                      </div>
+                      <button class="ra-select-btn" type="button" @click="selectReassignCleaner(c)">
+                        Select Cleaner
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p v-if="reassignError" class="ra-error">{{ reassignError }}</p>
+            </template>
+
+            <!-- Step 3: Confirm -->
+            <template v-else-if="reassignStep === 3">
+              <div class="ra-confirm-grid">
+                <div class="ra-confirm-block">
+                  <span class="ra-confirm-label">Replacement cleaner</span>
+                  <p class="ra-confirm-value">{{ reassignSelectedCleaner ? reassignDisplayName(reassignSelectedCleaner) : '—' }}</p>
+                  <p class="ra-confirm-sub">
+                    ★ {{ reassignSelectedCleaner?.average_rating.toFixed(1) }} · {{ reassignSelectedCleaner?.review_count }} reviews
+                  </p>
+                </div>
+                <div class="ra-confirm-block">
+                  <span class="ra-confirm-label">New date &amp; time</span>
+                  <p class="ra-confirm-value">{{ reassignDate }}</p>
+                  <p class="ra-confirm-sub">Starting at {{ reassignTime }}</p>
+                </div>
+                <div class="ra-confirm-block">
+                  <span class="ra-confirm-label">Service</span>
+                  <p class="ra-confirm-value">{{ booking?.service_title_snapshot ?? 'Cleaning' }}</p>
+                </div>
+                <div class="ra-confirm-block">
+                  <span class="ra-confirm-label">Additional cost</span>
+                  <p class="ra-confirm-value" style="color:#2e7d32">None — already paid</p>
+                </div>
+              </div>
+              <p v-if="reassignError" class="ra-error">{{ reassignError }}</p>
+            </template>
+
+          </div>
+
+          <!-- Footer -->
+          <div class="ra-footer">
+            <button
+              v-if="reassignStep > 1"
+              class="btn-modal-cancel"
+              type="button"
+              :disabled="reassignConfirmLoading"
+              @click="reassignStep > 2 ? (reassignStep = 2) : (reassignStep = 1)"
+            >
+              ← Back
+            </button>
+            <button class="btn-modal-cancel" type="button" :disabled="reassignConfirmLoading" @click="closeReassignFlow">
+              Cancel
+            </button>
+            <button
+              v-if="reassignStep === 1"
+              class="btn-modal-confirm"
+              type="button"
+              :disabled="!reassignDate || reassignSearchLoading"
+              @click="goToReassignStep2"
+            >
+              {{ reassignSearchLoading ? 'Searching…' : 'Find Available Cleaners →' }}
+            </button>
+            <button
+              v-if="reassignStep === 3"
+              class="btn-modal-confirm"
+              type="button"
+              :disabled="reassignConfirmLoading"
+              @click="confirmReassignment"
+            >
+              {{ reassignConfirmLoading ? 'Confirming…' : 'Confirm Replacement' }}
+            </button>
           </div>
         </div>
       </div>
@@ -426,7 +557,7 @@ import {
   transitionBookingState,
   recordAdditionalPayment,
   reportCleanerNoShow,
-  requestReassignment,
+  customerReassignBooking,
   type BookingDetailRow,
 } from '@/services/bookingService'
 import { cancelAsCustomer } from '@/services/bookingLifecycleService'
@@ -459,11 +590,19 @@ const noShowModalOpen = ref(false)
 const noShowActionLoading = ref<'replacement' | 'refund' | null>(null)
 const noShowError = ref('')
 const noShowSuccess = ref('')
-const replacementCleaners = ref<CleanerSearchResult[]>([])
 const currentTime = ref(Date.now())
 let noShowClock: ReturnType<typeof setInterval> | null = null
-const reassignRequestLoading = ref(false)
-const reassignRequestError = ref('')
+// Customer reassign flow
+const reassignModalOpen = ref(false)
+const reassignStep = ref<1 | 2 | 3>(1)
+const reassignDate = ref('')
+const reassignTime = ref('09:00')
+const reassignCleaners = ref<CleanerSearchResult[]>([])
+const reassignSelectedCleaner = ref<CleanerSearchResult | null>(null)
+const reassignSearchLoading = ref(false)
+const reassignConfirmLoading = ref(false)
+const reassignError = ref('')
+const reassignCleanerPrices = ref<Map<string, { price: number; title: string }>>(new Map())
 
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
@@ -484,21 +623,14 @@ const canReportNoShow = computed(() => {
   return currentTime.value > start.getTime() + 30 * 60 * 1000
 })
 
-// Customer can request a new cleaner when theirs cancelled and no request yet made
-const canRequestNewCleaner = computed(() => {
+// Customer can self-serve a replacement cleaner after cancellation or no-show
+const canReassign = computed(() => {
   const b = booking.value
   if (!b) return false
-  return b.status === 'cleaner_cancelled' && !b.reassignment_requested_at
+  return ['cleaner_cancelled', 'cleaner_no_show', 'reassign_requested'].includes(b.status)
 })
 
-// Customer already submitted a reassignment request
-const hasRequestedReassignment = computed(() => {
-  const b = booking.value
-  if (!b) return false
-  return b.status === 'reassign_requested' || (b.status === 'cleaner_cancelled' && !!b.reassignment_requested_at)
-})
-
-// Admin completed the reassignment (booking is now active again with a new cleaner)
+// A new cleaner has been confirmed (booking is active again)
 const hasBeenReassigned = computed(() => {
   const b = booking.value
   if (!b) return false
@@ -536,17 +668,113 @@ function statusInfo(status: string): string {
   return map[status] ?? ''
 }
 
-async function requestNewCleaner() {
-  if (!booking.value || reassignRequestLoading.value) return
-  reassignRequestLoading.value = true
-  reassignRequestError.value = ''
+function openReassignFlow() {
+  const b = booking.value
+  if (!b) return
+  const start = new Date(b.scheduled_start)
+  reassignDate.value = Number.isNaN(start.valueOf()) ? '' : b.scheduled_start.slice(0, 10)
+  reassignTime.value = Number.isNaN(start.valueOf()) ? '09:00' : b.scheduled_start.slice(11, 16)
+  reassignStep.value = 1
+  reassignCleaners.value = []
+  reassignSelectedCleaner.value = null
+  reassignError.value = ''
+  reassignCleanerPrices.value = new Map()
+  reassignModalOpen.value = true
+}
+
+function closeReassignFlow() {
+  if (reassignConfirmLoading.value) return
+  reassignModalOpen.value = false
+  reassignStep.value = 1
+  reassignCleaners.value = []
+  reassignSelectedCleaner.value = null
+  reassignError.value = ''
+}
+
+async function goToReassignStep2() {
+  if (!booking.value || !reassignDate.value) return
+  reassignSearchLoading.value = true
+  reassignError.value = ''
+  reassignCleaners.value = []
   try {
-    const updated = await requestReassignment(bookingId)
-    booking.value = updated
+    const city = replacementSearchCity(booking.value.location_text)
+    const found = await searchCleaners({
+      serviceCategory: booking.value.category_snapshot ?? undefined,
+      availabilityDate: reassignDate.value,
+      availabilityTime: reassignTime.value,
+      city,
+      limit: 12,
+    })
+    reassignCleaners.value = found.filter((c) => c.user_id !== booking.value!.cleaner_id)
+    await loadReassignCleanerPrices(reassignCleaners.value.map((c) => c.user_id))
+    reassignStep.value = 2
   } catch (e) {
-    reassignRequestError.value = e instanceof Error ? e.message : 'Failed to request a new cleaner.'
+    reassignError.value = e instanceof Error ? e.message : 'Failed to search for cleaners.'
   } finally {
-    reassignRequestLoading.value = false
+    reassignSearchLoading.value = false
+  }
+}
+
+async function loadReassignCleanerPrices(cleanerIds: string[]) {
+  if (!cleanerIds.length) return
+  const supabase = getSupabaseClient()
+  const { data } = await supabase
+    .from('services')
+    .select('cleaner_id, base_price_pence, title, category')
+    .in('cleaner_id', cleanerIds)
+    .eq('active', true)
+  if (!data) return
+  const map = new Map<string, { price: number; title: string }>()
+  const targetCategory = booking.value?.category_snapshot?.toLowerCase() ?? ''
+  for (const svc of data) {
+    const existing = map.get(svc.cleaner_id)
+    const isMatch = (svc.category ?? '').toLowerCase() === targetCategory
+    if (!existing || isMatch) {
+      map.set(svc.cleaner_id, { price: svc.base_price_pence, title: svc.title })
+    }
+  }
+  reassignCleanerPrices.value = map
+}
+
+function reassignEstimatedPrice(cleanerId: string): string {
+  const entry = reassignCleanerPrices.value.get(cleanerId)
+  if (!entry) return '—'
+  return formatPence(entry.price, booking.value?.currency ?? 'GBP')
+}
+
+function reassignServiceTitle(cleanerId: string): string {
+  return reassignCleanerPrices.value.get(cleanerId)?.title ?? 'Cleaning'
+}
+
+function reassignDisplayName(c: CleanerSearchResult): string {
+  return (c as any).business_name ?? c.profiles?.full_name ?? 'Cleaner'
+}
+
+function selectReassignCleaner(c: CleanerSearchResult) {
+  reassignSelectedCleaner.value = c
+  reassignStep.value = 3
+}
+
+async function confirmReassignment() {
+  if (!booking.value || !reassignSelectedCleaner.value || reassignConfirmLoading.value) return
+  reassignConfirmLoading.value = true
+  reassignError.value = ''
+  try {
+    const isoStart =
+      reassignDate.value && reassignTime.value
+        ? `${reassignDate.value}T${reassignTime.value}:00`
+        : undefined
+    const updated = await customerReassignBooking(
+      bookingId,
+      reassignSelectedCleaner.value.user_id,
+      isoStart,
+    )
+    booking.value = updated
+    closeReassignFlow()
+  } catch (e) {
+    reassignError.value = e instanceof Error ? e.message : 'Failed to confirm reassignment.'
+  } finally {
+    reassignConfirmLoading.value = false
   }
 }
 
@@ -627,7 +855,6 @@ function openNoShowModal() {
   noShowModalOpen.value = true
   noShowError.value = ''
   noShowSuccess.value = ''
-  replacementCleaners.value = []
 }
 
 function closeNoShowModal() {
@@ -647,29 +874,13 @@ async function requestReplacementCleaner() {
   if (!booking.value || noShowActionLoading.value) return
   noShowActionLoading.value = 'replacement'
   noShowError.value = ''
-  noShowSuccess.value = ''
-  replacementCleaners.value = []
   try {
     const updated = await reportCleanerNoShow(bookingId, 'replacement')
     booking.value = updated
-    noShowSuccess.value = "We'll help find another available cleaner."
-
-    const start = new Date(updated.scheduled_start)
-    const date = Number.isNaN(start.valueOf()) ? undefined : updated.scheduled_start.slice(0, 10)
-    const time = Number.isNaN(start.valueOf()) ? undefined : updated.scheduled_start.slice(11, 16)
-    const matches = await searchCleaners({
-      serviceCategory: updated.category_snapshot ?? undefined,
-      availabilityDate: date,
-      availabilityTime: time,
-      city: replacementSearchCity(updated.location_text),
-      limit: 6,
-    })
-    replacementCleaners.value = matches
-      .filter((cleaner) => cleaner.user_id !== updated.cleaner_id)
-      .slice(0, 3)
+    closeNoShowModal()
+    openReassignFlow()
   } catch (e) {
-    noShowError.value =
-      e instanceof Error ? e.message : 'Failed to request another cleaner.'
+    noShowError.value = e instanceof Error ? e.message : 'Failed to request another cleaner.'
   } finally {
     noShowActionLoading.value = null
   }
@@ -680,7 +891,6 @@ async function requestNoShowRefund() {
   noShowActionLoading.value = 'refund'
   noShowError.value = ''
   noShowSuccess.value = ''
-  replacementCleaners.value = []
   try {
     const updated = await reportCleanerNoShow(bookingId, 'refund')
     booking.value = updated
@@ -1498,5 +1708,421 @@ onBeforeUnmount(() => {
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   display: inline-block;
+}
+
+/* ── Reassign cleaner modal ───────────────────────────────── */
+.ra-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.ra-box {
+  background: #ffffff;
+  border-radius: 0.5rem;
+  width: 100%;
+  max-width: 56rem;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.ra-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--outline-variant, #c4c7c7);
+  flex-shrink: 0;
+}
+
+.ra-step-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--secondary, #5e5e5e);
+  margin: 0 0 0.25rem;
+}
+
+.ra-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary, #000000);
+  margin: 0;
+}
+
+.ra-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--secondary, #5e5e5e);
+  display: flex;
+  padding: 0;
+  margin-top: 2px;
+}
+
+.ra-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.ra-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--outline-variant, #c4c7c7);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ── Step 1: Date inputs ─────────────────────────────────── */
+.ra-step-desc {
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0 0 1.25rem;
+  line-height: 1.6;
+}
+
+.ra-date-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.ra-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--secondary, #5e5e5e);
+  margin-bottom: 0.4rem;
+}
+
+.ra-input {
+  width: 100%;
+  height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: #ffffff;
+  font-size: 14px;
+  color: var(--primary, #000000);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.ra-input:focus {
+  border-color: var(--primary, #000000);
+}
+
+.ra-error {
+  font-size: 13px;
+  color: #ba1a1a;
+  margin: 1rem 0 0;
+}
+
+/* ── Step 2: Loading / empty ─────────────────────────────── */
+.ra-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+  padding: 2rem 0;
+}
+
+.ra-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--outline-variant, #c4c7c7);
+  border-top-color: var(--primary, #000000);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.ra-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3rem 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+}
+
+/* ── Step 2: Cleaner cards ─────────────────────────────── */
+.ra-cleaner-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .ra-cleaner-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .ra-cleaner-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.ra-cleaner-card {
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: #ffffff;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.ra-cleaner-card:hover {
+  border-color: var(--primary, #000000);
+}
+
+.ra-card-img-wrap {
+  position: relative;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  background: var(--surface-variant, #e2e2e2);
+}
+
+.ra-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1);
+  transition: filter 0.4s;
+}
+
+.ra-cleaner-card:hover .ra-card-img {
+  filter: grayscale(0);
+}
+
+.ra-card-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-container, #eeeeee);
+}
+
+.ra-top-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: var(--primary, #000000);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+}
+
+.ra-card-body {
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.ra-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.ra-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary, #000000);
+  margin: 0;
+}
+
+.ra-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+  font-size: 13px;
+  color: var(--primary, #000000);
+}
+
+.ra-star {
+  font-size: 14px !important;
+  color: #f59e0b;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.ra-review-count {
+  color: var(--secondary, #5e5e5e);
+  font-size: 12px;
+}
+
+.ra-card-price {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.ra-card-price > span:first-child {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary, #000000);
+}
+
+.ra-price-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--secondary, #5e5e5e);
+}
+
+.ra-card-bio {
+  font-size: 12px;
+  color: var(--on-surface-variant, #5e5e5e);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ra-card-footer {
+  border-top: 1px solid var(--outline-variant, #c4c7c7);
+  padding-top: 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ra-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ra-card-service,
+.ra-card-avail {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 11px;
+  color: var(--secondary, #5e5e5e);
+}
+
+.ra-card-avail {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.ra-select-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--primary, #000000);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.ra-select-btn:hover {
+  opacity: 0.85;
+}
+
+/* ── Step 3: Confirm grid ─────────────────────────────────── */
+.ra-confirm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 480px) {
+  .ra-confirm-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ra-confirm-block {
+  background: var(--surface-container, #eeeeee);
+  padding: 1rem;
+}
+
+.ra-confirm-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--secondary, #5e5e5e);
+  margin-bottom: 0.4rem;
+}
+
+.ra-confirm-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary, #000000);
+  margin: 0;
+}
+
+.ra-confirm-sub {
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
+  margin: 0.2rem 0 0;
+}
+
+/* ── Footer buttons ─────────────────────────────────────── */
+.btn-modal-cancel {
+  padding: 0.5rem 1rem;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--primary, #000000);
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  cursor: pointer;
+}
+
+.btn-modal-cancel:hover:not(:disabled) {
+  background: var(--surface-variant, #e2e2e2);
+}
+
+.btn-modal-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-modal-confirm {
+  padding: 0.5rem 1.25rem;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--primary, #000000);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn-modal-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-modal-confirm:hover:not(:disabled) {
+  opacity: 0.85;
 }
 </style>

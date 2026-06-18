@@ -94,84 +94,196 @@
       </div>
     </section>
 
-    <!-- Reassign Modal -->
-    <AppModal v-model="showReassignModal" title="Reassign Cleaner" size="lg">
-      <div class="reassign-modal-body">
-        <!-- Active booking warning -->
-        <div v-if="reassignTarget?.status === 'in_progress'" class="reassign-warning">
-          <span class="material-symbols-outlined reassign-warning__icon">warning</span>
+    <!-- Reassign Modal (3-step) -->
+    <div v-if="showReassignModal" class="ra-backdrop" @click.self="closeReassignModal">
+      <div class="ra-box">
+        <!-- Header -->
+        <div class="ra-header">
           <div>
-            <p class="reassign-warning__title">This booking is currently active</p>
-            <p class="reassign-warning__body">Reassigning may disrupt an in-progress service. Confirm only if necessary.</p>
+            <p class="ra-step-label">Step {{ reassignStep }} of 3</p>
+            <h2 class="ra-title">
+              {{ reassignStep === 1 ? 'Select New Date & Time' : reassignStep === 2 ? 'Choose Cleaner' : 'Confirm Reassignment' }}
+            </h2>
           </div>
+          <button class="ra-close" type="button" @click="closeReassignModal">
+            <span class="material-symbols-outlined">close</span>
+          </button>
         </div>
 
-        <div v-if="reassignTarget" class="reassign-booking-info">
-          <p class="reassign-label">Booking</p>
-          <p class="reassign-value">
-            #{{ reassignTarget.id.slice(0, 8).toUpperCase() }} —
-            {{ reassignTarget.service_title_snapshot ?? 'Cleaning Booking' }}
-          </p>
-          <p class="reassign-sub">
-            {{ formatDateTime(reassignTarget.scheduled_start) }} ·
-            {{ formatTimeRange(reassignTarget.scheduled_start, reassignTarget.scheduled_end) }}
-          </p>
-          <p v-if="reassignTarget.current_cleaner_name" class="reassign-sub">
-            Current cleaner: {{ reassignTarget.current_cleaner_name }}
-          </p>
+        <!-- Body -->
+        <div class="ra-body">
+          <!-- Warning for in-progress bookings -->
+          <div v-if="reassignTarget?.status === 'in_progress'" class="reassign-warning">
+            <span class="material-symbols-outlined reassign-warning__icon">warning</span>
+            <div>
+              <p class="reassign-warning__title">This booking is currently in progress</p>
+              <p class="reassign-warning__body">Reassigning may disrupt an active service. Confirm only if necessary.</p>
+            </div>
+          </div>
+
+          <!-- ── Step 1: Date & Time ── -->
+          <template v-if="reassignStep === 1">
+            <div class="reassign-booking-info">
+              <p class="reassign-label">Booking</p>
+              <p class="reassign-value">{{ reassignTarget?.service_title_snapshot ?? 'Cleaning Booking' }}</p>
+              <p class="reassign-sub">Current cleaner: {{ reassignTarget?.current_cleaner_name ?? 'Unassigned' }}</p>
+            </div>
+            <div class="ra-date-grid">
+              <div>
+                <label class="ra-field-label">New Cleaning Date</label>
+                <input
+                  v-model="reassignDate"
+                  type="date"
+                  :min="today"
+                  class="ra-input"
+                />
+              </div>
+              <div>
+                <label class="ra-field-label">Start Time</label>
+                <input
+                  v-model="reassignTime"
+                  type="time"
+                  class="ra-input"
+                />
+              </div>
+            </div>
+          </template>
+
+          <!-- ── Step 2: Cleaner Cards ── -->
+          <template v-else-if="reassignStep === 2">
+            <p class="reassign-sub" style="margin-bottom:1rem;">
+              Available on {{ formatDate(reassignDate) }} at {{ reassignTime }}
+            </p>
+            <div v-if="cleanerSearchLoading" class="ra-loading">
+              <div class="ra-spinner"></div>
+              Searching available cleaners…
+            </div>
+            <div v-else-if="cleanerResults.length === 0" class="ra-empty">
+              <span class="material-symbols-outlined" style="font-size:2.5rem;color:var(--outline-variant,#c4c7c7)">search_off</span>
+              <p>No available cleaners found for this date.</p>
+              <p style="font-size:12px;color:var(--secondary,#5e5e5e)">Try a different date or time.</p>
+            </div>
+            <div v-else class="ra-cleaner-grid">
+              <div
+                v-for="c in cleanerResults"
+                :key="c.user_id"
+                class="ra-cleaner-card"
+              >
+                <div class="ra-card-img-wrap">
+                  <img
+                    v-if="c.profiles?.avatar_url"
+                    :src="c.profiles.avatar_url"
+                    :alt="cleanerDisplayName(c)"
+                    class="ra-card-img"
+                  />
+                  <div v-else class="ra-card-img-placeholder">
+                    <span class="material-symbols-outlined" style="font-size:3rem;color:var(--on-surface-variant,#5e5e5e)">person</span>
+                  </div>
+                  <div v-if="c.average_rating >= 4.9" class="ra-top-badge">Top Rated</div>
+                </div>
+                <div class="ra-card-body">
+                  <div class="ra-card-header">
+                    <div>
+                      <h3 class="ra-card-name">{{ cleanerDisplayName(c) }}</h3>
+                      <div class="ra-card-rating">
+                        <span class="material-symbols-outlined ra-star">star</span>
+                        <span>{{ c.average_rating > 0 ? c.average_rating.toFixed(1) : '—' }}</span>
+                        <span class="ra-review-count">({{ c.review_count }})</span>
+                      </div>
+                    </div>
+                    <div class="ra-card-price">
+                      <span>{{ estimatedPrice(c.user_id) }}</span>
+                      <span class="ra-price-sub">est. total</span>
+                    </div>
+                  </div>
+                  <p v-if="c.bio" class="ra-card-bio">{{ c.bio }}</p>
+                  <div class="ra-card-footer">
+                    <div class="ra-card-meta">
+                      <div class="ra-card-service">
+                        <span class="material-symbols-outlined" style="font-size:14px">cleaning_services</span>
+                        {{ serviceTitle(c.user_id) }}
+                      </div>
+                      <div class="ra-card-avail">
+                        <span class="material-symbols-outlined" style="font-size:14px">event_available</span>
+                        Available {{ formatDate(reassignDate) }}
+                      </div>
+                    </div>
+                    <button
+                      class="ra-select-btn"
+                      type="button"
+                      @click="selectCleanerForReassign(c)"
+                    >
+                      Select Cleaner
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- ── Step 3: Confirm ── -->
+          <template v-else-if="reassignStep === 3">
+            <div class="reassign-booking-info">
+              <p class="reassign-label">New Cleaner</p>
+              <p class="reassign-value">{{ cleanerDisplayName(selectedCleaner!) }}</p>
+              <p class="reassign-sub" v-if="selectedCleaner?.profiles?.city">{{ selectedCleaner.profiles.city }}</p>
+              <div class="ra-card-rating" style="margin-top:0.25rem">
+                <span class="material-symbols-outlined ra-star">star</span>
+                <span>{{ selectedCleaner?.average_rating.toFixed(1) }}</span>
+                <span class="ra-review-count">({{ selectedCleaner?.review_count }} reviews)</span>
+              </div>
+            </div>
+            <div class="reassign-booking-info" style="margin-top:0.75rem">
+              <p class="reassign-label">New Schedule</p>
+              <p class="reassign-value">{{ formatDate(reassignDate) }} at {{ reassignTime }}</p>
+              <p class="reassign-sub">Duration preserved from original booking</p>
+            </div>
+            <div class="reassign-booking-info" style="margin-top:0.75rem">
+              <p class="reassign-label">Booking</p>
+              <p class="reassign-value">{{ reassignTarget?.service_title_snapshot ?? 'Cleaning Booking' }}</p>
+              <p class="reassign-sub">Previous cleaner: {{ reassignTarget?.current_cleaner_name ?? '—' }}</p>
+            </div>
+            <p v-if="reassignError" class="reassign-error" style="margin-top:0.75rem">{{ reassignError }}</p>
+          </template>
         </div>
 
-        <div class="reassign-available-section">
-          <div class="reassign-available-header">
-            <span class="reassign-label">Available Cleaners</span>
-            <button
-              class="btn-find-cleaners"
-              type="button"
-              :disabled="cleanerSearchLoading"
-              @click="findAvailableCleaners"
-            >
-              {{ cleanerSearchLoading ? 'Searching…' : 'Refresh' }}
-            </button>
-          </div>
-          <div v-if="cleanerSearchLoading" class="cleaner-search-loading">
-            Searching available cleaners…
-          </div>
-          <div v-else-if="cleanerResults.length > 0" class="cleaner-cards">
-            <button
-              v-for="c in cleanerResults"
-              :key="c.user_id"
-              :class="['cleaner-card', selectedCleaner?.user_id === c.user_id && 'cleaner-card--selected']"
-              type="button"
-              @click="selectedCleaner = c"
-            >
-              <span class="cleaner-card__name">{{ c.profiles?.full_name ?? c.business_name ?? '—' }}</span>
-              <span class="cleaner-card__city">{{ c.profiles?.city ?? '—' }}</span>
-              <span class="cleaner-card__rating">
-                ★ {{ c.average_rating > 0 ? c.average_rating.toFixed(1) : '—' }}
-                · {{ c.review_count }} completed jobs
-              </span>
-              <span class="cleaner-card__available">✓ Available</span>
-            </button>
-          </div>
-          <div v-else-if="cleanerSearched && !cleanerSearchLoading" class="cleaner-empty">
-            <p class="cleaner-empty__msg">No available replacement cleaners found.</p>
-          </div>
-        </div>
+        <!-- Footer -->
+        <div class="ra-footer">
+          <button
+            v-if="reassignStep === 1"
+            class="btn-modal-cancel"
+            type="button"
+            @click="closeReassignModal"
+          >Cancel</button>
+          <button
+            v-if="reassignStep > 1"
+            class="btn-modal-cancel"
+            type="button"
+            :disabled="reassignLoading"
+            @click="reassignStep = (reassignStep - 1) as 1 | 2 | 3"
+          >← Back</button>
 
-        <p v-if="reassignError" class="reassign-error">{{ reassignError }}</p>
+          <button
+            v-if="reassignStep === 1"
+            class="btn-modal-confirm"
+            type="button"
+            :disabled="!reassignDate || !reassignTime || cleanerSearchLoading"
+            @click="goToStep2"
+          >
+            {{ cleanerSearchLoading ? 'Searching…' : 'Find Available Cleaners →' }}
+          </button>
+          <button
+            v-if="reassignStep === 3"
+            class="btn-modal-confirm"
+            type="button"
+            :disabled="!selectedCleaner || reassignLoading"
+            @click="submitReassign"
+          >
+            {{ reassignLoading ? 'Reassigning…' : 'Confirm Reassignment' }}
+          </button>
+        </div>
       </div>
-      <template #footer>
-        <button class="btn-modal-cancel" type="button" @click="closeReassignModal">Cancel</button>
-        <button
-          class="btn-modal-confirm"
-          type="button"
-          :disabled="!selectedCleaner || reassignLoading"
-          @click="submitReassign"
-        >
-          {{ reassignLoading ? 'Reassigning…' : 'Confirm Reassignment' }}
-        </button>
-      </template>
-    </AppModal>
+    </div>
   </main>
 </template>
 
@@ -180,14 +292,16 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getBookingById, reassignBooking, type BookingDetailRow } from '@/services/bookingService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
-import { formatDateTime, formatPence } from '@/utils/format'
+import { formatDate, formatDateTime, formatPence } from '@/utils/format'
 import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
-import AppModal from '@/components/ui/AppModal.vue'
+import { requireSupabase } from '@/lib/supabase'
 
 const REASSIGNABLE_STATUSES = new Set([
   'cleaner_no_show', 'accepted', 'in_progress', 'paid',
   'cleaner_cancelled', 'reassign_requested', 'pending_request',
 ])
+
+const today = new Date().toISOString().slice(0, 10)
 
 const route = useRoute()
 const booking = ref<BookingDetailRow | null>(null)
@@ -197,10 +311,14 @@ const errorMessage = ref('')
 // Reassign modal state
 const showReassignModal = ref(false)
 const reassignTarget = ref<BookingDetailRow | null>(null)
+const reassignStep = ref<1 | 2 | 3>(1)
+const reassignDate = ref('')
+const reassignTime = ref('09:00')
 const cleanerResults = ref<CleanerSearchResult[]>([])
 const cleanerSearchLoading = ref(false)
 const cleanerSearched = ref(false)
 const selectedCleaner = ref<CleanerSearchResult | null>(null)
+const cleanerBasePrices = ref<Map<string, { price: number; title: string }>>(new Map())
 const reassignLoading = ref(false)
 const reassignError = ref('')
 
@@ -267,14 +385,17 @@ function formatTimeRange(start: string | null | undefined, end: string | null | 
   return `${fmt.format(s)} - ${fmt.format(e)}`
 }
 
-async function openReassignModal(b: BookingDetailRow) {
+function openReassignModal(b: BookingDetailRow) {
   reassignTarget.value = b
+  reassignStep.value = 1
+  reassignDate.value = b.scheduled_start?.slice(0, 10) ?? today
+  reassignTime.value = b.scheduled_start?.slice(11, 16) ?? '09:00'
   cleanerResults.value = []
   cleanerSearched.value = false
   selectedCleaner.value = null
+  cleanerBasePrices.value = new Map()
   reassignError.value = ''
   showReassignModal.value = true
-  await findAvailableCleaners()
 }
 
 function closeReassignModal() {
@@ -282,29 +403,31 @@ function closeReassignModal() {
   reassignTarget.value = null
   cleanerResults.value = []
   selectedCleaner.value = null
+  cleanerBasePrices.value = new Map()
   reassignError.value = ''
+  reassignStep.value = 1
 }
 
-async function findAvailableCleaners() {
-  if (!reassignTarget.value?.scheduled_start) return
-  const start = reassignTarget.value.scheduled_start
-  const dateStr = start.split('T')[0]
-  const timeStr = start.split('T')[1]?.slice(0, 5) ?? '09:00'
-
+async function goToStep2() {
+  if (!reassignDate.value || !reassignTime.value) return
   cleanerSearchLoading.value = true
   cleanerSearched.value = false
   cleanerResults.value = []
+  cleanerBasePrices.value = new Map()
+  reassignError.value = ''
   try {
     const results = await searchCleaners({
-      availabilityDate: dateStr,
-      availabilityTime: timeStr,
-      serviceCategory: reassignTarget.value.category_snapshot ?? undefined,
+      availabilityDate: reassignDate.value,
+      availabilityTime: reassignTime.value,
+      serviceCategory: reassignTarget.value?.category_snapshot ?? undefined,
     })
-    const currentCleanerId = reassignTarget.value.cleaner_id
+    const currentCleanerId = reassignTarget.value?.cleaner_id
     cleanerResults.value = currentCleanerId
       ? results.filter((c) => c.user_id !== currentCleanerId)
       : results
+    await loadCleanerPrices(cleanerResults.value.map((c) => c.user_id))
     cleanerSearched.value = true
+    reassignStep.value = 2
   } catch {
     cleanerResults.value = []
     cleanerSearched.value = true
@@ -313,16 +436,65 @@ async function findAvailableCleaners() {
   }
 }
 
+async function loadCleanerPrices(cleanerIds: string[]) {
+  if (!cleanerIds.length) return
+  const category = reassignTarget.value?.category_snapshot ?? null
+  const supabase = requireSupabase()
+  const { data } = await supabase
+    .from('services')
+    .select('cleaner_id, title, category, base_price_cents')
+    .in('cleaner_id', cleanerIds)
+    .eq('active', true)
+
+  const prices = new Map<string, { price: number; title: string }>()
+  for (const svc of data ?? []) {
+    const existing = prices.get(svc.cleaner_id)
+    const isMatch = category && svc.category === category
+    if (!existing || isMatch) {
+      prices.set(svc.cleaner_id, { price: svc.base_price_cents, title: svc.title })
+    }
+  }
+  cleanerBasePrices.value = prices
+}
+
+function estimatedPrice(cleanerId: string): string {
+  const d = cleanerBasePrices.value.get(cleanerId)
+  if (!d || !d.price) return '—'
+  return `From ${formatPence(d.price, 'GBP')}`
+}
+
+function serviceTitle(cleanerId: string): string {
+  return cleanerBasePrices.value.get(cleanerId)?.title
+    ?? reassignTarget.value?.service_title_snapshot
+    ?? 'Cleaning Service'
+}
+
+function cleanerDisplayName(c: CleanerSearchResult): string {
+  return c.business_name ?? c.profiles?.full_name ?? 'Cleaner'
+}
+
+function selectCleanerForReassign(c: CleanerSearchResult) {
+  selectedCleaner.value = c
+  reassignStep.value = 3
+}
+
 async function submitReassign() {
   if (!selectedCleaner.value || !reassignTarget.value) return
   reassignLoading.value = true
   reassignError.value = ''
   try {
-    await reassignBooking(reassignTarget.value.id, selectedCleaner.value.user_id)
+    const newStart = new Date(`${reassignDate.value}T${reassignTime.value}:00`)
+    await reassignBooking(
+      reassignTarget.value.id,
+      selectedCleaner.value.user_id,
+      undefined,
+      newStart.toISOString(),
+    )
     closeReassignModal()
     await loadBooking(reassignTarget.value.id)
   } catch (e) {
     reassignError.value = e instanceof Error ? e.message : 'Reassignment failed.'
+    reassignStep.value = 3
   } finally {
     reassignLoading.value = false
   }
@@ -501,13 +673,7 @@ async function submitReassign() {
   min-width: 0;
 }
 
-/* ── Reassign modal ────────────────────────────────────────── */
-.reassign-modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
+/* ── Reassign modal (shared elements) ─────────────────────── */
 .reassign-warning {
   display: flex;
   align-items: flex-start;
@@ -515,6 +681,7 @@ async function submitReassign() {
   background: #fff3e0;
   border: 1px solid #ffcc02;
   padding: 0.875rem 1rem;
+  margin-bottom: 1rem;
 }
 
 .reassign-warning__icon {
@@ -543,19 +710,20 @@ async function submitReassign() {
 }
 
 .reassign-label {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--secondary, #5e5e5e);
   display: block;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  margin-bottom: 0.25rem;
 }
 
 .reassign-value {
   font-size: 14px;
   font-weight: 500;
   color: var(--primary, #000000);
-  margin: 0.25rem 0 0;
+  margin: 0;
 }
 
 .reassign-sub {
@@ -564,121 +732,340 @@ async function submitReassign() {
   margin: 0.125rem 0 0;
 }
 
-.reassign-available-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.reassign-available-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.btn-find-cleaners {
-  padding: 0.375rem 0.75rem;
-  font-size: 12px;
-  font-weight: 500;
-  background: transparent;
-  color: var(--primary, #000000);
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-
-.btn-find-cleaners:hover:not(:disabled) {
-  background-color: var(--surface-variant, #e2e2e2);
-}
-
-.btn-find-cleaners:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.cleaner-search-loading {
-  font-size: 13px;
-  color: var(--secondary, #5e5e5e);
-  padding: 0.5rem 0;
-}
-
-.cleaner-cards {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.625rem;
-  max-height: 18rem;
-  overflow-y: auto;
-}
-
-@media (min-width: 480px) {
-  .cleaner-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.cleaner-card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.2rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  background: #ffffff;
-  cursor: pointer;
-  text-align: left;
-  transition: border-color 0.15s, background-color 0.15s;
-}
-
-.cleaner-card:hover {
-  border-color: var(--primary, #000000);
-}
-
-.cleaner-card--selected {
-  border-color: var(--primary, #000000);
-  background: var(--surface-container, #eeeeee);
-}
-
-.cleaner-card__name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--primary, #000000);
-}
-
-.cleaner-card__city {
-  font-size: 12px;
-  color: var(--secondary, #5e5e5e);
-}
-
-.cleaner-card__rating {
-  font-size: 12px;
-  color: var(--secondary, #5e5e5e);
-  margin-top: 0.25rem;
-}
-
-.cleaner-card__available {
-  font-size: 11px;
-  color: #2e7d32;
-  font-weight: 600;
-  margin-top: 0.125rem;
-}
-
-.cleaner-empty {
-  padding: 1rem;
-  background: var(--surface-container, #eeeeee);
-}
-
-.cleaner-empty__msg {
-  font-size: 13px;
-  color: var(--secondary, #5e5e5e);
-  margin: 0;
-}
-
 .reassign-error {
   font-size: 13px;
   color: #ba1a1a;
   margin: 0;
 }
 
+/* ── Reassign modal shell ──────────────────────────────────── */
+.ra-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.ra-box {
+  background: #ffffff;
+  border-radius: 0.5rem;
+  width: 100%;
+  max-width: 56rem;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.ra-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--outline-variant, #c4c7c7);
+  flex-shrink: 0;
+}
+
+.ra-step-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--secondary, #5e5e5e);
+  margin: 0 0 0.25rem;
+}
+
+.ra-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary, #000000);
+  margin: 0;
+}
+
+.ra-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--secondary, #5e5e5e);
+  display: flex;
+  padding: 0;
+  margin-top: 2px;
+}
+
+.ra-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.ra-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--outline-variant, #c4c7c7);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ── Step 1: Date inputs ─────────────────────────────────── */
+.ra-date-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.ra-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--secondary, #5e5e5e);
+  margin-bottom: 0.4rem;
+}
+
+.ra-input {
+  width: 100%;
+  height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: #ffffff;
+  font-size: 14px;
+  color: var(--primary, #000000);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.ra-input:focus {
+  border-color: var(--primary, #000000);
+}
+
+/* ── Step 2: Cleaner loading/empty ────────────────────────── */
+.ra-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+  padding: 2rem 0;
+}
+
+.ra-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--outline-variant, #c4c7c7);
+  border-top-color: var(--primary, #000000);
+  border-radius: 50%;
+  animation: ra-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes ra-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ra-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3rem 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--secondary, #5e5e5e);
+}
+
+/* ── Step 2: Cleaner cards ──────────────────────────────── */
+.ra-cleaner-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .ra-cleaner-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .ra-cleaner-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.ra-cleaner-card {
+  border: 1px solid var(--outline-variant, #c4c7c7);
+  background: #ffffff;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.ra-cleaner-card:hover {
+  border-color: var(--primary, #000000);
+}
+
+.ra-card-img-wrap {
+  position: relative;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  background: var(--surface-variant, #e2e2e2);
+}
+
+.ra-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1);
+  transition: filter 0.4s;
+}
+
+.ra-cleaner-card:hover .ra-card-img {
+  filter: grayscale(0);
+}
+
+.ra-card-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-container, #eeeeee);
+}
+
+.ra-top-badge {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: var(--primary, #000000);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+}
+
+.ra-card-body {
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.ra-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.ra-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary, #000000);
+  margin: 0;
+}
+
+.ra-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+  font-size: 13px;
+  color: var(--primary, #000000);
+}
+
+.ra-star {
+  font-size: 14px !important;
+  color: #f59e0b;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.ra-review-count {
+  color: var(--secondary, #5e5e5e);
+  font-size: 12px;
+}
+
+.ra-card-price {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.ra-card-price > span:first-child {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary, #000000);
+}
+
+.ra-price-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--secondary, #5e5e5e);
+}
+
+.ra-card-bio {
+  font-size: 12px;
+  color: var(--on-surface-variant, #5e5e5e);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ra-card-footer {
+  border-top: 1px solid var(--outline-variant, #c4c7c7);
+  padding-top: 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ra-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ra-card-service,
+.ra-card-avail {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 11px;
+  color: var(--secondary, #5e5e5e);
+}
+
+.ra-card-avail {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.ra-select-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background: var(--primary, #000000);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.ra-select-btn:hover {
+  opacity: 0.85;
+}
+
+/* ── Footer buttons ─────────────────────────────────────── */
 .btn-modal-cancel {
   padding: 0.5rem 1rem;
   font-size: 14px;
@@ -689,12 +1076,17 @@ async function submitReassign() {
   cursor: pointer;
 }
 
-.btn-modal-cancel:hover {
+.btn-modal-cancel:hover:not(:disabled) {
   background: var(--surface-variant, #e2e2e2);
 }
 
+.btn-modal-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .btn-modal-confirm {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.25rem;
   font-size: 14px;
   font-weight: 500;
   background: var(--primary, #000000);

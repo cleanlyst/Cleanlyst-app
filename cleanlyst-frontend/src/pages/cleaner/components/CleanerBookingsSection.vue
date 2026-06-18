@@ -75,6 +75,7 @@
                 <h3 class="booking-title">
                   {{ b.service_title_snapshot ?? 'Cleaning Booking' }}
                 </h3>
+                <p class="booking-id-label">#{{ b.id.slice(0, 8).toUpperCase() }}</p>
                 <p class="booking-address">
                   <span class="material-symbols-outlined meta-icon">location_on</span>
                   {{ b.location_text }}
@@ -400,6 +401,13 @@ const emptyDesc = computed(() => {
   font-weight: 600;
   line-height: 1.3;
   color: var(--primary, #000000);
+  margin: 0 0 0.125rem;
+}
+
+.booking-id-label {
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--secondary, #5e5e5e);
   margin: 0 0 0.25rem;
 }
 

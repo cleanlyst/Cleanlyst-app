@@ -1,5 +1,100 @@
 import { getSupabaseClient } from '@/services/supabaseClient'
 
+// ── Types ─────────────────────────────────────────────────────
+
+export type CleanerStatusFilter = 'pending' | 'approved' | 'suspended' | 'deactivated' | 'rejected'
+
+export interface AdminCleanerRow {
+  user_id: string
+  full_name: string
+  email: string
+  city: string | null
+  avatar_url: string | null
+  business_name: string | null
+  cleaner_status: string
+  is_active: boolean
+  average_rating: number
+  review_count: number
+  total_bookings: number
+  completed_bookings: number
+  total_earnings_cents: number
+  joined_at: string
+  approval_date: string | null
+  has_availability: boolean
+  documents_verified: boolean
+  total_count: number
+}
+
+export interface AdminCleanerProfile {
+  user_id: string
+  full_name: string
+  email: string
+  city: string | null
+  country: string | null
+  avatar_url: string | null
+  phone: string | null
+  business_name: string | null
+  bio: string | null
+  status: string
+  is_active: boolean
+  average_rating: number
+  review_count: number
+  onboarding_complete: boolean
+  joined_at: string
+  approval_date: string | null
+  services: AdminCleanerService[]
+  upcoming_bookings: AdminCleanerBooking[]
+  completed_bookings_count: number
+  total_earnings_cents: number
+  documents: AdminCleanerDocument[]
+  reviews: AdminCleanerReview[]
+}
+
+export interface AdminCleanerService {
+  id: string
+  title: string
+  category: string | null
+  description: string | null
+  base_price_pence: number
+  duration_minutes: number | null
+  active: boolean
+}
+
+export interface AdminCleanerBooking {
+  id: string
+  status: string
+  scheduled_start: string
+  service_title: string | null
+  quote_cents: number
+  customer_name: string | null
+}
+
+export interface AdminCleanerDocument {
+  id: string
+  document_type: string
+  file_path: string | null
+  mime_type: string | null
+  uploaded_at: string | null
+  admin_verified: boolean
+}
+
+export interface AdminCleanerReview {
+  id: string
+  rating: number
+  comment: string | null
+  created_at: string
+  customer_name: string | null
+}
+
+export interface AdminRefundResult {
+  booking_id: string
+  refund_cents: number
+  is_full: boolean
+  payment_total: number
+  platform_fee: number
+  cleaner_payout: number
+}
+
 export async function getPendingCleanerApplications() {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
@@ -55,4 +150,80 @@ export async function reviewCleanerApplication(
   }
 
   return data
+}
+
+// ── Cleaner list ───────────────────────────────────────────────
+
+export async function getAllCleaners(
+  search: string | null,
+  status: CleanerStatusFilter | null,
+  page: number,
+  pageSize: number,
+): Promise<{ cleaners: AdminCleanerRow[]; total: number }> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('admin_get_all_cleaners', {
+    p_search: search || null,
+    p_status: status || null,
+    p_limit: pageSize,
+    p_offset: (page - 1) * pageSize,
+  })
+  if (error) throw new Error(error.message)
+  const rows = (data ?? []) as AdminCleanerRow[]
+  const total = rows[0]?.total_count ?? 0
+  return { cleaners: rows, total: Number(total) }
+}
+
+export async function getCleanerProfile(cleanerId: string): Promise<AdminCleanerProfile> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('admin_get_cleaner_profile', {
+    p_cleaner_id: cleanerId,
+  })
+  if (error) throw new Error(error.message)
+  return data as AdminCleanerProfile
+}
+
+// ── Cleaner actions ────────────────────────────────────────────
+
+export async function suspendCleaner(cleanerId: string, reason?: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  const { error } = await supabase.rpc('admin_suspend_cleaner', {
+    p_cleaner_id: cleanerId,
+    p_reason: reason || null,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function reactivateCleaner(cleanerId: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  const { error } = await supabase.rpc('admin_reactivate_cleaner', {
+    p_cleaner_id: cleanerId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function deactivateCleaner(cleanerId: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  const { error } = await supabase.rpc('admin_deactivate_cleaner', {
+    p_cleaner_id: cleanerId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+// ── Refund ─────────────────────────────────────────────────────
+
+export async function processRefund(
+  bookingId: string,
+  refundCents: number,
+  reason: string,
+  notes?: string,
+): Promise<AdminRefundResult> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('admin_process_refund', {
+    p_booking_id:   bookingId,
+    p_refund_cents: refundCents,
+    p_reason:       reason,
+    p_notes:        notes || null,
+  })
+  if (error) throw new Error(error.message)
+  return data as AdminRefundResult
 }

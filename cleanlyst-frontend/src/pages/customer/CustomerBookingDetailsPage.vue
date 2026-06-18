@@ -556,11 +556,11 @@ import {
   getBookingById,
   transitionBookingState,
   completeBooking,
-  recordAdditionalPayment,
   reportCleanerNoShow,
   customerReassignBooking,
   type BookingDetailRow,
 } from '@/services/bookingService'
+import { startAdditionalPayment } from '@/services/payments/paymentOrchestrator'
 import { cancelAsCustomer } from '@/services/bookingLifecycleService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import BookingTimeline from '@/components/BookingTimeline.vue'
@@ -911,8 +911,8 @@ async function confirmPayment() {
   payModalError.value = ''
   successMessage.value = ''
   try {
-    const updated = await recordAdditionalPayment(bookingId)
-    booking.value = updated
+    await startAdditionalPayment(bookingId)
+    await refreshBooking()
     paySuccess.value = true
   } catch (e) {
     payModalError.value = e instanceof Error ? e.message : 'Failed to process payment.'

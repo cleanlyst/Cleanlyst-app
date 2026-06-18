@@ -289,7 +289,7 @@
 import { onMounted, ref } from 'vue'
 import type { PropType } from 'vue'
 import { createReview } from '@/services/reviewService'
-import { recordAdditionalPayment } from '@/services/bookingService'
+import { startAdditionalPayment } from '@/services/payments/paymentOrchestrator'
 import { formatPence } from '@/utils/format'
 import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
 import { useBookingList, BOOKING_TABS } from '@/composables/useBookingList'
@@ -381,7 +381,7 @@ async function confirmPayment() {
   payProcessing.value = true
   payError.value = ''
   try {
-    await recordAdditionalPayment(bookingId)
+    await startAdditionalPayment(bookingId)
     optimisticPaidIds.value = new Set([...optimisticPaidIds.value, bookingId])
     paySuccess.value = true
     await list.fetch()

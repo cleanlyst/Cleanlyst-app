@@ -1,5 +1,6 @@
 import type { BookingStatus } from '@/types/domain'
 import { getSupabaseClient } from '@/services/supabaseClient'
+import { getSupabaseConfig } from '@/config/supabase'
 
 // ─── Direct Supabase query helpers ───────────────────────────
 
@@ -27,7 +28,10 @@ export async function getBookingTransaction(bookingId: string): Promise<Transact
 
 // ─── Edge Function call wrappers ─────────────────────────────
 
-const functionsBaseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
+// Derive the Edge Functions base URL from the env-aware Supabase config.
+// VITE_SUPABASE_URL does not exist in this project — the config resolves
+// VITE_SUPABASE_STAGING_URL / VITE_SUPABASE_PROD_URL based on domain.
+const functionsBaseUrl = `${getSupabaseConfig().url}/functions/v1`
 
 async function callFunction<TResponse = unknown, TPayload extends object = object>(
   functionName: string,

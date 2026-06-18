@@ -485,7 +485,8 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
-import { createBookingRequest, processPaymentDirect } from '@/services/bookingService'
+import { createBookingRequest } from '@/services/bookingService'
+import { startInitialPayment } from '@/services/payments/paymentOrchestrator'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
@@ -865,8 +866,16 @@ async function confirmAndPay() {
 
     if (!booking?.id) throw new Error('Booking creation failed — no ID returned')
 
-    await processPaymentDirect(booking.id)
+    const paymentResult = await startInitialPayment(booking.id)
 
+    if (paymentResult.redirectUrl) {
+      // Stripe Checkout — browser navigates to Stripe's hosted payment page.
+      // paymentSuccess.value is set on return via the checkout redirect URL.
+      window.location.href = paymentResult.redirectUrl
+      return
+    }
+
+    // Simulation mode — payment RPC ran synchronously, booking is updated.
     if (saveAsPreferences.value) {
       try {
         await prefsStore.save({

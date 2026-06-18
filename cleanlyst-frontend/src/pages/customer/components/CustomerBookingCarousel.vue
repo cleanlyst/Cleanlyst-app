@@ -216,7 +216,7 @@ import { computed, ref } from 'vue'
 import type { PropType } from 'vue'
 import { formatDate, formatPence } from '@/utils/format'
 import { isCustomerPaymentRequired, getBookingStatusLabel } from '@/utils/bookingStatusLabel'
-import { recordAdditionalPayment } from '@/services/bookingService'
+import { startAdditionalPayment } from '@/services/payments/paymentOrchestrator'
 
 interface CarouselBooking {
   id: string
@@ -286,7 +286,7 @@ async function confirmPayment() {
   payProcessing.value = true
   payError.value = ''
   try {
-    await recordAdditionalPayment(bookingId)
+    await startAdditionalPayment(bookingId)
     optimisticPaidIds.value = new Set([...optimisticPaidIds.value, bookingId])
     paySuccess.value = true
     emit('paymentDone', bookingId)

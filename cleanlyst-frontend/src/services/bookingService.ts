@@ -506,37 +506,37 @@ export async function processBookingPayment(bookingId: string): Promise<BookingD
   return booking
 }
 
+/**
+ * @deprecated Use startInitialPayment from paymentOrchestrator directly.
+ *
+ * Thin backward-compatibility wrapper. Delegates to the orchestrator.
+ * Will throw if Stripe is configured and a redirect is required — callers
+ * must migrate to startInitialPayment() and handle OrchestratorResult.
+ */
 export async function processPaymentDirect(bookingId: string): Promise<BookingDetailRow> {
-  const supabase = getSupabaseClient()
-
-  // Simulate payment gateway delay
-  await new Promise((resolve) => setTimeout(resolve, 2500))
-
-  const { data: paymentResult, error } = await supabase.rpc('record_initial_payment', {
-    p_booking_id: bookingId,
-  })
-
-  if (error) throw new Error(error.message ?? 'Payment processing failed')
-
+  const { startInitialPayment } = await import('@/services/payments/paymentOrchestrator')
+  const result = await startInitialPayment(bookingId)
+  if (!result.simulationMode) {
+    throw new Error(
+      'processPaymentDirect does not support Stripe payments. ' +
+        'Call startInitialPayment() from paymentOrchestrator and handle result.redirectUrl.',
+    )
+  }
   const updated = await getBookingById(bookingId)
   if (!updated) throw new Error('Payment recorded but failed to fetch updated booking.')
   return updated
 }
 
+/**
+ * @deprecated Use startAdditionalPayment from paymentOrchestrator directly.
+ *
+ * Thin backward-compatibility wrapper. Delegates to the orchestrator.
+ */
 export async function recordAdditionalPayment(bookingId: string): Promise<BookingDetailRow> {
-  const supabase = getSupabaseClient()
-
-  // Simulate payment gateway delay
-  await new Promise((resolve) => setTimeout(resolve, 2500))
-
-  const { error } = await supabase.rpc('record_additional_payment', {
-    p_booking_id: bookingId,
-  })
-
-  if (error) throw new Error(error.message ?? 'Additional payment processing failed')
-
+  const { startAdditionalPayment } = await import('@/services/payments/paymentOrchestrator')
+  await startAdditionalPayment(bookingId)
   const updated = await getBookingById(bookingId)
-  if (!updated) throw new Error('Payment recorded but failed to fetch updated booking.')
+  if (!updated) throw new Error('Additional payment recorded but failed to fetch updated booking.')
   return updated
 }
 

@@ -32,15 +32,11 @@ export interface FinancialLogEntry {
   payload:   Record<string, unknown>
 }
 
-const LEVEL_METHODS: Record<LogLevel, typeof console.info> = {
-  info:  console.info,
-  warn:  console.warn,
-  error: console.error,
-}
-
 /**
  * Emits a structured financial log entry.
  * In production, swap the console calls for your log-shipping transport.
+ *
+ * Reads console at call time (not at import time) so test spies work correctly.
  */
 export function financialLog(
   event: FinancialLogEvent,
@@ -53,7 +49,7 @@ export function financialLog(
     timestamp: new Date().toISOString(),
     payload,
   }
-  LEVEL_METHODS[level](`[financial:${event}]`, entry)
+  console[level](`[financial:${event}]`, entry)
 }
 
 /** Pre-bound helpers so call sites stay clean. */

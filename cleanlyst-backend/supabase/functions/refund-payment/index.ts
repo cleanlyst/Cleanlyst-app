@@ -6,16 +6,18 @@
  *
  * Eligibility rules:
  *   - Admin can refund any booking whose payment is 'authorized' or 'captured'
+ *   - Customer can cancel their own booking's payment ONLY when status = 'authorized'
+ *     (uncaptured Stripe authorization — no money has moved yet)
  *   - Booking must not already be refunded or in a terminal state
  *   - Payout must not yet have been released (prevents negative-balance transfers)
  *
  * Steps:
- *   1. Validate admin auth
+ *   1. Validate auth (admin or booking owner for authorized cancels)
  *   2. Load booking + payment
  *   3. Validate eligibility
  *   4. Cancel any pending payout if found
- *   5. Create Stripe refund (full or partial)
- *   6. Update payment + booking rows
+ *   5. Create Stripe refund (full or partial) or cancel uncaptured intent
+ *   6. Update payment row (status) + booking row (status only — payment_status is written by Stripe webhook)
  *   7. Notify customer
  */
 
@@ -27,7 +29,8 @@ Deno.serve(async (req) => {
   const admin = makeAdminClient()
 
   try {
-    const auth = await requireRole(req.headers.get('Authorization'), admin, 'admin')
+    // Accept admin for full refund control; customer for cancelling their own authorized payment.
+    const auth = await requireRole(req.headers.get('Authorization'), admin, 'admin', 'customer')
     if (auth instanceof Response) return auth
 
     const body = await req.json().catch(() => null)
@@ -46,6 +49,11 @@ Deno.serve(async (req) => {
 
     if (bookingError || !booking) return err(404, 'Booking not found')
 
+    // Customers may only act on their own bookings.
+    if (auth.role === 'customer' && auth.userId !== booking.customer_id) {
+      return err(403, 'Forbidden — you do not own this booking')
+    }
+
     const nonRefundableStatuses = ['refunded', 'cancelled']
     if (nonRefundableStatuses.includes(booking.status)) {
       return err(409, `Booking is already in a non-refundable state: ${booking.status}`)
@@ -60,6 +68,11 @@ Deno.serve(async (req) => {
 
     if (paymentError || !payment) return err(404, 'No payment record found for this booking')
     if (!payment.stripe_payment_intent_id) return err(409, 'Payment has no Stripe intent to refund')
+
+    // Customers can only cancel uncaptured authorizations (no money transferred yet).
+    if (auth.role === 'customer' && payment.status !== 'authorized') {
+      return err(403, 'Customers can only cancel uncaptured payment authorizations — contact support for captured payment refunds')
+    }
 
     const refundableStatuses = ['authorized', 'captured']
     if (!refundableStatuses.includes(payment.status)) {
@@ -96,7 +109,7 @@ Deno.serve(async (req) => {
       const refundParams = new URLSearchParams({
         payment_intent: payment.stripe_payment_intent_id,
         'metadata[booking_id]': booking.id,
-        'metadata[admin_id]': auth.userId,
+        'metadata[initiated_by]': auth.userId,
       })
       if (refundCents) refundParams.set('amount', String(refundCents))
       if (reason) refundParams.set('reason', reason) // 'duplicate' | 'fraudulent' | 'requested_by_customer'
@@ -112,6 +125,9 @@ Deno.serve(async (req) => {
       .eq('id', payment.id)
 
     // ── Update booking status ─────────────────────────────────────────────
+    // payment_status is NOT set here — the Stripe webhook (payment_intent.canceled
+    // for authorization cancels, charge.refunded for captured refunds) is the sole
+    // writer of bookings.payment_status.
     await admin
       .from('bookings')
       .update({ status: 'refunded' })

@@ -175,6 +175,32 @@
               Awaiting customer payment
             </button>
 
+            <!-- payment_authorized: Stripe Checkout complete, cleaner can start -->
+            <div v-if="booking.status === 'payment_authorized'" class="status-info">
+              <span class="material-symbols-outlined status-info-icon">payments</span>
+              Payment received — ready to start once confirmed
+            </div>
+            <template v-if="booking.status === 'payment_authorized'">
+              <button
+                v-if="!isWithinStartWindow(booking)"
+                type="button"
+                class="btn-secondary"
+                disabled
+              >
+                Available in {{ countdownText(booking.scheduled_start) }}
+              </button>
+              <button
+                v-if="isWithinStartWindow(booking)"
+                type="button"
+                class="btn-start"
+                data-testid="start-cleaning-stripe-btn"
+                :disabled="actionLoading"
+                @click="handleStartCleaning"
+              >
+                {{ actionLoading && activeAction === 'start' ? 'Starting…' : 'Start Cleaning (pending payment confirmation)' }}
+              </button>
+            </template>
+
             <button
               v-if="cannotAttend(booking) && booking.status !== 'cleaner_cancelled'"
               type="button"

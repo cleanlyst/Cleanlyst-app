@@ -23,6 +23,8 @@ import {
   cancelBookingCustomer as _cancelBookingCustomer,
   cleanerCannotAttend as _cleanerCannotAttend,
 } from '@/services/bookingService'
+import { derivePaymentReadiness } from '@/services/payments/paymentStateMachine'
+import type { DerivedPaymentState } from '@/services/payments/paymentLedgerResolver'
 
 // ─── Transition map (mirrors SQL in transition_booking_state) ─────────────────
 
@@ -32,52 +34,86 @@ interface TransitionRule {
   allowedActors: ActorRole[]
 }
 
+// Deterministic contract: ALL bookings.status transitions must flow through
+// the transition_booking_state RPC. This map is the single source of truth
+// for what is allowed — it mirrors the if-elsif chain in that RPC exactly.
+// service_role (Stripe webhook) is the only writer outside this contract;
+// it may write payment_authorized and refunded without calling this RPC.
 export const LIFECYCLE_TRANSITIONS: Partial<
   Record<BookingStatus, Partial<Record<BookingStatus, TransitionRule>>>
 > = {
   pending_request: {
-    accepted: { allowedActors: ['cleaner', 'admin'] },
-    declined: { allowedActors: ['cleaner', 'admin'] },
+    accepted:         { allowedActors: ['cleaner', 'admin'] },
+    declined:         { allowedActors: ['cleaner', 'admin'] },
     cleaner_declined: { allowedActors: ['cleaner', 'admin'] },
-    cancelled: { allowedActors: ['customer', 'admin'] },
+    cancelled:        { allowedActors: ['customer', 'admin'] },
     estimate_proposed: { allowedActors: ['cleaner'] },
+    cleaner_cancelled: { allowedActors: ['cleaner', 'admin'] },
   },
   accepted: {
-    paid: { allowedActors: ['admin'] },
-    in_progress: { allowedActors: ['cleaner', 'admin'] },
-    cancelled: { allowedActors: ['customer', 'admin'] },
+    paid:              { allowedActors: ['admin'] },
+    in_progress:       { allowedActors: ['cleaner', 'admin'] },
+    cancelled:         { allowedActors: ['customer', 'admin'] },
+    cleaner_cancelled: { allowedActors: ['cleaner', 'admin'] },
+    cleaner_no_show:   { allowedActors: ['customer', 'admin'] },
+    refunded:          { allowedActors: ['admin'] },
   },
   paid: {
-    in_progress: { allowedActors: ['cleaner', 'admin'] },
-    cancelled: { allowedActors: ['customer', 'admin'] },
+    in_progress:       { allowedActors: ['cleaner', 'admin'] },
+    cancelled:         { allowedActors: ['customer', 'admin'] },
+    cleaner_cancelled: { allowedActors: ['cleaner', 'admin'] },
+    cleaner_no_show:   { allowedActors: ['customer', 'admin'] },
+    refunded:          { allowedActors: ['admin'] },
   },
   in_progress: {
-    completed: { allowedActors: ['cleaner', 'admin'] },
+    completed:                  { allowedActors: ['cleaner', 'admin'] },
     completion_pending_customer: { allowedActors: ['cleaner', 'admin'] },
-    disputed: { allowedActors: ['customer', 'admin'] },
+    disputed:                   { allowedActors: ['customer', 'admin'] },
+    refunded:                   { allowedActors: ['admin'] },
   },
   completed: {
     disputed: { allowedActors: ['customer', 'admin'] },
-    payout_released: { allowedActors: ['admin'] },
+    refunded: { allowedActors: ['admin'] },
+    // payout_released is an audit-event label only — not a real bookings.status value.
   },
   disputed: {
-    refunded: { allowedActors: ['admin'] },
+    refunded:  { allowedActors: ['admin'] },
     completed: { allowedActors: ['admin'] },
   },
   estimate_proposed: {
     awaiting_customer_payment: { allowedActors: ['customer'] },
-    cancelled: { allowedActors: ['customer', 'admin'] },
+    cancelled:                 { allowedActors: ['customer', 'admin'] },
   },
   awaiting_customer_payment: {
+    // payment_authorized is written by the Stripe webhook (service_role), not this RPC.
     payment_authorized: { allowedActors: ['customer'] },
-    cancelled: { allowedActors: ['customer', 'admin'] },
+    cancelled:          { allowedActors: ['customer', 'admin'] },
   },
   payment_authorized: {
+    // Cancellation of authorized payment goes through refund-payment EF → Stripe → webhook.
     in_progress: { allowedActors: ['cleaner', 'admin'] },
+    refunded:    { allowedActors: ['admin'] },
   },
   completion_pending_customer: {
     completed: { allowedActors: ['customer', 'admin'] },
-    disputed: { allowedActors: ['customer', 'admin'] },
+    disputed:  { allowedActors: ['customer', 'admin'] },
+  },
+  cleaner_no_show: {
+    // Customer or admin picks replacement cleaner → accepted via reassign functions.
+    accepted:  { allowedActors: ['customer', 'admin'] },
+    cancelled: { allowedActors: ['customer', 'admin'] },
+    refunded:  { allowedActors: ['admin'] },
+  },
+  cleaner_cancelled: {
+    // Customer or admin picks replacement cleaner.
+    accepted: { allowedActors: ['customer', 'admin'] },
+    refunded: { allowedActors: ['admin'] },
+  },
+  reassign_requested: {
+    accepted: { allowedActors: ['customer', 'admin'] },
+  },
+  cancelled: {
+    refunded: { allowedActors: ['admin'] },
   },
 }
 
@@ -94,11 +130,17 @@ export function isTransitionAllowed(
 
 const START_WINDOW_MINUTES = 60
 
-export function canStartCleaning(booking: BookingDetailRow): boolean {
-  if (!['paid', 'accepted'].includes(booking.status)) return false
-  if (booking.payment_status !== 'captured') return false
+export function canStartCleaning(
+  booking: BookingDetailRow,
+  derivedPaymentState?: DerivedPaymentState,
+): boolean {
   if (booking.started_at) return false
-  return true
+  // Stripe Checkout path: authorized hold — cleaner can start, capture happens later.
+  if (booking.status === 'payment_authorized') return true
+  if (!['paid', 'accepted'].includes(booking.status)) return false
+  // Prefer ledger-derived state when available; fall back to cached booking field.
+  if (derivedPaymentState !== undefined) return derivedPaymentState === 'captured'
+  return derivePaymentReadiness(booking.payment_status)
 }
 
 export function isWithinStartWindow(booking: BookingDetailRow): boolean {
@@ -112,7 +154,7 @@ export function canComplete(booking: BookingDetailRow): boolean {
 }
 
 export function canCancelCustomer(booking: BookingDetailRow): boolean {
-  return ['pending_request', 'accepted', 'paid', 'estimate_proposed', 'awaiting_customer_payment'].includes(
+  return ['pending_request', 'accepted', 'paid', 'estimate_proposed', 'awaiting_customer_payment', 'payment_authorized'].includes(
     booking.status,
   )
 }

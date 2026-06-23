@@ -1,16 +1,33 @@
+/**
+ * stripe-webhook — ledger writer
+ *
+ * Responsibilities (ONLY):
+ *   1. Verify the Stripe signature
+ *   2. Deduplicate via payment_webhook_events
+ *   3. Insert into payment_webhook_events (Realtime for frontend dispatcher)
+ *   4. Resolve booking_id (from metadata or DB lookup)
+ *   5. INSERT into payment_ledger_events (triggers sync_booking_from_ledger_event)
+ *   6. Mark event processed
+ *   7. Return 200
+ *
+ * INVARIANTS:
+ *   - ZERO booking business logic in this file
+ *   - ZERO direct booking table writes
+ *   - All financial state changes flow through the ledger trigger
+ */
+
 import { createClient } from 'jsr:@supabase/supabase-js@2'
+
+// ─── Stripe Signature Verification ───────────────────────────────────────────
 
 function getEnv(name: string): string {
   const value = Deno.env.get(name)
-  if (!value) {
-    throw new Error(`Missing environment variable: ${name}`)
-  }
+  if (!value) throw new Error(`Missing environment variable: ${name}`)
   return value
 }
 
 async function toHex(buffer: ArrayBuffer): Promise<string> {
-  const bytes = new Uint8Array(buffer)
-  return Array.from(bytes)
+  return Array.from(new Uint8Array(buffer))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('')
 }
@@ -23,29 +40,145 @@ async function signPayload(secret: string, payload: string): Promise<string> {
     false,
     ['sign'],
   )
-
-  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload))
-  return toHex(signature)
+  return toHex(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payload)))
 }
 
-async function verifyStripeSignature(payload: string, stripeSignature: string, secret: string): Promise<boolean> {
-  const parts = stripeSignature.split(',').map((part) => part.trim())
-  const timestamp = parts.find((part) => part.startsWith('t='))?.replace('t=', '')
-  const expectedSignature = parts.find((part) => part.startsWith('v1='))?.replace('v1=', '')
+async function verifyStripeSignature(
+  payload: string,
+  stripeSignature: string,
+  secret: string,
+): Promise<boolean> {
+  const parts = stripeSignature.split(',').map((p) => p.trim())
+  const timestamp = parts.find((p) => p.startsWith('t='))?.slice(2)
+  const expected = parts.find((p) => p.startsWith('v1='))?.slice(3)
+  if (!timestamp || !expected) return false
+  const computed = await signPayload(secret, `${timestamp}.${payload}`)
+  return computed === expected
+}
 
-  if (!timestamp || !expectedSignature) {
-    return false
+// ─── Event Parsing ────────────────────────────────────────────────────────────
+
+interface StripeEvent {
+  id: string
+  type: string
+  data: { object: Record<string, unknown> }
+}
+
+// Stripe event type → ledger event type.
+// Events not in this map are logged in payment_webhook_events but skipped from ledger.
+const STRIPE_TO_LEDGER_EVENT: Readonly<Record<string, string>> = {
+  'checkout.session.completed':    'PAYMENT_AUTHORIZED',
+  'payment_intent.succeeded':      'PAYMENT_CAPTURED',
+  'charge.refunded':               'PAYMENT_REFUNDED',
+  'payment_intent.canceled':       'PAYMENT_REFUNDED',
+  'transfer.paid':                 'PAYOUT_RELEASED',
+}
+
+interface LedgerPayload {
+  bookingId: string
+  amountCents: number | null
+  stripePaymentIntentId: string | null
+  stripeTransferId: string | null
+  currency: string
+}
+
+/** Extracts structured data from a Stripe event object for the ledger row. */
+function extractLedgerData(event: StripeEvent): Omit<LedgerPayload, 'bookingId'> {
+  const obj = event.data.object
+
+  const stripeTransferId  = event.type === 'transfer.paid'
+    ? String(obj.id ?? '')
+    : null
+
+  const stripePaymentIntentId = event.type.startsWith('payment_intent.')
+    ? String(obj.id ?? '')
+    : obj.payment_intent
+      ? String(obj.payment_intent)
+      : null
+
+  let amountCents: number | null = null
+  if (event.type === 'checkout.session.completed') {
+    amountCents = typeof obj.amount_total === 'number' ? obj.amount_total : null
+  } else if (event.type === 'payment_intent.succeeded') {
+    amountCents = typeof obj.amount_received === 'number' ? obj.amount_received : null
+  } else if (event.type === 'charge.refunded') {
+    amountCents = typeof obj.amount_refunded === 'number' ? obj.amount_refunded : null
+  } else if (event.type === 'transfer.paid') {
+    amountCents = typeof obj.amount === 'number' ? obj.amount : null
   }
 
-  const signedPayload = `${timestamp}.${payload}`
-  const computed = await signPayload(secret, signedPayload)
-  return computed === expectedSignature
+  const currency = typeof obj.currency === 'string' ? obj.currency : 'gbp'
+
+  return { amountCents, stripePaymentIntentId, stripeTransferId, currency }
 }
 
+type AdminClient = ReturnType<typeof createClient>
+
+/** Resolves booking_id — checks event metadata first, then falls back to DB lookups. */
+async function resolveBookingId(event: StripeEvent, admin: AdminClient): Promise<string> {
+  const obj = event.data.object
+  const metadata = obj.metadata as Record<string, unknown> | undefined
+
+  // 1. Fast path: booking_id is in event metadata (checkout.session.completed)
+  if (metadata?.booking_id) return String(metadata.booking_id)
+
+  // 2. payment_intent events — look up via payments table
+  if (event.type === 'payment_intent.succeeded' || event.type === 'payment_intent.canceled') {
+    const paymentIntentId = String(obj.id ?? '')
+    if (paymentIntentId) {
+      const { data } = await admin
+        .from('payments')
+        .select('booking_id')
+        .eq('stripe_payment_intent_id', paymentIntentId)
+        .maybeSingle()
+      if (data?.booking_id) return String(data.booking_id)
+    }
+  }
+
+  // 3. charge.refunded — payment_intent links to payments row
+  if (event.type === 'charge.refunded') {
+    const paymentIntentId = obj.payment_intent ? String(obj.payment_intent) : null
+    if (paymentIntentId) {
+      const { data } = await admin
+        .from('payments')
+        .select('booking_id')
+        .eq('stripe_payment_intent_id', paymentIntentId)
+        .maybeSingle()
+      if (data?.booking_id) return String(data.booking_id)
+    }
+  }
+
+  // 4. transfer.paid — look up via payouts table
+  if (event.type === 'transfer.paid') {
+    const transferId = String(obj.id ?? '')
+    if (transferId) {
+      const { data } = await admin
+        .from('payouts')
+        .select('booking_id')
+        .eq('stripe_transfer_id', transferId)
+        .maybeSingle()
+      if (data?.booking_id) return String(data.booking_id)
+    }
+  }
+
+  return ''
+}
+
+// ─── HTTP Handler ─────────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      },
+    })
+  }
+
   try {
-    const supabaseUrl = getEnv('SUPABASE_URL')
-    const serviceRoleKey = getEnv('SUPABASE_SERVICE_ROLE_KEY')
+    const supabaseUrl   = getEnv('SUPABASE_URL')
+    const serviceKey    = getEnv('SUPABASE_SERVICE_ROLE_KEY')
     const webhookSecret = getEnv('STRIPE_WEBHOOK_SECRET')
 
     const signature = req.headers.get('stripe-signature')
@@ -57,124 +190,77 @@ Deno.serve(async (req) => {
     }
 
     const rawBody = await req.text()
-    const isValid = await verifyStripeSignature(rawBody, signature, webhookSecret)
-    if (!isValid) {
+    if (!(await verifyStripeSignature(rawBody, signature, webhookSecret))) {
       return new Response(JSON.stringify({ error: 'Invalid webhook signature' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       })
     }
 
-    const event = JSON.parse(rawBody) as {
-      id: string
-      type: string
-      data: { object: Record<string, unknown> }
-    }
+    const event = JSON.parse(rawBody) as StripeEvent
+    const admin = createClient(supabaseUrl, serviceKey)
 
-    const adminClient = createClient(supabaseUrl, serviceRoleKey)
-    const { data: existingEvent } = await adminClient
+    // ── Deduplicate ───────────────────────────────────────────────────────────
+    const { data: existing } = await admin
       .from('payment_webhook_events')
       .select('id')
       .eq('stripe_event_id', event.id)
       .maybeSingle()
 
-    if (existingEvent) {
+    if (existing) {
       return new Response(JSON.stringify({ ok: true, deduped: true }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
     }
 
-    const { error: insertEventError } = await adminClient.from('payment_webhook_events').insert({
-      stripe_event_id: event.id,
+    // ── Emit: record raw event (triggers Realtime for frontend dispatcher) ────
+    const { error: emitError } = await admin.from('payment_webhook_events').insert({
+      stripe_event_id:   event.id,
       stripe_event_type: event.type,
-      payload: event as unknown as Record<string, unknown>,
+      payload:           event as unknown as Record<string, unknown>,
     })
+    if (emitError) throw emitError
 
-    if (insertEventError) throw insertEventError
+    // ── Write to ledger (if this event type maps to a financial event) ────────
+    const ledgerEventType = STRIPE_TO_LEDGER_EVENT[event.type]
+    if (ledgerEventType) {
+      const bookingId = await resolveBookingId(event, admin)
 
-    const object = event.data.object
-    const bookingId = String((object.metadata as Record<string, unknown> | undefined)?.booking_id ?? '')
+      if (bookingId) {
+        const { amountCents, stripePaymentIntentId, stripeTransferId, currency } =
+          extractLedgerData(event)
 
-    if (bookingId) {
-      if (event.type === 'checkout.session.completed') {
-        const paymentIntentId = String(object.payment_intent ?? '')
-        const sessionId = String(object.id ?? '')
+        const { error: ledgerError } = await admin.from('payment_ledger_events').insert({
+          booking_id:                bookingId,
+          event_type:                ledgerEventType,
+          amount_cents:              amountCents,
+          currency,
+          stripe_event_id:           event.id,
+          stripe_payment_intent_id:  stripePaymentIntentId,
+          stripe_transfer_id:        stripeTransferId,
+          metadata:                  {
+            stripe_event_type: event.type,
+            resolved_at: new Date().toISOString(),
+          },
+        })
 
-        await adminClient
-          .from('payments')
-          .update({
-            stripe_checkout_session_id: sessionId,
-            stripe_payment_intent_id: paymentIntentId || null,
-            status: 'authorized',
-            authorized_at: new Date().toISOString(),
-            last_webhook_event_id: event.id,
-          })
-          .eq('booking_id', bookingId)
-
-        await adminClient
-          .from('bookings')
-          .update({ status: 'payment_authorized' })
-          .eq('id', bookingId)
-      }
-
-      if (event.type === 'payment_intent.payment_failed') {
-        const paymentIntentId = String(object.id ?? '')
-        await adminClient
-          .from('payments')
-          .update({
-            status: 'failed',
-            failed_at: new Date().toISOString(),
-            last_webhook_event_id: event.id,
-          })
-          .eq('stripe_payment_intent_id', paymentIntentId)
-      }
-
-      if (event.type === 'payment_intent.succeeded') {
-        const paymentIntentId = String(object.id ?? '')
-        await adminClient
-          .from('payments')
-          .update({
-            status: 'captured',
-            captured_at: new Date().toISOString(),
-            last_webhook_event_id: event.id,
-          })
-          .eq('stripe_payment_intent_id', paymentIntentId)
-      }
-
-      if (event.type === 'charge.refunded') {
-        const paymentIntentId = String(object.payment_intent ?? '')
-        await adminClient
-          .from('payments')
-          .update({
-            status: 'refunded',
-            refunded_at: new Date().toISOString(),
-            last_webhook_event_id: event.id,
-          })
-          .eq('stripe_payment_intent_id', paymentIntentId)
-
-        await adminClient.from('bookings').update({ status: 'refunded' }).eq('id', bookingId)
+        if (ledgerError) {
+          // UNIQUE violation means we already processed this stripe_event_id — safe to skip
+          if (ledgerError.code !== '23505') throw ledgerError
+        }
+      } else {
+        console.warn('[stripe-webhook] could not resolve booking_id for event', {
+          eventId: event.id,
+          eventType: event.type,
+        })
       }
     }
 
-    // ── transfer.paid: Stripe has settled funds into the cleaner's account ─
-    // Fires days after the transfer is created. No booking_id in metadata —
-    // look up the payout row via stripe_transfer_id instead.
-    if (event.type === 'transfer.paid') {
-      const transferId = String(object.id ?? '')
-      if (transferId) {
-        await adminClient
-          .from('payouts')
-          .update({ status: 'paid' })
-          .eq('stripe_transfer_id', transferId)
-      }
-    }
-
-    await adminClient
+    // ── Mark processed ────────────────────────────────────────────────────────
+    await admin
       .from('payment_webhook_events')
-      .update({
-        processed_at: new Date().toISOString(),
-      })
+      .update({ processed_at: new Date().toISOString() })
       .eq('stripe_event_id', event.id)
 
     return new Response(JSON.stringify({ ok: true }), {

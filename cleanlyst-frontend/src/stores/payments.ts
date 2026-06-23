@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { getSupabaseClient } from '@/services/supabaseClient'
-import { releasePayout } from '@/services/paymentService'
+import { releasePayout } from '@/services/payments/paymentOrchestrator'
 
 export const usePaymentsStore = defineStore('payments', {
   state: () => ({

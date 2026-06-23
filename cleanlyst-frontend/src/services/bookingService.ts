@@ -1,5 +1,41 @@
+// Stripe is the ONLY system allowed to mutate bookings.payment_status.
+// bookingService must NEVER write payment_status or infer booking.status from payment logic.
+// All payment-driven state changes flow through: stripe-webhook → _shared/paymentStateMachine.
+
 import type { BookingStatus } from '@/types/domain'
 import { getSupabaseClient } from '@/services/supabaseClient'
+
+// ─── Payment mutation guard ───────────────────────────────────────────────────
+
+/** Payment-related fields that bookingService must never write directly. */
+const PAYMENT_GUARDED_FIELDS = new Set([
+  'payment_status',
+  'payment_authorized',
+  'stripe_payment_intent_id',
+  'stripe_checkout_session_id',
+])
+
+/**
+ * Throws if the given update payload contains any payment-controlled fields.
+ * Call at the top of every bookingService function that issues a direct UPDATE.
+ *
+ * Payment state changes must flow through paymentOrchestrator (and ultimately
+ * the Stripe webhook → _shared/paymentStateMachine). No exceptions.
+ */
+function assertNoPaymentMutation(
+  updates: Record<string, unknown>,
+  callerName: string,
+): void {
+  for (const field of PAYMENT_GUARDED_FIELDS) {
+    if (field in updates) {
+      throw new Error(
+        `[bookingService.${callerName}] Forbidden: attempted to write payment-controlled field ` +
+          `'${field}'. All payment state changes must flow through the Stripe webhook → ` +
+          `paymentStateMachine. Use paymentOrchestrator for initiating payments.`,
+      )
+    }
+  }
+}
 
 export interface BookingListRow {
   id: string
@@ -183,7 +219,8 @@ export async function createBookingRequest(input: BookingRequestInput): Promise<
       cleaner_payout_cents: input.cleanerPayoutCents,
       currency: input.currency ?? 'GBP',
       status: 'pending_request',
-      payment_status: 'unpaid',
+      payment_status: 'unpaid', // sole allowed INSERT write — initial state only
+
       duration_minutes: input.durationMinutes ?? null,
       notes: input.notes ?? null,
       property_type_snapshot: input.propertyType ?? null,
@@ -429,6 +466,7 @@ export async function updateBookingDetails(
   bookingId: string,
   updates: { notes?: string | null; estimated_hours?: number | null },
 ) {
+  assertNoPaymentMutation(updates as Record<string, unknown>, 'updateBookingDetails')
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from('bookings')
@@ -493,51 +531,6 @@ export async function updateBookingDuration(
   const booking = normalizeBookingDetailRow(data)
   if (!booking) throw new Error('Failed to update booking duration.')
   return booking
-}
-
-export async function processBookingPayment(bookingId: string): Promise<BookingDetailRow> {
-  const supabase = getSupabaseClient()
-  const { data, error } = await supabase.rpc('process_booking_payment', {
-    p_booking_id: bookingId,
-  })
-  if (error) throw error
-  const booking = normalizeBookingDetailRow(data)
-  if (!booking) throw new Error('Failed to process payment.')
-  return booking
-}
-
-/**
- * @deprecated Use startInitialPayment from paymentOrchestrator directly.
- *
- * Thin backward-compatibility wrapper. Delegates to the orchestrator.
- * Will throw if Stripe is configured and a redirect is required — callers
- * must migrate to startInitialPayment() and handle OrchestratorResult.
- */
-export async function processPaymentDirect(bookingId: string): Promise<BookingDetailRow> {
-  const { startInitialPayment } = await import('@/services/payments/paymentOrchestrator')
-  const result = await startInitialPayment(bookingId)
-  if (!result.simulationMode) {
-    throw new Error(
-      'processPaymentDirect does not support Stripe payments. ' +
-        'Call startInitialPayment() from paymentOrchestrator and handle result.redirectUrl.',
-    )
-  }
-  const updated = await getBookingById(bookingId)
-  if (!updated) throw new Error('Payment recorded but failed to fetch updated booking.')
-  return updated
-}
-
-/**
- * @deprecated Use startAdditionalPayment from paymentOrchestrator directly.
- *
- * Thin backward-compatibility wrapper. Delegates to the orchestrator.
- */
-export async function recordAdditionalPayment(bookingId: string): Promise<BookingDetailRow> {
-  const { startAdditionalPayment } = await import('@/services/payments/paymentOrchestrator')
-  await startAdditionalPayment(bookingId)
-  const updated = await getBookingById(bookingId)
-  if (!updated) throw new Error('Additional payment recorded but failed to fetch updated booking.')
-  return updated
 }
 
 export async function reassignBooking(

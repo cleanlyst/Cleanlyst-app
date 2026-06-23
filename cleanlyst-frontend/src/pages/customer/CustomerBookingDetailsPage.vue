@@ -608,7 +608,7 @@ const reassignCleanerPrices = ref<Map<string, { price: number; title: string }>>
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
 const canCancel = computed(() =>
-  ['pending_request', 'accepted', 'paid', 'estimate_proposed', 'awaiting_customer_payment'].includes(
+  ['pending_request', 'accepted', 'paid', 'estimate_proposed', 'awaiting_customer_payment', 'payment_authorized'].includes(
     booking.value?.status ?? '',
   ),
 )
@@ -810,9 +810,10 @@ async function confirmComplete() {
   successMessage.value = ''
   errorMessage.value = ''
   try {
-    // Must use complete_booking RPC (not the generic transition) so the payout row
-    // is created and cleaner total_earnings_cents is incremented correctly.
-    await completeBooking(bookingId)
+    // completion_pending_customer → completed: customer confirms via transition_booking_state,
+    // which allows this path for customers. complete_booking requires cleaner auth and is
+    // only for the cleaner's 'End Job' flow (in_progress → completed).
+    await transitionBookingState(bookingId, 'completed')
     successMessage.value = 'Booking marked as completed.'
     await refreshBooking()
   } catch (e) {
@@ -830,7 +831,18 @@ async function cancelBooking() {
   successMessage.value = ''
   errorMessage.value = ''
   try {
-    await cancelAsCustomer(bookingId)
+    if (booking.value.status === 'payment_authorized') {
+      // Stripe hold on card — must cancel via Stripe (not DB-only path).
+      // refund-payment Edge Function cancels the uncaptured PaymentIntent,
+      // releasing the hold immediately, and updates booking + payment rows.
+      const supabase = getSupabaseClient()
+      const { error } = await supabase.functions.invoke('refund-payment', {
+        body: { booking_id: bookingId, reason: 'requested_by_customer' },
+      })
+      if (error) throw new Error(error.message ?? 'Failed to cancel payment authorization')
+    } else {
+      await cancelAsCustomer(bookingId)
+    }
     successMessage.value = 'Booking cancelled.'
     await refreshBooking()
   } catch (e) {

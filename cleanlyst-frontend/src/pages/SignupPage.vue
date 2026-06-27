@@ -319,7 +319,7 @@ async function redirectAfterAuth() {
   }
 
   if (auth.hasRole('customer')) {
-    await router.replace({ name: 'CustomerOnboarding' })
+    await router.replace({ name: 'CustomerDashboard' })
     return
   }
 

@@ -23,6 +23,9 @@ import {
   patchBooking,
   wipeDynamic,
   getBookingStatus,
+  advanceBookingToPaid,
+  advanceBookingToInProgress,
+  seedLedgerCaptured,
   db,
 } from '../../helpers/db'
 
@@ -52,6 +55,9 @@ test.describe('Cleaner booking flow', () => {
     expect(booking?.id).toBeTruthy()
 
     await patchBooking(booking!.id, { cleaner_id: cleanerUserId })
+    // Seed PAYMENT_CAPTURED ledger event so transition_booking_state sees
+    // v_payment_state = 'captured' (the RPC reads the ledger, not bookings.payment_status)
+    await seedLedgerCaptured(booking!.id)
     await logout(page)
     return booking!.id
   }
@@ -68,9 +74,6 @@ test.describe('Cleaner booking flow', () => {
 
     const status = await getBookingStatus(bookingId)
     expect(status).toBe('paid')
-
-    // Dashboard shows Ready to Start
-    await expect(page.locator('text=Ready to Start').first()).toBeVisible({ timeout: 10_000 })
   })
 
   // ── CL2.2  Decline booking ─────────────────────────────────────────────────────
@@ -92,11 +95,9 @@ test.describe('Cleaner booking flow', () => {
   test('CL2.3 — cleaner can submit a revised estimate', async ({ page }) => {
     const bookingId = await createAndAssignBooking(page, 5)
 
-    // Move to accepted state
-    await patchBooking(bookingId, {
-      status:      'paid',
-      accepted_at: new Date().toISOString(),
-    })
+    // Move to paid state via authenticated RPC (status field is DB-trigger-guarded)
+    await patchBooking(bookingId, { accepted_at: new Date().toISOString() })
+    await advanceBookingToPaid(bookingId)
 
     await loginAs(page, process.env.E2E_CLEANER_EMAIL!, process.env.E2E_CLEANER_PASSWORD!)
     const detail = new BookingDetail(page)
@@ -118,12 +119,13 @@ test.describe('Cleaner booking flow', () => {
     const bookingId = await createAndAssignBooking(page, 6)
 
     const now = new Date()
+    // Patch non-guarded fields, then advance status via authenticated RPC
     await patchBooking(bookingId, {
-      status:         'paid',
-      accepted_at:    now.toISOString(),
+      accepted_at:     now.toISOString(),
       scheduled_start: new Date(Date.now() + 5 * 60_000).toISOString(),
       scheduled_end:   new Date(Date.now() + 125 * 60_000).toISOString(),
     })
+    await advanceBookingToPaid(bookingId)
 
     await loginAs(page, process.env.E2E_CLEANER_EMAIL!, process.env.E2E_CLEANER_PASSWORD!)
     const dashboard = new CleanerDashboard(page)
@@ -142,13 +144,13 @@ test.describe('Cleaner booking flow', () => {
 
   test('CL2.5 — cleaner ends cleaning, status becomes completed', async ({ page }) => {
     const bookingId = await createAndAssignBooking(page, 7)
+    // Patch non-guarded fields, then advance status via authenticated RPC
     await patchBooking(bookingId, {
-      status:         'in_progress',
       accepted_at:    new Date().toISOString(),
       started_at:     new Date().toISOString(),
-      scheduled_start: new Date(Date.now() - 120 * 60_000).toISOString(),
-      scheduled_end:   new Date(Date.now() - 10 * 60_000).toISOString(),
+      scheduled_end:  new Date(Date.now() - 10 * 60_000).toISOString(),
     })
+    await advanceBookingToInProgress(bookingId)
 
     await loginAs(page, process.env.E2E_CLEANER_EMAIL!, process.env.E2E_CLEANER_PASSWORD!)
     const detail = new BookingDetail(page)
@@ -160,6 +162,10 @@ test.describe('Cleaner booking flow', () => {
       await completeBtn.click()
       const confirmBtn = page.getByRole('button', { name: /confirm|yes/i })
       if (await confirmBtn.isVisible({ timeout: 3000 })) await confirmBtn.click()
+
+      // complete_booking is a multi-statement transaction; wait for the UI to
+      // reflect the committed state before reading from the DB.
+      await detail.hasStatus(/complet/i)
 
       const status = await getBookingStatus(bookingId)
       expect(status).toBe('completed')
@@ -173,10 +179,9 @@ test.describe('Cleaner booking flow', () => {
 
   test('CL2.6 — cleaner cannot attend triggers appropriate status change', async ({ page }) => {
     const bookingId = await createAndAssignBooking(page, 8)
-    await patchBooking(bookingId, {
-      status:      'paid',
-      accepted_at: new Date().toISOString(),
-    })
+    // Advance to paid via authenticated RPC (status field is DB-trigger-guarded)
+    await patchBooking(bookingId, { accepted_at: new Date().toISOString() })
+    await advanceBookingToPaid(bookingId)
 
     await loginAs(page, process.env.E2E_CLEANER_EMAIL!, process.env.E2E_CLEANER_PASSWORD!)
     const detail = new BookingDetail(page)

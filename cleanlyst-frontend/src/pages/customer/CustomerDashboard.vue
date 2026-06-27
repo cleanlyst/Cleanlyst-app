@@ -50,9 +50,11 @@ const activeRouteName = computed(() =>
 )
 
 onMounted(async () => {
-  // Guard: redirect to onboarding if setup has not been completed
+  // Guard: redirect to onboarding if started but not finished setup.
+  // Brand-new customers with no preferences record bypass this guard so they
+  // land directly on the dashboard (the booking wizard collects their address).
   await prefsStore.load()
-  if (!prefsStore.preferences?.setup_completed_at) {
+  if (prefsStore.preferences && !prefsStore.preferences.setup_completed_at) {
     await router.replace({ name: 'CustomerOnboarding' })
     return
   }

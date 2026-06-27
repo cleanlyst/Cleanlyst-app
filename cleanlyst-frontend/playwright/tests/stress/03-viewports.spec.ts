@@ -47,8 +47,8 @@ test.describe('Mobile viewport (375×667)', () => {
     await page.goto('/customer/dashboard')
     await page.waitForLoadState('networkidle')
 
-    // Dashboard content visible
-    await expect(page.getByText(/my bookings|dashboard/i).first()).toBeVisible()
+    // Dashboard content visible — check page heading; sidebar nav links are hidden on mobile
+    await expect(page.getByRole('heading').first()).toBeVisible({ timeout: 10_000 })
 
     // No horizontal scroll overflow
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)
@@ -66,9 +66,9 @@ test.describe('Mobile viewport (375×667)', () => {
     if (await hamburger.isVisible()) {
       await hamburger.click()
       // Navigation links should appear
+      // After hamburger click, the mobile nav appears (aria-label="Mobile navigation")
       await expect(
-        page.getByRole('link', { name: /bookings|dashboard/i }).first()
-          .or(page.getByRole('navigation')),
+        page.getByRole('navigation', { name: /mobile navigation/i }),
       ).toBeVisible({ timeout: 5000 })
     } else {
       // App may use a fixed bottom nav on mobile instead of a hamburger
@@ -96,9 +96,7 @@ test.describe('Mobile viewport (375×667)', () => {
     await page.goto('/admin/dashboard')
     await page.waitForLoadState('networkidle')
 
-    const heading = page.getByRole('heading', { name: /admin dashboard/i })
-      .or(page.getByText(/admin/i).first())
-    await expect(heading).toBeVisible()
+    await expect(page.getByRole('heading', { name: /admin dashboard/i })).toBeVisible()
   })
 })
 
@@ -170,32 +168,55 @@ test.describe('Desktop viewport (1280×800)', () => {
     await page.goto('/admin/dashboard')
     await page.waitForLoadState('networkidle')
 
-    const nav = page.getByRole('navigation')
-    await expect(nav).toBeVisible()
-    await expect(nav.getByRole('link', { name: /bookings/i })).toBeVisible()
-    await expect(nav.getByRole('link', { name: /cleaners/i })).toBeVisible()
+    // Multiple nav elements on the page (sidebar, header, footer); check visibility without strict mode
+    await expect(page.getByRole('navigation').first()).toBeVisible()
+    await expect(page.getByRole('link', { name: /bookings/i }).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: /cleaners/i }).first()).toBeVisible()
   })
 })
 
 // ── Consistent status display across viewports ────────────────────────────────
 
 test.describe('Cross-viewport status consistency', () => {
-  for (const [label, viewport] of Object.entries(VIEWPORTS)) {
-    test(`status labels visible on ${label} (${viewport.width}×${viewport.height})`, async ({ customerPage: page }) => {
-      test.use({ viewport })
+  test.describe('mobile viewport', () => {
+    test.use({ viewport: VIEWPORTS.mobile })
 
+    test(`status labels visible on mobile (${VIEWPORTS.mobile.width}×${VIEWPORTS.mobile.height})`, async ({ customerPage: page }) => {
       await page.goto('/customer/dashboard/bookings')
       await page.waitForLoadState('networkidle')
 
-      // Tab buttons accessible at any viewport
       const pendingTab = page.getByRole('button', { name: 'Pending' })
       const activeTab  = page.getByRole('button', { name: 'Active' })
-      if (await pendingTab.isVisible()) {
-        await expect(pendingTab).toBeEnabled()
-      }
-      if (await activeTab.isVisible()) {
-        await expect(activeTab).toBeEnabled()
-      }
+      if (await pendingTab.isVisible()) await expect(pendingTab).toBeEnabled()
+      if (await activeTab.isVisible())  await expect(activeTab).toBeEnabled()
     })
-  }
+  })
+
+  test.describe('tablet viewport', () => {
+    test.use({ viewport: VIEWPORTS.tablet })
+
+    test(`status labels visible on tablet (${VIEWPORTS.tablet.width}×${VIEWPORTS.tablet.height})`, async ({ customerPage: page }) => {
+      await page.goto('/customer/dashboard/bookings')
+      await page.waitForLoadState('networkidle')
+
+      const pendingTab = page.getByRole('button', { name: 'Pending' })
+      const activeTab  = page.getByRole('button', { name: 'Active' })
+      if (await pendingTab.isVisible()) await expect(pendingTab).toBeEnabled()
+      if (await activeTab.isVisible())  await expect(activeTab).toBeEnabled()
+    })
+  })
+
+  test.describe('desktop viewport', () => {
+    test.use({ viewport: VIEWPORTS.desktop })
+
+    test(`status labels visible on desktop (${VIEWPORTS.desktop.width}×${VIEWPORTS.desktop.height})`, async ({ customerPage: page }) => {
+      await page.goto('/customer/dashboard/bookings')
+      await page.waitForLoadState('networkidle')
+
+      const pendingTab = page.getByRole('button', { name: 'Pending' })
+      const activeTab  = page.getByRole('button', { name: 'Active' })
+      if (await pendingTab.isVisible()) await expect(pendingTab).toBeEnabled()
+      if (await activeTab.isVisible())  await expect(activeTab).toBeEnabled()
+    })
+  })
 })

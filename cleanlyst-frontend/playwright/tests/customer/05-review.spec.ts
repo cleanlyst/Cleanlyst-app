@@ -41,12 +41,11 @@ test.describe('Customer reviews', () => {
     await wizard.completeFullJourney({ daysAhead: 3 })
 
     const booking = await latestBookingForCustomer(customerUserId)
+    // status transition is guarded by a DB trigger — patch only non-guarded fields
     await patchBooking(booking!.id, {
-      status:     'completed',
       cleaner_id: cleanerUserId,
       accepted_at: new Date().toISOString(),
       started_at:  new Date().toISOString(),
-      ended_at:    new Date().toISOString(),
     })
     return booking!.id
   }

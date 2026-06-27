@@ -203,15 +203,28 @@ export async function ensureUserWithProfile(email: string, password: string, ful
 }
 
 export async function seedTestData() {
-  await ensureUserWithProfile(TEST_ENV.E2E_CUSTOMER_EMAIL, TEST_ENV.E2E_CUSTOMER_PASSWORD, 'E2E Customer', 'customer')
-  const cleanerUser = await ensureUserWithProfile(TEST_ENV.E2E_CLEANER_EMAIL, TEST_ENV.E2E_CLEANER_PASSWORD, 'E2E Cleaner', 'cleaner_active')
+  const customerUser = await ensureUserWithProfile(TEST_ENV.E2E_CUSTOMER_EMAIL, TEST_ENV.E2E_CUSTOMER_PASSWORD, 'E2E Customer', 'customer')
+  const cleanerUser  = await ensureUserWithProfile(TEST_ENV.E2E_CLEANER_EMAIL, TEST_ENV.E2E_CLEANER_PASSWORD, 'E2E Cleaner', 'cleaner_active')
   await ensureUserWithProfile(TEST_ENV.E2E_ADMIN_EMAIL, TEST_ENV.E2E_ADMIN_PASSWORD, 'E2E Admin', 'admin')
 
-  // Clear any lingering availability overrides so future test dates are not blocked.
-  // Overrides are set when a cleaner accepts a booking; without cleanup they accumulate
-  // across test runs and prevent the E2E cleaner from appearing in searches.
+  // Clear availability overrides so future test dates are not blocked.
   if (cleanerUser?.id) {
     await serviceClient.from('availability_overrides').delete().eq('cleaner_id', cleanerUser.id)
+  }
+
+  // Wipe all stale bookings from previous failed sessions. Without this,
+  // the cleaner appears "busy" on prior-session dates and never shows in search.
+  if (customerUser?.id) {
+    const { data: rows } = await serviceClient.from('bookings').select('id').eq('customer_id', customerUser.id)
+    const ids = ((rows ?? []) as { id: string }[]).map((r) => r.id)
+    if (ids.length) {
+      // payment_ledger_events FK is RESTRICT; cascade is blocked by trigger (postgres role).
+      // Direct service_role delete works — trigger bypass fires when current_user = 'service_role'.
+      await serviceClient.from('payment_ledger_events').delete().in('booking_id', ids)
+      await serviceClient.from('transactions').delete().in('booking_id', ids)
+      await serviceClient.from('reviews').delete().in('booking_id', ids)
+      await serviceClient.from('bookings').delete().eq('customer_id', customerUser.id)
+    }
   }
 }
 

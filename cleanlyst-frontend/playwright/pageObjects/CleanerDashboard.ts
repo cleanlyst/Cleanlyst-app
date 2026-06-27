@@ -15,7 +15,7 @@ export class CleanerDashboard {
   }
 
   async gotoEarnings() {
-    await this.page.goto('/cleaner/dashboard/earnings')
+    await this.page.goto('/cleaner/dashboard/financials')
     await this.page.waitForLoadState('networkidle')
   }
 
@@ -49,8 +49,13 @@ export class CleanerDashboard {
     const btn = this.acceptBtn(bookingId)
     await expect(btn).toBeVisible({ timeout: 15_000 })
     await btn.click()
+    // Wait for the accept API call to complete before switching tabs
+    await this.page.waitForLoadState('networkidle')
+    // Booking moves out of Pending → Active. Status may be 'paid' ('Ready to Start')
+    // or 'accepted' depending on payment_status at acceptance time.
+    await this.switchTab('Active')
     await expect(
-      this.page.locator('text=Ready to Start').or(this.page.getByTestId('start-cleaning-btn')).first(),
+      this.page.locator('[class*="status-pill"]').filter({ hasText: /ready to start|accepted/i }).first()
     ).toBeVisible({ timeout: 15_000 })
   }
 

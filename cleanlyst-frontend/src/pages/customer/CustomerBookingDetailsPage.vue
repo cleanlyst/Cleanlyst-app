@@ -608,7 +608,7 @@ const reassignCleanerPrices = ref<Map<string, { price: number; title: string }>>
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
 const canCancel = computed(() =>
-  ['pending_request', 'accepted', 'paid', 'estimate_proposed', 'awaiting_customer_payment', 'payment_authorized'].includes(
+  ['pending_request', 'accepted', 'estimate_proposed', 'awaiting_customer_payment', 'payment_authorized'].includes(
     booking.value?.status ?? '',
   ),
 )

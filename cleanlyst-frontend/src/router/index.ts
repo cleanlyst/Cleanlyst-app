@@ -394,7 +394,10 @@ router.beforeEach(async (to) => {
         if (!prefsStore.preferences && !prefsStore.loading) {
           await prefsStore.load()
         }
-        if (!prefsStore.preferences?.setup_completed_at) {
+        // Only block customers who started but didn't finish onboarding.
+        // A brand-new customer with no preferences record at all bypasses the
+        // guard so they land directly on the dashboard after registration.
+        if (prefsStore.preferences && !prefsStore.preferences.setup_completed_at) {
           return { name: 'CustomerOnboarding' }
         }
       }

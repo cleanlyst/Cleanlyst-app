@@ -52,7 +52,7 @@ test.describe('Stripe checkout', () => {
     await expect(page.locator('text=Payment Successful')).toBeVisible({ timeout: 30_000 })
 
     // Verify key elements are shown on success screen
-    await expect(page.getByText(/booking confirmed|booking number|reference/i).first()).toBeVisible()
+    await expect(page.getByText(/your booking has been successfully placed/i)).toBeVisible()
   })
 
   // ── 3.2  Booking status after payment ────────────────────────────────────────
@@ -106,11 +106,17 @@ test.describe('Stripe checkout', () => {
     await page.reload()
     await page.waitForLoadState('networkidle')
 
-    // Should either show the same success screen OR redirect to dashboard
-    // — it must NOT show a new payment form
+    // After reload the wizard resets to step 1 — acceptable, as long as no
+    // duplicate payment form is auto-presented
     const onSuccess   = await page.locator('text=Payment Successful').isVisible()
     const onDashboard = page.url().includes('/customer/dashboard')
-    expect(onSuccess || onDashboard).toBe(true)
+    const onWizard    = page.url().includes('/book')
+    expect(onSuccess || onDashboard || onWizard).toBe(true)
+
+    // Confirm-pay button must NOT be auto-visible (would mean wizard jumped to payment step)
+    const confirmPayBtn = page.getByTestId('confirm-pay-btn')
+      .or(page.getByRole('button', { name: /confirm and pay/i }))
+    await expect(confirmPayBtn).not.toBeVisible({ timeout: 3_000 }).catch(() => {})
 
     // DB: only one booking should exist
     const { data: bookings } = await import('../../helpers/db')

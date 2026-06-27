@@ -20,7 +20,9 @@ export class BookingDetail {
   get timeline()    { return this.page.getByTestId('booking-timeline').or(this.page.locator('[class*="timeline"]').first()) }
 
   async hasStatus(statusText: string | RegExp): Promise<void> {
-    await expect(this.page.getByText(statusText)).toBeVisible({ timeout: 10_000 })
+    await expect(
+      this.page.locator('[class*="status-pill"]').filter({ hasText: statusText }),
+    ).toBeVisible({ timeout: 10_000 })
   }
 
   // ── Customer actions ─────────────────────────────────────────────────────────

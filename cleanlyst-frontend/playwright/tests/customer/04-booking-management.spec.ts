@@ -22,6 +22,9 @@ import {
   patchBooking,
   wipeDynamic,
   getBookingStatus,
+  advanceBookingToPaid,
+  advanceBookingToInProgress,
+  cancelBookingAsCustomer,
   db,
 } from '../../helpers/db'
 
@@ -92,12 +95,12 @@ test.describe('Booking management', () => {
     await wizard.completeFullJourney({ daysAhead: 5 })
 
     const booking = await latestBookingForCustomer(customerUserId)
-    // Fast-forward to paid via DB (skip cleaner UI interaction)
+    // Patch non-guarded fields, then advance status via authenticated RPC
     await patchBooking(booking!.id, {
-      status:      'paid',
       cleaner_id:  cleanerUserId,
       accepted_at: new Date().toISOString(),
     })
+    await advanceBookingToPaid(booking!.id)
 
     const detail = new BookingDetail(page)
     await detail.gotoCustomer(booking!.id)
@@ -114,14 +117,14 @@ test.describe('Booking management', () => {
     await wizard.completeFullJourney({ daysAhead: 6 })
 
     const booking = await latestBookingForCustomer(customerUserId)
-    // Fast-forward to in_progress
+    // Patch non-guarded fields, then advance status via authenticated RPC
     await patchBooking(booking!.id, {
-      status:       'in_progress',
-      cleaner_id:   cleanerUserId,
-      accepted_at:  new Date().toISOString(),
-      started_at:   new Date().toISOString(),
+      cleaner_id:    cleanerUserId,
+      accepted_at:   new Date().toISOString(),
+      started_at:    new Date().toISOString(),
       scheduled_end: new Date(Date.now() - 60_000).toISOString(),
     })
+    await advanceBookingToInProgress(booking!.id)
 
     const detail = new BookingDetail(page)
     await detail.gotoCustomer(booking!.id)
@@ -149,7 +152,7 @@ test.describe('Booking management', () => {
     await wizard.completeFullJourney({ daysAhead: 7 })
 
     const booking = await latestBookingForCustomer(customerUserId)
-    await patchBooking(booking!.id, { status: 'cancelled' })
+    await cancelBookingAsCustomer(booking!.id)
 
     const detail = new BookingDetail(page)
     await detail.gotoCustomer(booking!.id)
@@ -173,10 +176,9 @@ test.describe('Booking management', () => {
     const detail  = new BookingDetail(page)
     await detail.gotoCustomer(booking!.id)
 
-    // The timeline should always show at least the booking request event
+    // The timeline section is always rendered on the booking detail page
     const timeline = page.getByTestId('booking-timeline')
-      .or(page.locator('[class*="timeline"]').first())
-      .or(page.getByText(/booking requested|created|status/i).first())
+      .or(page.locator('.timeline-section').first())
 
     await expect(timeline).toBeVisible({ timeout: 10_000 })
   })

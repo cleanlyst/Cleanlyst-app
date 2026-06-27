@@ -65,7 +65,7 @@ test.describe('Admin approvals and cleaner management', () => {
   test('A1.3 — admin can navigate to cleaner management page', async ({ adminPage: page }) => {
     const admin = new AdminDashboard(page)
     await admin.gotoCleaners()
-    await expect(page.getByRole('heading', { name: /cleaner|pending application/i })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: /cleaner|pending application/i }).first()).toBeVisible({ timeout: 10_000 })
   })
 
   // ── A1.4  Approve cleaner ─────────────────────────────────────────────────────

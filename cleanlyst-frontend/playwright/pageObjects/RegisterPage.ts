@@ -5,7 +5,7 @@ export class RegisterPage {
   constructor(private page: Page) {}
 
   async goto() {
-    await this.page.goto('/auth/register')
+    await this.page.goto('/auth/signup')
     await this.page.waitForLoadState('networkidle')
   }
 
@@ -13,15 +13,22 @@ export class RegisterPage {
   get emailInput()      { return this.page.getByLabel(/email/i) }
   get passwordInput()   { return this.page.getByLabel(/^password/i).first() }
   get confirmInput()    { return this.page.getByLabel(/confirm password/i) }
-  get submitBtn()       { return this.page.getByRole('button', { name: /register|sign up|create account/i }) }
+  get submitBtn()       { return this.page.getByRole('button', { name: /register|create account/i }) }
   get errorMessage()    { return this.page.getByText(/already|invalid|error/i).first() }
   get loginLink()       { return this.page.getByRole('link', { name: /log in|sign in/i }) }
 
   async selectRole(role: 'customer' | 'cleaner'): Promise<void> {
-    const byBtn   = this.page.getByRole('button', { name: new RegExp(role, 'i') })
+    const byBtn = this.page.getByRole('button', { name: new RegExp(role, 'i') })
+    if (await byBtn.isVisible()) { await byBtn.click(); return }
+    // Role cards: <label> wrapping a visually-hidden radio with an intercepting
+    // overlay div inside. Click the label itself (overlay is a descendant so
+    // Playwright allows it); avoid clicking the radio directly which the overlay
+    // would intercept.
+    const byCard = this.page.locator('label').filter({ hasText: new RegExp(role, 'i') }).first()
+    if (await byCard.isVisible()) { await byCard.click(); return }
+    // Fallback: standard accessible radio (no overlay)
     const byRadio = this.page.getByLabel(new RegExp(role, 'i'))
-    if (await byBtn.isVisible())   { await byBtn.click(); return }
-    if (await byRadio.isVisible()) { await byRadio.click() }
+    if (await byRadio.isVisible()) await byRadio.click()
   }
 
   async fill(data: {
@@ -30,13 +37,22 @@ export class RegisterPage {
     password: string
     role?: 'customer' | 'cleaner'
   }): Promise<void> {
-    await this.fullNameInput.fill(data.fullName)
+    // Select role first so any role-dependent fields (e.g. Business Name) appear
+    if (data.role) await this.selectRole(data.role)
+    // Full Name is optional — the current signup form does not include it
+    if (await this.fullNameInput.isVisible()) {
+      await this.fullNameInput.fill(data.fullName)
+    }
     await this.emailInput.fill(data.email)
     await this.passwordInput.fill(data.password)
     if (await this.confirmInput.isVisible()) {
       await this.confirmInput.fill(data.password)
     }
-    if (data.role) await this.selectRole(data.role)
+    // Business Name field is shown on signup for cleaner role; use fullName as the value
+    const businessInput = this.page.getByLabel(/business name/i)
+    if (await businessInput.isVisible()) {
+      await businessInput.fill(data.fullName)
+    }
   }
 
   async submit(): Promise<void> {

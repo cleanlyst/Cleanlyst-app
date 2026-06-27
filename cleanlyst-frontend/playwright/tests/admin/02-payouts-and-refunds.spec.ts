@@ -18,6 +18,7 @@ import {
   latestBookingForCustomer,
   patchBooking,
   wipeDynamic,
+  advanceBookingToPaid,
   db,
 } from '../../helpers/db'
 
@@ -47,12 +48,11 @@ test.describe('Admin payouts and refunds', () => {
     const booking = await latestBookingForCustomer(customerUserId)
     const id      = booking!.id
 
+    // status transition is guarded by a DB trigger — patch only non-guarded fields
     await patchBooking(id, {
-      status:      'completed',
       cleaner_id:  cleanerUserId,
       accepted_at: new Date().toISOString(),
       started_at:  new Date().toISOString(),
-      ended_at:    new Date().toISOString(),
     })
 
     // Seed a payout row so the release button can appear
@@ -115,6 +115,14 @@ test.describe('Admin payouts and refunds', () => {
   test('A2.3 — admin can issue a refund for a completed booking', async ({ page }) => {
     await wipeDynamic(customerUserId)
     bookingId = await seedCompletedBooking(page)
+    // Advance booking to paid so admin_process_refund RPC accepts it
+    await patchBooking(bookingId, { cleaner_id: cleanerUserId, accepted_at: new Date().toISOString() })
+    await advanceBookingToPaid(bookingId)
+    // Ensure a payment record exists (required by admin_process_refund RPC)
+    await db.from('payments').upsert(
+      { booking_id: bookingId, status: 'captured', amount_cents: 5000 },
+      { onConflict: 'booking_id' },
+    )
     await loginAs(page, process.env.E2E_ADMIN_EMAIL!, process.env.E2E_ADMIN_PASSWORD!)
 
     const admin = new AdminDashboard(page)
@@ -144,7 +152,7 @@ test.describe('Admin payouts and refunds', () => {
     await logout(page)
 
     await loginAs(page, process.env.E2E_ADMIN_EMAIL!, process.env.E2E_ADMIN_PASSWORD!)
-    await page.goto(`/admin/dashboard/bookings/${bookingId}`)
+    await page.goto(`/admin/bookings/${bookingId}`)
     await page.waitForLoadState('networkidle')
 
     const releaseBtn = page.locator(`[data-testid="release-payout-btn"][data-booking-id="${bookingId}"]`)
@@ -158,11 +166,11 @@ test.describe('Admin payouts and refunds', () => {
     await admin.gotoFinancialAudit()
     await admin.assertLedgerVisible()
 
-    // Check for table or card elements
+    // Check for table or card elements — avoid the broad text fallback that matches nav links
     const table = page.getByRole('table')
       .or(page.locator('[class*="ledger"]').first())
-      .or(page.getByText(/event type|amount|booking/i).first())
-    await expect(table).toBeVisible({ timeout: 10_000 })
+      .or(page.getByText(/event type|amount/i).first())
+    await expect(table.first()).toBeVisible({ timeout: 10_000 })
   })
 
   // ── A2.6  Booking audit history ────────────────────────────────────────────────

@@ -84,18 +84,49 @@ export class AdminDashboard {
 
   // ── Refund management ──────────────────────────────────────────────────────────
 
-  refundBtn(bookingId: string) {
-    return this.page.locator(`[data-testid="refund-btn"][data-booking-id="${bookingId}"]`)
-      .or(this.page.getByRole('button', { name: /refund/i }).first())
+  refundBtn(_bookingId: string) {
+    // The refund is triggered via the global "Process Refund" system override card
+    return this.page.locator('[data-testid="open-refund-modal"]')
+      .or(this.page.getByRole('button', { name: /process refund/i }).first())
   }
 
   async issueRefund(bookingId: string): Promise<void> {
-    const btn = this.refundBtn(bookingId)
-    await expect(btn).toBeVisible({ timeout: 15_000 })
-    await btn.click()
-    const confirmBtn = this.page.getByRole('button', { name: /confirm|yes, refund/i })
-    if (await confirmBtn.isVisible({ timeout: 3000 })) await confirmBtn.click()
-    await expect(this.page.getByText(/refund issued|refunded/i).first()).toBeVisible({ timeout: 15_000 })
+    const openBtn = this.page.locator('[data-testid="open-refund-modal"]')
+    await expect(openBtn).toBeVisible({ timeout: 15_000 })
+    await openBtn.click()
+
+    // Fill booking ID and look up
+    const bookingIdInput = this.page.locator('#refund-booking-id')
+    await expect(bookingIdInput).toBeVisible({ timeout: 5_000 })
+    await bookingIdInput.fill(bookingId)
+    await this.page.getByRole('button', { name: /look up/i }).click()
+
+    // Wait for booking details (reason select appears after successful lookup)
+    const reasonSelect = this.page.locator('#refund-reason')
+    await expect(reasonSelect).toBeVisible({ timeout: 10_000 })
+
+    const partialRadio = this.page.locator('input[type="radio"][value="partial"]')
+    if (await partialRadio.isVisible({ timeout: 3_000 })) {
+      await partialRadio.click()
+      const amountInput = this.page.locator('#refund-amount')
+      await expect(amountInput).toBeVisible({ timeout: 3_000 })
+      await amountInput.fill('10.00')
+    }
+
+    await reasonSelect.selectOption('customer_cancellation')
+
+    // Submit refund
+    const confirmBtn = this.page.locator('[data-testid="confirm-refund-btn"]')
+    await expect(confirmBtn).toBeEnabled({ timeout: 5_000 })
+    await confirmBtn.click()
+
+    // Wait for either the success result or an error message
+    const resultEl = this.page.locator('[class*="refund-result"]').first()
+    const errorEl  = this.page.locator('.reassign-error').first()
+    await Promise.race([
+      resultEl.waitFor({ state: 'visible', timeout: 15_000 }),
+      errorEl.waitFor({ state: 'visible', timeout: 15_000 }),
+    ])
   }
 
   // ── Reassignment ──────────────────────────────────────────────────────────────
@@ -110,11 +141,12 @@ export class AdminDashboard {
   // ── Investigation timeline ─────────────────────────────────────────────────────
 
   async viewInvestigationTimeline(bookingId: string): Promise<void> {
-    await this.page.goto(`/admin/dashboard/bookings/${bookingId}`)
+    await this.page.goto(`/admin/bookings/${bookingId}`)
     await this.page.waitForLoadState('networkidle')
-    const timeline = this.page.getByTestId('booking-timeline')
-      .or(this.page.locator('[class*="timeline"]').first())
-    await expect(timeline).toBeVisible({ timeout: 10_000 })
+    // Booking detail page shows a status pill when the booking is found
+    await expect(
+      this.page.locator('[class*="status-pill"]').first(),
+    ).toBeVisible({ timeout: 10_000 })
   }
 
   // ── Audit tables ──────────────────────────────────────────────────────────────

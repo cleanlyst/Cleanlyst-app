@@ -788,8 +788,24 @@ async function selectCleaner(c: CleanerSearchResult) {
     // service's base price.
     // The button is disabled while loadingServices is true, preventing
     // confirmAndPay from running before services are available.
-    await loadCleanerServices(c.user_id)
-    await loadPricing()
+    //
+    // Guard: if either network call hangs without resolving (e.g. no HTTP
+    // timeout on the Supabase client), the finally block would never run and
+    // the button would stay permanently disabled. Race against a 12 s timeout
+    // so loadingServices always clears. Both inner calls have their own error
+    // fallbacks, so a timeout here degrades gracefully to default pricing.
+    await Promise.race([
+      (async () => {
+        await loadCleanerServices(c.user_id)
+        await loadPricing()
+      })(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('service-load-timeout')), 12_000),
+      ),
+    ])
+  } catch {
+    // Intentionally silent: loadCleanerServices falls back to [], loadPricing
+    // falls back to platform defaults. confirmAndPay handles missing serviceId.
   } finally {
     loadingServices.value = false
   }

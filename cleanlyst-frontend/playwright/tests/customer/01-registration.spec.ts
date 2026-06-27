@@ -68,7 +68,7 @@ test.describe('Customer registration', () => {
     // Should stay on register or show an error — NOT navigate to dashboard
     await page.waitForTimeout(3000)
     const isStillOnRegister = page.url().includes('register') || page.url().includes('auth')
-    const errorShown = await page.getByText(/already|exists|taken|in use/i).isVisible()
+    const errorShown = await page.getByText(/already|exists|taken|in use/i).first().isVisible()
     expect(isStillOnRegister || errorShown).toBe(true)
   })
 

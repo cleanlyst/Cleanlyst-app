@@ -45,9 +45,12 @@ test.describe('Double-click protection', () => {
       .or(page.getByRole('button', { name: /confirm and pay/i }))
     await expect(confirmBtn).toBeEnabled({ timeout: 15_000 })
 
-    // Rapid double-click
+    // Rapid double-click — the app correctly disables the button after the
+    // first click (paying = true). Force the second click so Playwright does
+    // not wait for the button to re-enable; we are explicitly testing that a
+    // forced second submission is still idempotent.
     await confirmBtn.click()
-    await confirmBtn.click({ delay: 100 })
+    await confirmBtn.click({ delay: 100, force: true })
 
     await expect(page.locator('text=Payment Successful')).toBeVisible({ timeout: 30_000 })
 
@@ -96,7 +99,8 @@ test.describe('Double-click protection', () => {
     const bookBtn = page.getByRole('button', { name: /^book$/i }).first()
 
     await bookBtn.click()
-    await bookBtn.click({ delay: 80 })
+    // Second click may arrive after wizard advances (element gone) — expected
+    await bookBtn.click({ delay: 80, timeout: 500 }).catch(() => {})
 
     // Should advance to step 5 without error
     const confirmBtn = page.getByTestId('confirm-pay-btn')
@@ -121,9 +125,11 @@ test.describe('Double-click protection', () => {
     const confirmBtn = page.getByRole('button', { name: /confirm cancel|yes, cancel/i })
     if (await confirmBtn.isVisible({ timeout: 3000 })) {
       await confirmBtn.click()
-      await confirmBtn.click({ delay: 80 })
+      // Second click: button may be disabled/gone after first — fail fast
+      await confirmBtn.click({ delay: 80, timeout: 500 }).catch(() => {})
     } else {
-      await cancelBtn.click({ delay: 80 })
+      // Second click: button becomes "Cancelling…" (disabled) after first — fail fast
+      await cancelBtn.click({ delay: 80, timeout: 500 }).catch(() => {})
     }
 
     await page.waitForTimeout(2000)

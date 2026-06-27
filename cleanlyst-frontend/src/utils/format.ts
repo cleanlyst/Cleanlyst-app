@@ -76,10 +76,24 @@ const TECHNICAL_PATTERNS = [
 /**
  * Converts a raw error to a user-friendly message.
  * Strips technical PostgreSQL / network details from user-facing copy.
+ *
+ * Handles:
+ *   - Error instances (standard JS errors)
+ *   - Supabase PostgrestError plain objects { message, details, hint, code }
+ *   - Any other thrown value
  */
 export function toUserMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
   if (!error) return fallback
-  const raw = error instanceof Error ? error.message : String(error)
+  let raw: string
+  if (error instanceof Error) {
+    raw = error.message
+  } else if (typeof error === 'object' && error !== null && 'message' in error) {
+    // PostgrestError and other plain-object errors with a message property
+    const msg = (error as { message: unknown }).message
+    raw = typeof msg === 'string' ? msg : String(msg)
+  } else {
+    raw = String(error)
+  }
   for (const pattern of TECHNICAL_PATTERNS) {
     if (pattern.test(raw)) return fallback
   }

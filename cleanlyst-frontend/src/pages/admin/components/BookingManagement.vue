@@ -280,7 +280,7 @@
               id="refund-booking-id"
               v-model="refundModal.bookingIdInput"
               class="reassign-input refund-id-input"
-              placeholder="Paste booking ID…"
+              placeholder="e.g. 6070D4A4 or full UUID"
               type="text"
             />
             <button class="btn-find-cleaners" type="button" :disabled="refundModal.lookupLoading" @click="lookupRefundBooking">
@@ -290,18 +290,39 @@
           <p v-if="refundModal.lookupError" class="reassign-error">{{ refundModal.lookupError }}</p>
         </div>
 
-        <!-- Booking details -->
-        <div v-if="refundModal.booking" class="reassign-booking-info">
+        <!-- Booking summary card (shown after successful lookup) -->
+        <div v-if="refundModal.booking" class="reassign-booking-info" data-testid="refund-booking-summary">
           <p class="reassign-label">Booking</p>
-          <p class="reassign-value">#{{ refundModal.booking.id.slice(0, 8).toUpperCase() }} — {{ refundModal.booking.service_title_snapshot ?? 'Booking' }}</p>
+          <p class="reassign-value">
+            #{{ refundModal.booking.id.slice(0, 8).toUpperCase() }} —
+            {{ refundModal.booking.service_title_snapshot ?? 'Booking' }}
+          </p>
           <p class="reassign-sub">{{ formatDate(refundModal.booking.scheduled_start ?? '') }}</p>
-          <p v-if="refundModal.booking.customer_name" class="reassign-sub">Customer: {{ refundModal.booking.customer_name }}</p>
-          <p v-if="refundModal.booking.cleaner_name" class="reassign-sub">Cleaner: {{ refundModal.booking.cleaner_name }}</p>
+
+          <!-- Customer / Cleaner -->
+          <div class="refund-parties">
+            <div class="refund-party">
+              <span class="reassign-label">Customer</span>
+              <span class="reassign-value">{{ refundModal.booking.customer_name ?? '—' }}</span>
+            </div>
+            <div class="refund-party">
+              <span class="reassign-label">Cleaner</span>
+              <span class="reassign-value">{{ refundModal.booking.cleaner_name ?? '—' }}</span>
+            </div>
+          </div>
+
+          <!-- Booking status -->
+          <div class="refund-summary-row refund-summary-row--status">
+            <span>Booking status</span>
+            <span :class="['status-badge', statusBadgeClass(refundModal.booking.status)]">
+              {{ formatStatus(refundModal.booking.status) }}
+            </span>
+          </div>
 
           <!-- Payment summary -->
-          <div v-if="refundModal.payment" class="refund-payment-summary">
+          <div v-if="refundModal.payment" class="refund-payment-summary" data-testid="refund-payment-summary">
             <div class="refund-summary-row">
-              <span>Booking total</span>
+              <span>Payment total</span>
               <strong>{{ formatPence(refundModal.payment.amount_cents) }}</strong>
             </div>
             <div class="refund-summary-row">
@@ -313,85 +334,124 @@
               <span>{{ formatPence(refundModal.payment.cleaner_payout_cents ?? 0) }}</span>
             </div>
             <div v-if="refundModal.payment.refund_cents" class="refund-summary-row refund-summary-row--refunded">
-              <span>Previously refunded</span>
+              <span>Already refunded</span>
               <span>{{ formatPence(refundModal.payment.refund_cents) }}</span>
             </div>
             <div class="refund-summary-row">
+              <span>Refundable amount</span>
+              <strong>{{ formatPence(refundModal.payment.amount_cents - (refundModal.payment.refund_cents ?? 0)) }}</strong>
+            </div>
+            <div class="refund-summary-row">
               <span>Payment status</span>
-              <span class="refund-status-badge">{{ refundModal.payment.status }}</span>
+              <span
+                class="refund-status-badge"
+                :class="REFUND_ELIGIBLE_STATUSES.has(refundModal.payment.status)
+                  ? 'refund-status-badge--ok' : 'refund-status-badge--warn'"
+                data-testid="payment-status-badge"
+              >
+                {{ refundModal.payment.status }}
+              </span>
+            </div>
+            <div v-if="refundModal.payment.stripe_payment_intent_id" class="refund-summary-row">
+              <span>Stripe PI</span>
+              <span class="refund-mono">{{ refundModal.payment.stripe_payment_intent_id }}</span>
             </div>
           </div>
 
-          <!-- Refund type -->
-          <div class="refund-type-row">
-            <label class="reassign-label">Refund Type</label>
-            <div class="refund-type-options">
-              <label class="refund-type-option">
-                <input v-model="refundModal.refundType" type="radio" value="full" class="mr-2" />
-                Full refund ({{ refundModal.payment ? formatPence(refundModal.payment.amount_cents) : '—' }})
-              </label>
-              <label class="refund-type-option">
-                <input v-model="refundModal.refundType" type="radio" value="partial" class="mr-2" />
-                Custom amount
-              </label>
+          <!-- Eligibility warning (not refundable, already refunded, etc.) -->
+          <div
+            v-if="refundModal.eligibilityError"
+            class="refund-eligibility-warn"
+            role="alert"
+            data-testid="eligibility-error"
+          >
+            <span class="material-symbols-outlined refund-eligibility-warn__icon" aria-hidden="true">warning</span>
+            {{ refundModal.eligibilityError }}
+          </div>
+
+          <!-- Refund form — only shown when eligible -->
+          <template v-if="!refundModal.eligibilityError && !refundModal.result">
+            <!-- Refund type -->
+            <div class="refund-type-row">
+              <label class="reassign-label">Refund Type</label>
+              <div class="refund-type-options">
+                <label class="refund-type-option">
+                  <input v-model="refundModal.refundType" type="radio" value="full" class="mr-2" />
+                  Full refund ({{ refundModal.payment ? formatPence(refundModal.payment.amount_cents) : '—' }})
+                </label>
+                <label class="refund-type-option">
+                  <input v-model="refundModal.refundType" type="radio" value="partial" class="mr-2" />
+                  Partial refund
+                </label>
+              </div>
             </div>
-          </div>
 
-          <!-- Custom amount -->
-          <div v-if="refundModal.refundType === 'partial'" class="reassign-field">
-            <label class="reassign-label" for="refund-amount">Refund Amount (£)</label>
-            <input
-              id="refund-amount"
-              v-model="refundModal.customAmountStr"
-              class="reassign-input"
-              placeholder="e.g. 25.00"
-              type="number"
-              min="0.01"
-              :max="refundModal.payment ? refundModal.payment.amount_cents / 100 : undefined"
-              step="0.01"
-            />
-            <p v-if="refundModal.customAmountStr" class="reassign-sub mt-1">
-              Customer refund: {{ formatPence(Math.round(parseFloat(refundModal.customAmountStr) * 100)) }}
-            </p>
-          </div>
+            <!-- Custom amount -->
+            <div v-if="refundModal.refundType === 'partial'" class="reassign-field">
+              <label class="reassign-label" for="refund-amount">Refund Amount (£)</label>
+              <input
+                id="refund-amount"
+                v-model="refundModal.customAmountStr"
+                class="reassign-input"
+                placeholder="e.g. 25.00"
+                type="number"
+                min="0.01"
+                :max="refundModal.payment ? refundModal.payment.amount_cents / 100 : undefined"
+                step="0.01"
+              />
+              <p v-if="refundModal.customAmountStr" class="reassign-sub mt-1">
+                Customer refund: {{ formatPence(Math.round(parseFloat(refundModal.customAmountStr) * 100)) }}
+              </p>
+            </div>
 
-          <!-- Reason -->
-          <div class="reassign-field">
-            <label class="reassign-label" for="refund-reason">Reason <span class="text-red-500">*</span></label>
-            <select id="refund-reason" v-model="refundModal.reason" class="reassign-input">
-              <option value="">Select reason…</option>
-              <option value="cleaner_no_show">Cleaner no-show</option>
-              <option value="customer_cancellation">Customer cancellation</option>
-              <option value="service_issue">Service issue</option>
-              <option value="duplicate_payment">Duplicate payment</option>
-              <option value="manual_adjustment">Manual adjustment</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
+            <!-- Reason -->
+            <div class="reassign-field">
+              <label class="reassign-label" for="refund-reason">
+                Reason <span class="text-red-500" aria-hidden="true">*</span>
+              </label>
+              <select
+                id="refund-reason"
+                v-model="refundModal.reason"
+                class="reassign-input"
+                data-testid="refund-reason-select"
+              >
+                <option value="">Select reason…</option>
+                <option value="cleaner_no_show">Cleaner no-show</option>
+                <option value="customer_cancellation">Customer cancellation</option>
+                <option value="service_issue">Service issue</option>
+                <option value="duplicate_payment">Duplicate payment</option>
+                <option value="manual_adjustment">Manual adjustment</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
 
-          <!-- Notes -->
-          <div class="reassign-field">
-            <label class="reassign-label" for="refund-notes">Notes (optional)</label>
-            <textarea
-              id="refund-notes"
-              v-model="refundModal.notes"
-              class="reassign-input"
-              rows="2"
-              placeholder="Additional context for the audit log…"
-              style="resize:vertical;height:64px"
-            />
-          </div>
+            <!-- Notes -->
+            <div class="reassign-field">
+              <label class="reassign-label" for="refund-notes">Notes (optional)</label>
+              <textarea
+                id="refund-notes"
+                v-model="refundModal.notes"
+                class="reassign-input"
+                rows="2"
+                placeholder="Additional context for the audit log…"
+                style="resize:vertical;height:64px"
+              />
+            </div>
+          </template>
 
-          <!-- Result preview -->
-          <div v-if="refundModal.result" class="refund-result">
-            <span class="material-symbols-outlined refund-result__icon">check_circle</span>
+          <!-- Result -->
+          <div v-if="refundModal.result" class="refund-result" data-testid="refund-result">
+            <span class="material-symbols-outlined refund-result__icon" aria-hidden="true">check_circle</span>
             <p class="refund-result__title">Refund processed</p>
             <p class="refund-result__body">
               {{ formatPence(refundModal.result.refund_cents) }} refunded to customer.
+              {{ refundModal.result.is_full ? 'Full refund.' : 'Partial refund.' }}
             </p>
           </div>
 
-          <p v-if="refundModal.error" class="reassign-error">{{ refundModal.error }}</p>
+          <p v-if="refundModal.error" class="reassign-error" role="alert" data-testid="refund-submit-error">
+            {{ refundModal.error }}
+          </p>
         </div>
       </div>
 
@@ -401,13 +461,18 @@
           {{ refundModal.result ? 'Close' : 'Cancel' }}
         </button>
         <button
-          v-if="!refundModal.result && refundModal.booking"
+          v-if="!refundModal.result && refundModal.booking && !refundModal.eligibilityError"
           class="btn-modal-confirm"
           data-testid="confirm-refund-btn"
           type="button"
           :disabled="refundModal.loading || !refundModal.reason"
           @click="submitRefund"
         >
+          <span
+            v-if="refundModal.loading"
+            class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+            aria-hidden="true"
+          ></span>
           {{ refundModal.loading ? 'Processing…' : 'Process Refund' }}
         </button>
       </div>
@@ -472,14 +537,14 @@ interface BookingQueryRow {
   quote_cents: number | null
   no_show_action: string | null
   cleaner_id: string | null
+  customer_id: string | null
   original_cleaner_id: string | null
   reassigned_at: string | null
-  customer?: {
-    full_name?: string | null
-  } | null
-  cleaner?: {
-    full_name?: string | null
-  } | null
+  // Embedded profiles via FK joins — aliased with explicit table+column hint.
+  // Using profiles!customer_id / profiles!cleaner_id avoids ambiguity when
+  // both customer_id and cleaner_id FK to the same profiles table.
+  customer?: { full_name?: string | null } | null
+  cleaner?: { full_name?: string | null } | null
 }
 
 interface ActivityQueryRow {
@@ -560,11 +625,13 @@ async function loadBookings() {
     let q = supabase
       .from('bookings')
       .select(
+        // Use explicit table+FK-column hint to disambiguate when both
+        // customer_id and cleaner_id FK to the same profiles table.
         `id, status, scheduled_start, scheduled_end,
          service_title_snapshot, category_snapshot, quote_cents,
-         no_show_action, cleaner_id, original_cleaner_id, reassigned_at,
-         customer:customer_id(full_name),
-         cleaner:cleaner_id(full_name)`,
+         no_show_action, cleaner_id, customer_id, original_cleaner_id, reassigned_at,
+         customer:profiles!customer_id(full_name),
+         cleaner:profiles!cleaner_id(full_name)`,
         { count: 'exact' },
       )
       .order('created_at', { ascending: false })
@@ -797,7 +864,11 @@ interface PaymentInfo {
   cleaner_payout_cents: number | null
   status: string
   refund_cents: number | null
+  stripe_payment_intent_id: string | null
 }
+
+// REFUND_ELIGIBLE_STATUSES: payment states where admin_process_refund will succeed.
+const REFUND_ELIGIBLE_STATUSES = new Set(['captured', 'released'])
 
 interface RefundModal {
   open: boolean
@@ -805,6 +876,7 @@ interface RefundModal {
   bookingIdInput: string
   lookupLoading: boolean
   lookupError: string
+  eligibilityError: string
   booking: BookingRow | null
   payment: PaymentInfo | null
   refundType: 'full' | 'partial'
@@ -822,6 +894,7 @@ const refundModal = reactive<RefundModal>({
   bookingIdInput: '',
   lookupLoading: false,
   lookupError: '',
+  eligibilityError: '',
   booking: null,
   payment: null,
   refundType: 'full',
@@ -840,6 +913,7 @@ function openRefundModal(booking: BookingRow | null) {
   refundModal.bookingIdInput = ''
   refundModal.lookupLoading = false
   refundModal.lookupError = ''
+  refundModal.eligibilityError = ''
   refundModal.payment = null
   refundModal.refundType = 'full'
   refundModal.customAmountStr = ''
@@ -858,47 +932,83 @@ function closeRefundModal() {
   refundModal.open = false
 }
 
-async function loadRefundPayment(bookingId: string) {
+async function loadRefundPayment(bookingId: string): Promise<PaymentInfo | null> {
   try {
     const supabase = requireSupabase()
     const { data, error } = await supabase
       .from('payments')
-      .select('id, amount_cents, platform_fee_cents, cleaner_payout_cents, status, refund_cents')
+      .select(
+        'id, amount_cents, platform_fee_cents, cleaner_payout_cents, status, refund_cents, stripe_payment_intent_id',
+      )
       .eq('booking_id', bookingId)
       .maybeSingle()
-    if (error) throw error
+    if (error) throw new Error(error.message)
     refundModal.payment = data as PaymentInfo | null
+    return refundModal.payment
   } catch {
-    // Non-critical; payment summary just won't show
+    return null
   }
 }
 
+// UUID regex: full 8-4-4-4-12 format
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+// Short prefix shown in the UI: exactly 8 hex chars (e.g. "6070D4A4")
+const SHORT_ID_RE = /^[0-9a-f]{8}$/i
+
 async function lookupRefundBooking() {
-  const id = refundModal.bookingIdInput.trim()
-  if (!id) return
+  const raw = refundModal.bookingIdInput.trim()
+  if (!raw) return
   refundModal.lookupLoading = true
   refundModal.lookupError = ''
+  refundModal.eligibilityError = ''
   refundModal.booking = null
   refundModal.payment = null
   try {
     const supabase = requireSupabase()
-    const { data, error } = await supabase
-      .from('bookings')
-      .select(
-        `id, status, scheduled_start, scheduled_end,
-         service_title_snapshot, category_snapshot, quote_cents,
-         no_show_action, cleaner_id, original_cleaner_id, reassigned_at,
-         customer:customer_id(full_name),
-         cleaner:cleaner_id(full_name)`,
-      )
-      .eq('id', id)
-      .maybeSingle()
-    if (error) throw error
-    if (!data) {
-      refundModal.lookupError = 'Booking not found.'
+
+    // The UI shows only the first 8 chars of the UUID (e.g. "#6070D4A4").
+    // Accept both the short prefix and the full UUID.
+    const BOOKING_COLS =
+      'id, status, scheduled_start, scheduled_end, service_title_snapshot, ' +
+      'category_snapshot, quote_cents, no_show_action, cleaner_id, customer_id, ' +
+      'original_cleaner_id, reassigned_at'
+
+    let bookingData: Record<string, unknown> | null = null
+    let bookingError: { message: string } | null = null
+
+    if (UUID_RE.test(raw)) {
+      // Full UUID — exact match
+      const res = await supabase.from('bookings').select(BOOKING_COLS).eq('id', raw).maybeSingle()
+      bookingData = res.data as Record<string, unknown> | null
+      bookingError = res.error
+    } else if (SHORT_ID_RE.test(raw)) {
+      // 8-char prefix shown in the UI — cast uuid to text before pattern matching
+      const res = await supabase
+        .from('bookings')
+        .select(BOOKING_COLS)
+        .filter('id::text', 'ilike', `${raw.toLowerCase()}%`)
+        .limit(1)
+        .maybeSingle()
+      bookingData = res.data as Record<string, unknown> | null
+      bookingError = res.error
+    } else {
+      refundModal.lookupError = 'Enter the 8-character booking ID shown on the booking list, or the full UUID.'
       return
     }
-    const row = data as BookingQueryRow
+
+    if (bookingError) throw new Error(bookingError.message)
+    if (!bookingData) {
+      refundModal.lookupError = 'Booking not found. Check the ID and try again.'
+      return
+    }
+
+    // Fetch customer and cleaner names separately (no FK join — avoids PostgREST ambiguity)
+    const row = bookingData as BookingQueryRow & { customer_id: string }
+    const [customerResult, cleanerResult] = await Promise.all([
+      supabase.from('profiles').select('full_name').eq('id', row.customer_id).maybeSingle(),
+      supabase.from('profiles').select('full_name').eq('id', row.cleaner_id ?? '').maybeSingle(),
+    ])
+
     refundModal.booking = {
       id: row.id,
       status: row.status,
@@ -907,14 +1017,27 @@ async function lookupRefundBooking() {
       service_title_snapshot: row.service_title_snapshot ?? null,
       category_snapshot: row.category_snapshot ?? null,
       quote_cents: row.quote_cents ?? 0,
-      customer_name: row.customer?.full_name ?? null,
-      cleaner_name: row.cleaner?.full_name ?? null,
+      customer_name: (customerResult.data as { full_name?: string } | null)?.full_name ?? null,
+      cleaner_name: (cleanerResult.data as { full_name?: string } | null)?.full_name ?? null,
       cleaner_id: row.cleaner_id ?? null,
       no_show_action: row.no_show_action ?? null,
       original_cleaner_id: row.original_cleaner_id ?? null,
       reassigned_at: row.reassigned_at ?? null,
     }
-    await loadRefundPayment(id)
+
+    // Load payment using the full resolved UUID (not the short prefix the user typed)
+    const payment = await loadRefundPayment(row.id)
+
+    if (!payment) {
+      refundModal.eligibilityError = 'No payment record found for this booking. It may not have been paid yet.'
+    } else if (payment.status === 'refunded') {
+      const alreadyRefunded = payment.refund_cents ?? 0
+      refundModal.eligibilityError =
+        `This booking has already been fully refunded (${formatPence(alreadyRefunded)}).`
+    } else if (!REFUND_ELIGIBLE_STATUSES.has(payment.status)) {
+      refundModal.eligibilityError =
+        `Payment is not eligible for refund. Current status: ${payment.status}.`
+    }
   } catch (e) {
     refundModal.lookupError = toUserMessage(e, 'Failed to find that booking. Please try again.')
   } finally {
@@ -924,11 +1047,16 @@ async function lookupRefundBooking() {
 
 async function submitRefund() {
   const bookingId = refundModal.booking?.id
-  if (!bookingId || !refundModal.reason) return
+  // Idempotency guard: prevent double-click
+  if (!bookingId || !refundModal.reason || refundModal.loading || refundModal.result) return
 
   let refundCents: number
   if (refundModal.refundType === 'full') {
     refundCents = refundModal.payment?.amount_cents ?? 0
+    if (!refundCents) {
+      refundModal.error = 'Payment amount not loaded. Please close and re-open the modal.'
+      return
+    }
   } else {
     refundCents = Math.round(parseFloat(refundModal.customAmountStr) * 100)
     if (!refundCents || refundCents <= 0) {
@@ -936,7 +1064,7 @@ async function submitRefund() {
       return
     }
     if (refundModal.payment && refundCents > refundModal.payment.amount_cents) {
-      refundModal.error = 'Refund amount exceeds the payment total.'
+      refundModal.error = `Refund amount exceeds the payment total (${formatPence(refundModal.payment.amount_cents)}).`
       return
     }
   }
@@ -1796,5 +1924,57 @@ async function submitRefund() {
   font-size: 14px;
   margin: 0;
   color: #166534;
+}
+
+.refund-parties {
+  display: flex;
+  gap: 1rem;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.refund-party {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+}
+
+.refund-summary-row--status {
+  margin-top: 0.5rem;
+}
+
+.refund-status-badge--ok {
+  color: #15803d;
+}
+
+.refund-status-badge--warn {
+  color: #b45309;
+}
+
+.refund-mono {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--secondary, #5e5e5e);
+  word-break: break-all;
+}
+
+.refund-eligibility-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #fef9c3;
+  border: 1px solid #fde047;
+  border-radius: 0.375rem;
+  font-size: 13px;
+  color: #854d0e;
+  margin-top: 0.75rem;
+}
+
+.refund-eligibility-warn__icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #ca8a04;
 }
 </style>

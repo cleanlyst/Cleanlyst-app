@@ -4,6 +4,7 @@ import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { pinia } from '@/stores'
 import type { Role } from '@/stores/auth'
 import { isProductionEnvironment } from '@/config/environment'
+import { trackPageView, setAnalyticsUser } from '@/utils/analytics'
 
 const CLEANER_PROTECTED_ROUTES = [
   'CleanerDashboard',
@@ -336,6 +337,12 @@ const router = createRouter({
       component: () => import('../pages/admin/FinancialCloseDashboard.vue'),
     },
     {
+      path: '/admin/monitoring',
+      name: 'AdminMonitoring',
+      meta: { title: 'System Monitoring', requiresAuth: true, requiresRole: 'admin' },
+      component: () => import('../pages/admin/AdminDashboard.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       redirect: { name: 'Home' },
@@ -429,6 +436,13 @@ router.beforeEach(async (to) => {
 
     return { name: 'Home' }
   }
+})
+
+router.afterEach((to) => {
+  const auth = useAuthStore(pinia)
+  const userId = auth.user?.id
+  if (userId) setAnalyticsUser(userId)
+  trackPageView(to.fullPath, userId)
 })
 
 export default router

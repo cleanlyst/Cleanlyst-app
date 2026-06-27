@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { toUserMessage } from '@/utils/format'
 
 const PAGE_SIZE = 10
 
@@ -33,7 +34,10 @@ const TAB_STATUSES: Record<BookingTab, string[] | null> = {
     'reassign_requested', // waiting for replacement cleaner
   ],
   completed: ['completed'],
-  cancelled: ['cancelled', 'declined', 'cleaner_declined', 'disputed', 'refunded', 'cleaner_cancelled'],
+  cancelled: [
+    'cancelled', 'declined', 'cleaner_declined', 'disputed', 'refunded', 'cleaner_cancelled',
+    'awaiting_resolution', 'no_show_reported',
+  ],
 }
 
 export interface BookingListItem {
@@ -160,7 +164,7 @@ export function useBookingList(role: 'customer' | 'cleaner') {
         customer_name: row.customer?.full_name ?? null,
       }))
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to load bookings.'
+      error.value = toUserMessage(e, 'Failed to load bookings. Please refresh the page.')
     } finally {
       loading.value = false
     }

@@ -175,6 +175,7 @@ import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
 import { uploadAvatar } from '@/services/storageService'
 import { ROLLOUT_CONFIG } from '@/config/rollout'
+import { toUserMessage } from '@/utils/format'
 
 const auth = useAuthStore()
 
@@ -286,15 +287,26 @@ async function handleSaveEdit() {
       editing.value = false
     }, 1500)
   } catch (err) {
-    editError.value = err instanceof Error ? err.message : 'Failed to save changes.'
+    editError.value = toUserMessage(err, 'Failed to save changes. Please try again.')
   } finally {
     editSaving.value = false
   }
 }
 
+const AVATAR_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024 // 5 MB
+
 async function handleAvatarChange(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file || !auth.userId) return
+  if (!AVATAR_ALLOWED_TYPES.includes(file.type)) {
+    avatarError.value = 'Please upload a JPEG, PNG or WebP image.'
+    return
+  }
+  if (file.size > AVATAR_MAX_BYTES) {
+    avatarError.value = 'Photo must be smaller than 5 MB.'
+    return
+  }
   avatarUploading.value = true
   avatarError.value = ''
   try {
@@ -307,7 +319,7 @@ async function handleAvatarChange(event: Event) {
     if (error) throw error
     await auth._loadProfileData(auth.userId)
   } catch (err) {
-    avatarError.value = err instanceof Error ? err.message : 'Failed to upload photo.'
+    avatarError.value = toUserMessage(err, 'Failed to upload photo. Please try again.')
   } finally {
     avatarUploading.value = false
   }

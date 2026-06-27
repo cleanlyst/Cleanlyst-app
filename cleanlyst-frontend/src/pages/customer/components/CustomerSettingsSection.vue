@@ -240,6 +240,7 @@ import { requireSupabase } from '@/lib/supabase'
 import { uploadAvatar } from '@/services/storageService'
 import { UK_CITIES } from '@/utils/ukCities'
 import AppCountrySelect from '@/components/ui/AppCountrySelect.vue'
+import { toUserMessage } from '@/utils/format'
 
 const auth = useAuthStore()
 
@@ -348,7 +349,7 @@ async function handleAvatarChange(event: Event) {
     avatarUrl.value = publicUrl
     await auth._loadProfileData(auth.userId)
   } catch (err) {
-    avatarError.value = err instanceof Error ? err.message : 'Failed to upload photo.'
+    avatarError.value = toUserMessage(err, 'Failed to upload photo. Please try again.')
   } finally {
     avatarUploading.value = false
   }
@@ -402,9 +403,8 @@ async function saveProfile() {
       editingProfile.value = false
     }, 1500)
   } catch (err) {
-    console.error('[CustomerSettingsSection] saveProfile error', err)
     profileStatus.value = 'error'
-    profileError.value = err instanceof Error ? err.message : 'Failed to update profile.'
+    profileError.value = toUserMessage(err, 'Failed to update profile. Please try again.')
   } finally {
     profileSaving.value = false
   }
@@ -427,7 +427,7 @@ async function savePassword() {
     }, 3000)
   } catch (err) {
     passwordStatus.value = 'error'
-    passwordError.value = err instanceof Error ? err.message : 'Failed to update password.'
+    passwordError.value = toUserMessage(err, 'Failed to update password. Please try again.')
   } finally {
     passwordSaving.value = false
   }

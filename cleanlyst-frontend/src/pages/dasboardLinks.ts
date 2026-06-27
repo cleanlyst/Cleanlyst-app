@@ -14,6 +14,7 @@ export const adminDashboardLinks: DashboardLinkItem[] = [
   { name: 'BookingManagement', label: 'Bookings', icon: 'admin_panel_settings' },
   { name: 'OperationsConsole', label: 'Ops Console', icon: 'manage_search' },
   { name: 'FinancialCloseDashboard', label: 'Financial Close', icon: 'receipt_long' },
+  { name: 'AdminMonitoring', label: 'Monitoring', icon: 'monitor_heart' },
 ]
 
 export const customerDashboardLinks: DashboardLinkItem[] = [

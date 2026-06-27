@@ -91,7 +91,7 @@
                   v-model="password"
                 />
               </div>
-              <p v-if="errorMessage" class="font-caption text-caption text-error">
+              <p v-if="errorMessage" class="font-caption text-caption text-error" role="alert">
                 {{ errorMessage }}
               </p>
               <button
@@ -99,10 +99,9 @@
                 :disabled="submitting"
                 type="submit"
               >
-                {{ submitting ? 'Logging in...' : 'Log In' }}
-                <span class="material-symbols-outlined text-sm" data-icon="arrow_forward"
-                  >arrow_forward</span
-                >
+                <span v-if="submitting" class="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
+                {{ submitting ? 'Logging in…' : 'Log In' }}
+                <span v-if="!submitting" class="material-symbols-outlined text-sm" aria-hidden="true">arrow_forward</span>
               </button>
             </form>
             <div class="mt-12 pt-8 border-t border-outline-variant text-center">
@@ -119,19 +118,6 @@
         </div>
       </div>
     </main>
-    <!-- Contextual Toast Notification (Design System Element) -->
-    <div
-      v-if="errorMessage"
-      class="fixed bottom-gutter left-gutter bg-primary text-on-primary px-6 py-4 flex items-center gap-4 shadow-lg transition-all duration-300"
-      id="toast"
-    >
-      <span class="material-symbols-outlined" data-icon="info">info</span>
-      <p class="font-label-md text-label-md">{{ errorMessage }}</p>
-      <button class="ml-4 opacity-50 hover:opacity-100" @click="errorMessage = ''">
-        <span class="material-symbols-outlined text-sm" data-icon="close">close</span>
-      </button>
-    </div>
-    <!-- Script to show toast for wireframe demo purposes -->
   </div>
 </template>
 
@@ -139,6 +125,8 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { toUserMessage } from '@/utils/format'
+import { track, setAnalyticsUser } from '@/utils/analytics'
 
 const route = useRoute()
 const router = useRouter()
@@ -164,9 +152,13 @@ async function handleLogin() {
 
   try {
     await auth.signIn(email.value, password.value)
+    if (auth.user) {
+      setAnalyticsUser(auth.user.id)
+      void track('LOGIN', { user_id: auth.user.id, role: auth.userRole ?? undefined })
+    }
     await redirectAfterAuth()
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Something went wrong.'
+    errorMessage.value = toUserMessage(error, 'Incorrect email or password. Please try again.')
   } finally {
     submitting.value = false
   }
@@ -179,8 +171,7 @@ async function handleGoogleAuth() {
   try {
     await auth.signInWithGoogle(redirectTarget.value)
   } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : 'Google sign-in could not be started.'
+    errorMessage.value = toUserMessage(error, 'Google sign-in could not be started. Please try again.')
     submitting.value = false
   }
 }

@@ -219,6 +219,26 @@
             >
               Edit booking
             </button>
+
+            <!-- Overdue: awaiting_resolution or no_show_reported -->
+            <div v-if="isOverdueBooking(booking.status)" class="overdue-panel">
+              <div class="overdue-panel__header">
+                <span class="material-symbols-outlined overdue-panel__icon" aria-hidden="true">event_busy</span>
+                <div>
+                  <p class="overdue-panel__title">Requires resolution</p>
+                  <p class="overdue-panel__body">
+                    This booking was not completed at the scheduled time.
+                    <template v-if="booking.status === 'no_show_reported'">
+                      The customer has reported a no-show. Our team will review this case.
+                    </template>
+                    <template v-else>
+                      Please contact support if you need assistance.
+                    </template>
+                  </p>
+                </div>
+              </div>
+              <a href="mailto:support@cleanlyst.com" class="btn-support">Contact Support</a>
+            </div>
           </div>
 
           <div class="action-summary">
@@ -432,7 +452,7 @@ import {
   cannotAttend,
 } from '@/services/bookingLifecycleService'
 import { formatDate, formatDateTime, formatPence, toUserMessage } from '@/utils/format'
-import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
+import { getBookingStatusLabel, getStatusPillClass, isOverdueBooking } from '@/utils/bookingStatusLabel'
 import { upsertAvailabilityOverride } from '@/services/availabilityService'
 
 const auth = useAuthStore()

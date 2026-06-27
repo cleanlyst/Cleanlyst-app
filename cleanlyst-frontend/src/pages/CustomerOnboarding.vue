@@ -186,7 +186,7 @@
       </section>
 
       <!-- Error -->
-      <p v-if="submitError" class="mt-4 text-caption text-red-600">{{ submitError }}</p>
+      <p v-if="submitError" class="mt-4 text-caption text-red-600" role="alert">{{ submitError }}</p>
 
       <!-- Navigation -->
       <div class="flex items-center justify-between pt-8">
@@ -230,6 +230,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { ROLLOUT_CONFIG } from '@/config/rollout'
+import { toUserMessage } from '@/utils/format'
 
 const STEP_LABELS = ['Service Address', 'Property & Access', 'Cleaner Preference']
 
@@ -305,8 +306,8 @@ async function nextStep() {
   submitError.value = ''
   try {
     await saveStep()
-  } catch {
-    // Non-fatal — continue anyway; dashboard will show stale data
+  } catch (err) {
+    submitError.value = toUserMessage(err, 'Your progress could not be saved. You can update your preferences later in Settings.')
   }
   step.value++
 }
@@ -325,7 +326,7 @@ async function handleComplete() {
     })
     await router.replace({ name: 'CustomerDashboard' })
   } catch (err) {
-    submitError.value = err instanceof Error ? err.message : 'Failed to save preferences.'
+    submitError.value = toUserMessage(err, 'Failed to save preferences. Please try again.')
   } finally {
     submitting.value = false
   }

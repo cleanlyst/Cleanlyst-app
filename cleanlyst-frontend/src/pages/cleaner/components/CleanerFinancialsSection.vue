@@ -7,16 +7,17 @@
       </div>
     </section>
 
+    <p v-if="loadError" class="error-msg" role="alert">{{ loadError }}</p>
+
     <!-- Summary Cards -->
     <section class="earnings-grid">
       <div class="earnings-card">
         <div>
-          <span class="metric-label">Total Earnings</span>
+          <span class="metric-label">All-time Earnings</span>
           <h2 class="metric-value-xl">{{ earningsToDate }}</h2>
         </div>
         <div class="metric-footer">
-          <span class="metric-footer-text">Based on completed jobs</span>
-          <span class="metric-footer-sub">based on actual payouts</span>
+          <span class="metric-footer-text">Based on completed job payouts</span>
         </div>
       </div>
 
@@ -63,11 +64,12 @@
           <span class="th-label th-label--right">Net payout</span>
           <span class="th-label">Status</span>
         </div>
-        <div
+        <button
           v-for="b in recentBookings"
           :key="b.bookingId"
           class="transaction-row"
-          style="cursor: pointer;"
+          type="button"
+          :aria-label="`View earnings detail for ${b.serviceTitle ?? 'Cleaning Booking'} on ${formatDate(b.scheduledStart)}`"
           @click="openTxDetail(b)"
         >
           <div class="tx-service">
@@ -83,7 +85,7 @@
               {{ txStatusLabel(b.bookingStatus) }}
             </span>
           </div>
-        </div>
+        </button>
       </div>
     </section>
 
@@ -138,7 +140,7 @@
         </div>
         <div class="tx-detail-row">
           <span class="tx-detail-label">Payment Status</span>
-          <span class="tx-detail-value">{{ selectedTx.paymentStatus ?? '—' }}</span>
+          <span class="tx-detail-value">{{ selectedTx.paymentStatus ? txStatusLabel(selectedTx.paymentStatus) : '—' }}</span>
         </div>
       </div>
 
@@ -188,6 +190,7 @@ import { getCleanerTransactions, type CleanerTransactionRow } from '@/services/f
 
 const auth = useAuthStore()
 const loading = ref(true)
+const loadError = ref('')
 const totalEarningsCents = ref(0)
 const thisMonthEarningsCents = ref(0)
 const pendingPayoutCents = ref(0)
@@ -271,6 +274,7 @@ async function loadFinancials() {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
+  loadError.value = ''
   const [allCompletedResult, monthCompletedResult, pendingResult, recentRows] = await Promise.all([
     // Use booking_financials as source so totals match cleaner_earnings_ledger exactly.
     supabase
@@ -330,7 +334,12 @@ function openTxDetail(b: CleanerTransactionRow) {
 }
 
 onMounted(async () => {
-  await loadFinancials()
+  try {
+    await loadFinancials()
+  } catch {
+    loadError.value = 'Failed to load financials. Please refresh the page.'
+    loading.value = false
+  }
   if (auth.userId && !realtimeChannel.value) {
     realtimeChannel.value = subscribeToTable('cleaner-financials-bookings', {
       table: 'bookings',
@@ -601,6 +610,15 @@ onBeforeUnmount(() => unsubscribe(realtimeChannel.value))
   align-items: center;
   border-bottom: 1px solid var(--surface-variant, #e2e2e2);
   transition: background-color 0.1s;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
 }
 
 .transaction-row:last-child {

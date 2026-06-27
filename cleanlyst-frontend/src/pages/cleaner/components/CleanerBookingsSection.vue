@@ -47,7 +47,8 @@
           v-model="searchQuery"
           class="clnst-search-input"
           placeholder="Search bookings…"
-          type="text"
+          type="search"
+          aria-label="Search bookings"
           @input="onSearchInput"
         />
       </div>

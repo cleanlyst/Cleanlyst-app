@@ -132,7 +132,10 @@ const UPCOMING_STATUSES = [
   'reassign_requested',
 ]
 
-const PAST_STATUSES = ['completed', 'declined', 'cleaner_declined', 'cancelled', 'disputed', 'refunded']
+const PAST_STATUSES = [
+  'completed', 'declined', 'cleaner_declined', 'cancelled', 'disputed', 'refunded',
+  'awaiting_resolution', 'no_show_reported',
+]
 
 const upcomingBookings = computed(() =>
   props.bookings.filter((b) => UPCOMING_STATUSES.includes(b.status)),

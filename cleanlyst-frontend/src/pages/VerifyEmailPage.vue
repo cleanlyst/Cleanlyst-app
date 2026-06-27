@@ -10,7 +10,7 @@
 
       <p class="verify-body">
         We've sent a confirmation link to
-        <strong class="verify-email">{{ email }}</strong>. Click the link in your email to activate
+        <strong class="verify-email">{{ email || 'your email address' }}</strong>. Click the link in your email to activate
         your account.
       </p>
 
@@ -29,12 +29,12 @@
         </div>
       </div>
 
-      <div class="verify-actions">
+      <div class="verify-actions" aria-live="polite">
         <p class="verify-hint">
           Didn't receive it? Check your spam folder, then
           <button
             class="resend-btn"
-            :disabled="resending || resent"
+            :disabled="resending || resent || !email"
             type="button"
             @click="handleResend"
           >

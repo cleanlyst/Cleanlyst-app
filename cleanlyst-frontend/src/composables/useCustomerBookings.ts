@@ -4,6 +4,7 @@ import {
   getCustomerBookings,
   type BookingListRow,
 } from '@/services/bookingService'
+import { toUserMessage } from '@/utils/format'
 
 export interface CustomerBooking extends BookingListRow {
   cleaner_id: string | null
@@ -50,7 +51,7 @@ export function useCustomerBookings() {
         cleaner_name: row.cleaner_id ? cleanerNames.get(row.cleaner_id) ?? null : null,
       }))
     } catch (e) {
-      errorMessage.value = e instanceof Error ? e.message : 'Failed to load bookings.'
+      errorMessage.value = toUserMessage(e, 'Failed to load bookings. Please refresh the page.')
       bookings.value = []
     } finally {
       loading.value = false

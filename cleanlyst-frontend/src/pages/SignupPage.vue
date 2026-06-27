@@ -15,7 +15,7 @@
               Join the marketplace for professional cleaning services.
             </h1>
             <p class="font-body text-body text-on-surface-variant max-w-md">
-              Sign up to book trusted local cleaners or apply to offer your services on Cleanlyst..
+              Sign up to book trusted local cleaners or apply to offer your services on Cleanlyst.
             </p>
             <div
               class="relative aspect-square w-full max-w-md bg-surface-container overflow-hidden"
@@ -132,7 +132,7 @@
                   v-model="businessName"
                 />
               </div>
-              <p v-if="errorMessage" class="font-caption text-caption text-error">
+              <p v-if="errorMessage" class="font-caption text-caption text-error" role="alert">
                 {{ errorMessage }}
               </p>
               <p v-if="successMessage" class="font-caption text-caption text-secondary">
@@ -197,15 +197,6 @@
       </div>
     </main>
 
-    <div
-      v-if="errorMessage"
-      class="fixed bottom-8 left-8 z-[100] bg-primary text-white p-4 flex items-center justify-between gap-6 min-w-[300px] shadow-lg"
-    >
-      <span class="font-label-md text-label-md">{{ errorMessage }}</span>
-      <button class="material-symbols-outlined text-sm hover:opacity-70" @click="errorMessage = ''">
-        close
-      </button>
-    </div>
   </div>
 </template>
 
@@ -214,6 +205,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { toUserMessage } from '@/utils/format'
+import { track } from '@/utils/analytics'
 
 type SignupRole = 'customer' | 'cleaner'
 
@@ -264,6 +256,7 @@ async function handleSignup() {
         ? businessName.value.trim()
         : email.value.split('@')[0] || 'New User'
 
+    void track('REGISTRATION_STARTED', { role: selectedRole.value })
     await auth.signUp(
       email.value,
       password.value,
@@ -272,6 +265,7 @@ async function handleSignup() {
       selectedRole.value === 'cleaner' ? businessName.value.trim() : undefined,
     )
     await auth.init()
+    void track('REGISTRATION_COMPLETED', { role: selectedRole.value, user_id: auth.user?.id })
 
     if (auth.isAuthenticated) {
       await redirectAfterAuth()

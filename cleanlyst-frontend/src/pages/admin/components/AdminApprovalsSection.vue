@@ -81,13 +81,13 @@
 
           <tbody class="divide-y divide-outline-variant">
             <tr v-if="loading">
-              <td colspan="4" class="px-6 py-12 text-center text-caption text-on-surface-variant">
+              <td colspan="5" class="px-6 py-12 text-center text-caption text-on-surface-variant">
                 Loading applications…
               </td>
             </tr>
             <tr v-else-if="applications.length === 0">
-              <td colspan="4" class="px-6 py-12 text-center text-caption text-on-surface-variant">
-                No applications found.
+              <td colspan="5" class="px-6 py-12 text-center text-caption text-on-surface-variant">
+                No pending applications.
               </td>
             </tr>
             <tr
@@ -217,12 +217,12 @@
     </main>
 
     <!-- Document Preview Modal -->
-    <div v-if="docPreview" class="modal-backdrop doc-preview-backdrop" @click.self="docPreview = null">
+    <div v-if="docPreview" class="modal-backdrop doc-preview-backdrop" @click.self="docPreview = null" role="dialog" aria-modal="true" :aria-label="docPreview.fileName">
       <div class="doc-preview-box">
         <div class="modal-header">
           <h2 class="font-label-md text-label-md truncate mr-4">{{ docPreview.fileName }}</h2>
-          <button class="modal-close" @click="docPreview = null">
-            <span class="material-symbols-outlined">close</span>
+          <button class="modal-close" @click="docPreview = null" aria-label="Close document preview">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
         <div class="doc-preview-body">
@@ -243,10 +243,10 @@
     </div>
 
     <!-- Review Modal -->
-    <div v-if="reviewModal" class="modal-backdrop" @click.self="closeReview">
+    <div v-if="reviewModal" class="modal-backdrop" @click.self="closeReview" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
       <div class="modal-box">
         <div class="modal-header">
-          <h2 class="font-h2 text-h2">Review Application</h2>
+          <h2 id="review-modal-title" class="font-h2 text-h2">Review Application</h2>
           <button class="modal-close" @click="closeReview">
             <span class="material-symbols-outlined">close</span>
           </button>
@@ -332,7 +332,7 @@
               :disabled="!!reviewLoading"
               @click="submitReview('needs_info')"
             >
-              {{ reviewLoading === 'needs_info' ? '…' : 'Request Changes' }}
+              {{ reviewLoading === 'needs_info' ? 'Requesting…' : 'Request Changes' }}
             </button>
             <button
               class="flex-1 py-3 border border-red-600 text-red-600 font-label-md hover:bg-red-50 transition-colors disabled:opacity-50"
@@ -442,7 +442,8 @@ async function loadApplications() {
       ? [statusFilter.value]
       : ['submitted', 'under_review', 'needs_info']
 
-    const q = supabase
+    const isSearching = !!searchQuery.value.trim()
+    let q = supabase
       .from('cleaner_applications')
       .select(
         `
@@ -460,7 +461,10 @@ async function loadApplications() {
       )
       .in('status', statuses)
       .order('updated_at', { ascending: sortOrder.value === 'asc' })
-      .range((page.value - 1) * pageSize, page.value * pageSize - 1)
+
+    if (!isSearching) {
+      q = q.range((page.value - 1) * pageSize, page.value * pageSize - 1)
+    }
 
     const { data, error, count } = await q
     if (error) throw error

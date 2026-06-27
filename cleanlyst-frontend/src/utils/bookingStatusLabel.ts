@@ -63,6 +63,16 @@ export function getBookingStatusLabel(booking: StatusLabelInput, role: BookingRo
     case 'completion_pending_customer':
       return role === 'customer' ? 'Confirm Completion' : 'Awaiting Confirmation'
 
+    case 'awaiting_resolution':
+      if (role === 'cleaner') return 'Requires resolution'
+      if (role === 'admin') return 'Awaiting resolution'
+      return 'Awaiting Resolution'
+
+    case 'no_show_reported':
+      if (role === 'cleaner') return 'No-show reported'
+      if (role === 'admin') return 'No-show reported'
+      return 'No-show Reported'
+
     case 'completed':
       return 'Completed'
 
@@ -85,6 +95,10 @@ export function getBookingStatusLabel(booking: StatusLabelInput, role: BookingRo
   }
 }
 
+export function isOverdueBooking(status: string): boolean {
+  return status === 'awaiting_resolution' || status === 'no_show_reported'
+}
+
 export function getStatusPillClass(status: string): string {
   if (['pending_request', 'estimate_proposed', 'awaiting_customer_payment'].includes(status))
     return 'status-pill--pending'
@@ -103,6 +117,7 @@ export function getStatusPillClass(status: string): string {
   )
     return 'status-pill--active'
   if (['completed', 'payout_released'].includes(status)) return 'status-pill--completed'
+  if (['awaiting_resolution', 'no_show_reported'].includes(status)) return 'status-pill--suspended'
   if (['cancelled', 'declined', 'cleaner_declined', 'cleaner_cancelled', 'disputed', 'refunded'].includes(status))
     return 'status-pill--cancelled'
   return ''

@@ -658,6 +658,64 @@ button:not(:disabled):active {
   border: 1px solid #cbd5e1;
 }
 
+/* ── Overdue booking panel ────────────────────────────────────────────────── */
+
+.overdue-panel {
+  border: 1px solid #f59e0b;
+  background: #fffbeb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.overdue-panel__header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.overdue-panel__icon {
+  font-size: 1.5rem;
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.overdue-panel__title {
+  font-weight: 600;
+  color: #92400e;
+  margin: 0 0 0.25rem;
+}
+
+.overdue-panel__body {
+  font-size: 0.875rem;
+  color: #78350f;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.overdue-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.overdue-panel__error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.overdue-panel__reported {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #166534;
+}
+
 /* ── Skip to main content link ────────────────────────────────────────────── */
 
 .skip-to-main {

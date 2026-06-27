@@ -65,9 +65,9 @@ function eventLabel(event: TimelineEvent): string {
 }
 
 function actorLabel(event: TimelineEvent): string {
-  const name = event.actor_name ?? 'Unknown'
   const role = event.actor_role ?? ''
-  if (!role) return name
+  if (role === 'system') return 'Automated — system'
+  if (!role) return event.actor_name ?? 'Unknown'
   const roleDisplay = role.charAt(0).toUpperCase() + role.slice(1)
   return `${roleDisplay}${event.actor_name ? ` — ${event.actor_name}` : ''}`
 }

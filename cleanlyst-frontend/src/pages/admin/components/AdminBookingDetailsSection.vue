@@ -105,8 +105,8 @@
               {{ reassignStep === 1 ? 'Select New Date & Time' : reassignStep === 2 ? 'Choose Cleaner' : 'Confirm Reassignment' }}
             </h2>
           </div>
-          <button class="ra-close" type="button" @click="closeReassignModal">
-            <span class="material-symbols-outlined">close</span>
+          <button class="ra-close" type="button" aria-label="Close" @click="closeReassignModal">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
 
@@ -225,7 +225,7 @@
           <template v-else-if="reassignStep === 3">
             <div class="reassign-booking-info">
               <p class="reassign-label">New Cleaner</p>
-              <p class="reassign-value">{{ cleanerDisplayName(selectedCleaner!) }}</p>
+              <p class="reassign-value">{{ selectedCleaner ? cleanerDisplayName(selectedCleaner) : '—' }}</p>
               <p class="reassign-sub" v-if="selectedCleaner?.profiles?.city">{{ selectedCleaner.profiles.city }}</p>
               <div class="ra-card-rating" style="margin-top:0.25rem">
                 <span class="material-symbols-outlined ra-star">star</span>
@@ -349,7 +349,7 @@ async function loadBooking(bookingId: string) {
     booking.value = data
   } catch (error) {
     booking.value = null
-    errorMessage.value = error instanceof Error ? error.message : 'Failed to load booking.'
+    errorMessage.value = toUserMessage(error, 'Failed to load booking. Please try again.')
   } finally {
     loading.value = false
   }

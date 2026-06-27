@@ -114,6 +114,7 @@
                     required
                     type="password"
                     autocomplete="new-password"
+                    @blur="confirmTouched = true"
                   />
                   <p v-if="mismatch" class="font-caption text-caption text-error mt-1">
                     Passwords do not match.
@@ -148,6 +149,7 @@ import { requireSupabase } from '@/lib/supabase'
 
 const newPassword = ref('')
 const confirmPassword = ref('')
+const confirmTouched = ref(false)
 const submitting = ref(false)
 const initialising = ref(true)
 const linkInvalid = ref(false)
@@ -155,7 +157,7 @@ const done = ref(false)
 const errorMessage = ref('')
 
 const mismatch = computed(
-  () => confirmPassword.value.length > 0 && newPassword.value !== confirmPassword.value,
+  () => confirmTouched.value && confirmPassword.value.length > 0 && newPassword.value !== confirmPassword.value,
 )
 
 const canSubmit = computed(

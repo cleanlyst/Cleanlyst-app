@@ -1,13 +1,15 @@
 <template>
   <main class="page-main">
-    <p v-if="props.errorMessage" class="error-msg">{{ props.errorMessage }}</p>
+    <p v-if="props.errorMessage" class="error-msg" role="alert">{{ props.errorMessage }}</p>
 
     <section class="page-header">
       <div>
         <h1 class="header-title">Welcome back, {{ auth.profile?.full_name ?? 'Cleaner' }}</h1>
         <p class="header-copy">
-          You have {{ props.bookingTotals.pending + props.bookingTotals.accepted }} upcoming
-          bookings.
+          <template v-if="!props.loading">
+            You have {{ props.bookingTotals.pending + props.bookingTotals.accepted }} upcoming booking{{ props.bookingTotals.pending + props.bookingTotals.accepted === 1 ? '' : 's' }}.
+          </template>
+          <template v-else>Loading your bookings…</template>
         </p>
       </div>
       <div class="availability-card">
@@ -41,11 +43,11 @@
     <section class="earnings-grid">
       <div class="earnings-card">
         <div>
-          <span class="metric-label">Total Earnings (This Month)</span>
+          <span class="metric-label">All-time Earnings</span>
           <h2 class="metric-value-xl">{{ props.earningsToDate }}</h2>
         </div>
         <div class="metric-footer">
-          <span class="metric-footer-text">Based on completed jobs</span>
+          <span class="metric-footer-text">Based on completed job payouts</span>
           <router-link :to="{ name: 'CleanerFinancials' }" class="report-btn">
             View Report <span class="material-symbols-outlined">arrow_forward</span>
           </router-link>

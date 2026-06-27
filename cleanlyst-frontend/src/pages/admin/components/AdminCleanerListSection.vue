@@ -654,10 +654,5 @@ function statusPillClass(status: string): string {
   return map[status] ?? 'text-on-surface-variant bg-surface-container'
 }
 
-function formatDateShort(iso: string | null): string {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
 onMounted(loadCleaners)
 </script>

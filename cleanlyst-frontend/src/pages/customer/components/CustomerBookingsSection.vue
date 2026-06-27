@@ -257,15 +257,18 @@
           </button>
         </div>
         <div class="modal-body">
-          <div class="star-row">
+          <div class="star-row" role="radiogroup" aria-label="Rating">
             <button
               v-for="n in 5"
               :key="n"
               class="star-btn"
               type="button"
+              role="radio"
+              :aria-checked="reviewRating === n"
+              :aria-label="`${n} star${n === 1 ? '' : 's'}`"
               @click="reviewRating = n"
             >
-              <span class="material-symbols-outlined">{{
+              <span class="material-symbols-outlined" aria-hidden="true">{{
                 n <= reviewRating ? 'star' : 'star_border'
               }}</span>
             </button>
@@ -441,7 +444,7 @@ function canConfirmComplete(status: string): boolean {
 
 function formatDate(value: string): string {
   const date = new Date(value)
-  if (Number.isNaN(date.valueOf())) return 'Invalid date'
+  if (Number.isNaN(date.valueOf())) return 'Date unavailable'
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 

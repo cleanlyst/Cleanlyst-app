@@ -79,6 +79,42 @@
           </div>
 
           <div class="action-group">
+            <!-- ── Overdue / Awaiting Resolution ── -->
+            <template v-if="isOverdue">
+              <div class="overdue-panel">
+                <div class="overdue-panel__header">
+                  <span class="material-symbols-outlined overdue-panel__icon" aria-hidden="true">event_busy</span>
+                  <div>
+                    <p class="overdue-panel__title">This booking was not completed</p>
+                    <p class="overdue-panel__body">
+                      This booking was scheduled for {{ formatDate(booking.scheduled_start) }} but appears not to have been completed.
+                      If your cleaner did not attend, you can report a no-show and we will review your case.
+                    </p>
+                  </div>
+                </div>
+
+                <p v-if="overdueReportError" class="overdue-panel__error" role="alert">{{ overdueReportError }}</p>
+
+                <div v-if="booking.status === 'awaiting_resolution' && !overdueReportSuccess" class="overdue-panel__actions">
+                  <button
+                    type="button"
+                    class="btn-danger"
+                    :disabled="overdueReportLoading"
+                    @click="reportOverdueNoShow"
+                  >
+                    <span v-if="overdueReportLoading">Reporting…</span>
+                    <span v-else>Report No-show</span>
+                  </button>
+                  <a href="mailto:support@cleanlyst.com" class="btn-support">Contact Support</a>
+                </div>
+
+                <div v-if="booking.status === 'no_show_reported' || overdueReportSuccess" class="overdue-panel__reported">
+                  <span class="material-symbols-outlined" style="font-size:1.25rem;color:#16a34a;" aria-hidden="true">check_circle</span>
+                  No-show reported. Our team has been notified and will review your case within 24 hours.
+                </div>
+              </div>
+            </template>
+
             <!-- Reassignment: cleaner cancelled / no-show / reassign requested -->
             <div v-if="canReassign" class="status-info status-info--warning">
               <span class="material-symbols-outlined status-info-icon">person_off</span>
@@ -312,7 +348,7 @@
               <div v-else class="ra-cleaner-grid">
                 <div v-for="c in reassignCleaners" :key="c.user_id" class="ra-cleaner-card">
                   <div class="ra-card-img-wrap">
-                    <img v-if="(c as any).avatar_url" :src="(c as any).avatar_url" :alt="reassignDisplayName(c)" class="ra-card-img" />
+                    <img v-if="c.profiles?.avatar_url" :src="c.profiles?.avatar_url" :alt="reassignDisplayName(c)" class="ra-card-img" />
                     <div v-else class="ra-card-img-placeholder">
                       <span class="material-symbols-outlined" style="font-size:2rem;color:var(--secondary,#5e5e5e)">person</span>
                     </div>
@@ -333,7 +369,7 @@
                         <span class="ra-price-sub">per session</span>
                       </div>
                     </div>
-                    <p v-if="(c as any).bio" class="ra-card-bio">{{ (c as any).bio }}</p>
+                    <p v-if="c.bio" class="ra-card-bio">{{ c.bio }}</p>
                     <div class="ra-card-footer">
                       <div class="ra-card-meta">
                         <span class="ra-card-service">
@@ -547,6 +583,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { track } from '@/utils/analytics'
 import { useMessagesStore } from '@/stores/messages'
 import type { RealtimeSubscription } from '@/lib/realtime'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
@@ -555,9 +592,9 @@ import { getSupabaseClient } from '@/services/supabaseClient'
 import {
   getBookingById,
   transitionBookingState,
-  completeBooking,
   reportCleanerNoShow,
   customerReassignBooking,
+  reportNoShowOverdue,
   type BookingDetailRow,
 } from '@/services/bookingService'
 import { startAdditionalPayment } from '@/services/payments/paymentOrchestrator'
@@ -565,7 +602,7 @@ import { cancelAsCustomer } from '@/services/bookingLifecycleService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import BookingTimeline from '@/components/BookingTimeline.vue'
 import { formatDate, formatDateTime, formatPence, toUserMessage } from '@/utils/format'
-import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
+import { getBookingStatusLabel, getStatusPillClass, isOverdueBooking } from '@/utils/bookingStatusLabel'
 
 const auth = useAuthStore()
 const messagesStore = useMessagesStore()
@@ -591,6 +628,9 @@ const noShowModalOpen = ref(false)
 const noShowActionLoading = ref<'replacement' | 'refund' | null>(null)
 const noShowError = ref('')
 const noShowSuccess = ref('')
+const overdueReportLoading = ref(false)
+const overdueReportError = ref('')
+const overdueReportSuccess = ref(false)
 const currentTime = ref(Date.now())
 let noShowClock: ReturnType<typeof setInterval> | null = null
 // Customer reassign flow
@@ -638,6 +678,8 @@ const hasBeenReassigned = computed(() => {
   return !!b.original_cleaner_id && ['accepted', 'paid', 'in_progress', 'pending_request'].includes(b.status)
 })
 
+const isOverdue = computed(() => isOverdueBooking(booking.value?.status ?? ''))
+
 function isTerminal(status: string): boolean {
   return [
     'completed',
@@ -647,6 +689,8 @@ function isTerminal(status: string): boolean {
     'cleaner_declined',
     'disputed',
     'refunded',
+    'awaiting_resolution',
+    'no_show_reported',
   ].includes(status)
 }
 
@@ -748,7 +792,7 @@ function reassignServiceTitle(cleanerId: string): string {
 }
 
 function reassignDisplayName(c: CleanerSearchResult): string {
-  return (c as any).business_name ?? c.profiles?.full_name ?? 'Cleaner'
+  return c.business_name ?? c.profiles?.full_name ?? 'Cleaner'
 }
 
 function selectReassignCleaner(c: CleanerSearchResult) {
@@ -866,6 +910,22 @@ function closePayModal() {
   payModalError.value = ''
 }
 
+async function reportOverdueNoShow() {
+  if (!booking.value || overdueReportLoading.value) return
+  overdueReportLoading.value = true
+  overdueReportError.value = ''
+  try {
+    await reportNoShowOverdue(bookingId)
+    overdueReportSuccess.value = true
+    // Reload booking so the status badge updates
+    await loadBooking()
+  } catch (e) {
+    overdueReportError.value = toUserMessage(e, 'Failed to report no-show. Please try again.')
+  } finally {
+    overdueReportLoading.value = false
+  }
+}
+
 function openNoShowModal() {
   noShowModalOpen.value = true
   noShowError.value = ''
@@ -926,6 +986,7 @@ async function confirmPayment() {
     await startAdditionalPayment(bookingId)
     await refreshBooking()
     paySuccess.value = true
+    void track('CHECKOUT_COMPLETED', { booking_id: bookingId, user_id: auth.userId ?? undefined })
   } catch (e) {
     payModalError.value = toUserMessage(e, 'Failed to process payment. Please try again.')
   } finally {

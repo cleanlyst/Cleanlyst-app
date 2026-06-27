@@ -490,6 +490,7 @@ import { startInitialPayment } from '@/services/payments/paymentOrchestrator'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
+import { track } from '@/utils/analytics'
 import { formatPence, toUserMessage } from '@/utils/format'
 import { isCityEnabled, ROLLOUT_UNAVAILABLE_MESSAGE } from '@/config/rollout'
 import { fetchPlatformSettings, getPricing, type PricingResult } from '@/services/pricingEngine'
@@ -762,6 +763,7 @@ async function loadCleanerBasePrices(cleanerIds: string[]) {
       .select('cleaner_id, title, category, description, base_price_cents')
       .in('cleaner_id', cleanerIds)
       .eq('active', true)
+      .order('title', { ascending: true })
     const prices = new Map<string, number>()
     for (const svc of data ?? []) {
       if (prices.has(svc.cleaner_id)) continue
@@ -849,6 +851,7 @@ async function confirmAndPay() {
     const fullNotes = notes.value || null
     const titleSnapshot = selectedServiceLabel.value
 
+    void track('BOOKING_STARTED', { user_id: auth.userId ?? undefined, role: 'customer' })
     const booking = await createBookingRequest({
       customerId: auth.userId,
       cleanerId: selectedCleaner.value.user_id,
@@ -882,6 +885,7 @@ async function confirmAndPay() {
 
     if (!booking?.id) throw new Error('Booking creation failed — no ID returned')
 
+    void track('CHECKOUT_STARTED', { booking_id: booking.id, user_id: auth.userId ?? undefined })
     const paymentResult = await startInitialPayment(booking.id)
 
     if (paymentResult.redirectUrl) {

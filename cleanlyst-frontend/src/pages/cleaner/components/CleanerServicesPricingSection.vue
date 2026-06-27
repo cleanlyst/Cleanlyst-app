@@ -16,8 +16,8 @@
     </div>
 
     <!-- ── Global store error ────────────────────────────────────────────── -->
-    <div v-if="store.error" class="error-card">
-      <span class="material-symbols-outlined error-icon">error</span>
+    <div v-if="store.error" class="error-card" role="alert">
+      <span class="material-symbols-outlined error-icon" aria-hidden="true">error</span>
       <p class="error-text">{{ store.error }}</p>
     </div>
 
@@ -90,12 +90,7 @@ import ServiceSelector from './services/ServiceSelector.vue'
 import MyServicesPanel from './services/MyServicesPanel.vue'
 
 function extractMessage(e: unknown, fallback: string): string {
-  return toUserMessage(e, 'Save failed. Please try again.')
-  if (e && typeof e === 'object' && 'message' in e) {
-    const msg = (e as { message: unknown }).message
-    if (typeof msg === 'string' && msg) return msg
-  }
-  return fallback
+  return toUserMessage(e, fallback)
 }
 
 // No props — reads directly from auth store so it can also write back
@@ -159,8 +154,7 @@ async function handleSubmit(drafts: ServiceDraft[]) {
       wizardSuccess.value = false
     }, 1400)
   } catch (e) {
-    console.error('[CleanerServicesPricingSection] save failed', e)
-    wizardError.value = store.error ?? extractMessage(e, 'Failed to save services.')
+    wizardError.value = store.error ?? extractMessage(e, 'Failed to save services. Please try again.')
   }
 }
 

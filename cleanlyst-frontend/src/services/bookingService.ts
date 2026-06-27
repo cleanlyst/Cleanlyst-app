@@ -518,6 +518,14 @@ export async function reportCleanerNoShow(
   return booking
 }
 
+export async function reportNoShowOverdue(bookingId: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  const { error } = await supabase.rpc('report_no_show_overdue', {
+    p_booking_id: bookingId,
+  })
+  if (error) throw error
+}
+
 export async function updateBookingDuration(
   bookingId: string,
   durationMinutes: number,

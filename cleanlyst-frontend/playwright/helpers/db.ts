@@ -250,3 +250,134 @@ export async function seedLedgerAuthorized(bookingId: string, amountCents = 5000
     metadata:        {},
   })
 }
+
+// ─── Admin-acceptance helpers ─────────────────────────────────────────────────
+
+export interface SeedBookingOptions {
+  status?: string
+  paymentStatus?: string
+  amountCents?: number
+  payoutCents?: number
+  daysFromNow?: number
+  stripePaymentIntentId?: string
+  stripeCheckoutSessionId?: string
+}
+
+export async function seedBookingDirect(
+  customerId: string,
+  cleanerId: string,
+  serviceId: string,
+  options: SeedBookingOptions = {},
+): Promise<string> {
+  const {
+    status            = 'pending_request',
+    paymentStatus     = 'unpaid',
+    amountCents       = 5000,
+    payoutCents       = 4000,
+    daysFromNow       = 5,
+    stripePaymentIntentId,
+    stripeCheckoutSessionId,
+  } = options
+  const start = new Date(Date.now() + daysFromNow * 86_400_000).toISOString()
+  const end   = new Date(Date.now() + daysFromNow * 86_400_000 + 5_400_000).toISOString()
+  const { data, error } = await db.from('bookings').insert({
+    customer_id:             customerId,
+    cleaner_id:              cleanerId,
+    service_id:              serviceId,
+    status,
+    payment_status:          paymentStatus,
+    location_text:           '10 Test Street, Manchester M1 1AA',
+    scheduled_start:         start,
+    scheduled_end:           end,
+    quote_cents:             amountCents,
+    cleaner_payout_cents:    payoutCents,
+    currency:                'GBP',
+    service_title_snapshot:  'Standard Cleaning',
+    ...(stripePaymentIntentId ? { stripe_payment_intent_id: stripePaymentIntentId } : {}),
+    ...(stripeCheckoutSessionId ? { stripe_checkout_session_id: stripeCheckoutSessionId } : {}),
+  }).select('id').single()
+  if (error) throw new Error(`seedBookingDirect failed: ${error.message}`)
+  return (data as { id: string }).id
+}
+
+export async function deleteBooking(bookingId: string): Promise<void> {
+  await db.from('payment_ledger_events').delete().eq('booking_id', bookingId)
+  await db.from('transactions').delete().eq('booking_id', bookingId)
+  await db.from('reviews').delete().eq('booking_id', bookingId)
+  await db.from('booking_status_events').delete().eq('booking_id', bookingId)
+  await db.from('notifications').delete().eq('booking_id', bookingId)
+  await db.from('payments').delete().eq('booking_id', bookingId)
+  await db.from('payouts').delete().eq('booking_id', bookingId)
+  await db.from('bookings').delete().eq('id', bookingId)
+}
+
+export async function getServiceIdForCleaner(cleanerId: string): Promise<string> {
+  const { data, error } = await db
+    .from('services')
+    .select('id')
+    .eq('cleaner_id', cleanerId)
+    .eq('active', true)
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) throw new Error(`No active service for cleaner ${cleanerId}`)
+  return (data as { id: string }).id
+}
+
+export async function getCleanerStatusInDb(cleanerId: string): Promise<string | null> {
+  const { data } = await db
+    .from('cleaner_profiles')
+    .select('status')
+    .eq('user_id', cleanerId)
+    .maybeSingle()
+  return (data as { status: string } | null)?.status ?? null
+}
+
+export async function setCleanerStatus(
+  cleanerId: string,
+  status: 'approved' | 'suspended' | 'deactivated' | 'pending',
+): Promise<void> {
+  await db.from('cleaner_profiles').update({ status }).eq('user_id', cleanerId)
+  // Sync profiles.role for approved/suspended transitions
+  if (status === 'approved') {
+    await db.from('profiles').update({ role: 'cleaner_active', is_active: true }).eq('id', cleanerId)
+  } else if (status === 'suspended' || status === 'deactivated') {
+    await db.from('profiles').update({ is_active: false }).eq('id', cleanerId)
+  }
+}
+
+export async function getNotificationsForUser(userId: string, limit = 10) {
+  const { data, error } = await db
+    .from('notifications')
+    .select('id, type, title, body, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getBookingStatusEvents(bookingId: string) {
+  const { data, error } = await db
+    .from('booking_status_events')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function seedPaymentRecord(bookingId: string, amountCents = 5000): Promise<void> {
+  await db.from('payments').upsert(
+    { booking_id: bookingId, status: 'captured', amount_cents: amountCents },
+    { onConflict: 'booking_id' },
+  )
+}
+
+export async function countBookingsForCustomer(customerId: string): Promise<number> {
+  const { count } = await db
+    .from('bookings')
+    .select('id', { count: 'exact', head: true })
+    .eq('customer_id', customerId)
+  return count ?? 0
+}

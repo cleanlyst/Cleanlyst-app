@@ -55,6 +55,17 @@ export default defineConfig({
       use: { ...devices['iPad (gen 11)'] },
       testMatch: '**/stress/03-viewports.spec.ts',
     },
+    // Admin-acceptance suite runs on all three browser engines
+    {
+      name: 'firefox-admin',
+      use: { ...devices['Desktop Firefox'] },
+      testMatch: '**/admin-acceptance/**',
+    },
+    {
+      name: 'webkit-admin',
+      use: { ...devices['Desktop Safari'] },
+      testMatch: '**/admin-acceptance/**',
+    },
   ],
 
   webServer: {

@@ -271,6 +271,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { toUserMessage } from '@/utils/format'
 import { useAuthStore } from '@/stores/auth'
 import { useCleanerApplicationStore } from '@/stores/cleanerApplication'
 import { uploadCleanerDocument } from '@/services/applicationService'
@@ -338,7 +339,7 @@ onMounted(async () => {
       requestedInfo.value = appStore.application?.requested_info ?? null
     }
   } catch (e) {
-    stepError.value = e instanceof Error ? e.message : 'Failed to load application.'
+    stepError.value = toUserMessage(e, 'Failed to load application. Please refresh.')
   } finally {
     initLoading.value = false
   }
@@ -414,7 +415,7 @@ async function handleNext() {
     await uploadCurrentStep()
     step.value++
   } catch (e) {
-    stepError.value = e instanceof Error ? e.message : 'Upload failed. Please try again.'
+    stepError.value = toUserMessage(e, 'Upload failed. Please try again.')
   } finally {
     uploading.value = false
   }
@@ -428,7 +429,7 @@ async function handleSubmit() {
     await appStore.submit()
     await router.replace({ name: 'CleanerPendingReview' })
   } catch (e) {
-    stepError.value = e instanceof Error ? e.message : 'Submission failed. Please try again.'
+    stepError.value = toUserMessage(e, 'Submission failed. Please try again.')
   } finally {
     uploading.value = false
   }

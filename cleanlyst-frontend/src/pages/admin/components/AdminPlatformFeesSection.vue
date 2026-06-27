@@ -141,6 +141,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
 import { invalidatePlatformSettingsCache } from '@/services/pricingEngine'
+import { toUserMessage } from '@/utils/format'
 
 const loading = ref(true)
 const saving = ref(false)
@@ -210,10 +211,7 @@ async function loadSettings() {
     }
     commissionInput.value = savedCommission.value
   } catch (e) {
-    loadError.value =
-      e instanceof Error
-        ? `Failed to load settings: ${e.message}`
-        : 'Failed to load platform settings.'
+    loadError.value = toUserMessage(e, 'Failed to load platform settings. Please refresh.')
   } finally {
     loading.value = false
   }
@@ -251,10 +249,7 @@ async function save() {
     saveSuccess.value = true
     setTimeout(() => { saveSuccess.value = false }, 4000)
   } catch (e) {
-    saveError.value =
-      e instanceof Error
-        ? `Failed to save: ${e.message}`
-        : 'Failed to save settings.'
+    saveError.value = toUserMessage(e, 'Failed to save settings. Please try again.')
   } finally {
     saving.value = false
   }

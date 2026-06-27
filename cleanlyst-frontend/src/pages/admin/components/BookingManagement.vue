@@ -418,7 +418,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
-import { formatDate, formatStatus, formatPence, formatRelativeTime } from '@/utils/format'
+import { formatDate, formatStatus, formatPence, formatRelativeTime, toUserMessage } from '@/utils/format'
 import AppModal from '@/components/ui/AppModal.vue'
 import { reassignBooking } from '@/services/bookingService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
@@ -614,7 +614,7 @@ async function loadBookings() {
       reassigned_at: row.reassigned_at ?? null,
     }))
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load bookings.'
+    errorMessage.value = toUserMessage(e, 'Failed to load bookings. Please refresh.')
   } finally {
     loading.value = false
   }
@@ -738,7 +738,7 @@ async function submitReassign() {
     closeReassignModal()
     await loadBookings()
   } catch (e) {
-    reassignError.value = e instanceof Error ? e.message : 'Reassignment failed.'
+    reassignError.value = toUserMessage(e, 'Reassignment failed. Please try again.')
   } finally {
     reassignLoading.value = false
   }
@@ -916,7 +916,7 @@ async function lookupRefundBooking() {
     }
     await loadRefundPayment(id)
   } catch (e) {
-    refundModal.lookupError = e instanceof Error ? e.message : 'Failed to look up booking.'
+    refundModal.lookupError = toUserMessage(e, 'Failed to find that booking. Please try again.')
   } finally {
     refundModal.lookupLoading = false
   }
@@ -953,7 +953,7 @@ async function submitRefund() {
     refundModal.result = result
     await loadBookings()
   } catch (e) {
-    refundModal.error = e instanceof Error ? e.message : 'Failed to process refund.'
+    refundModal.error = toUserMessage(e, 'Failed to process refund. Please try again.')
   } finally {
     refundModal.loading = false
   }

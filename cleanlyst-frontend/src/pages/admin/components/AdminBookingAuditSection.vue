@@ -127,7 +127,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { getSupabaseClient } from '@/services/supabaseClient'
-import { formatDateTime } from '@/utils/format'
+import { formatDateTime, toUserMessage } from '@/utils/format'
 import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
 
 interface AuditEvent {
@@ -227,7 +227,7 @@ async function loadEvents() {
       }
     })
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load audit events.'
+    error.value = toUserMessage(e, 'Failed to load audit events. Please refresh.')
   } finally {
     loading.value = false
   }

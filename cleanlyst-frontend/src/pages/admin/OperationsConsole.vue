@@ -160,7 +160,7 @@
 import { ref, defineAsyncComponent, onMounted } from 'vue'
 import { useRoute }                              from 'vue-router'
 import { formatRelativeTime }                    from '@/utils/format'
-import DashboardLayout                           from '@/components/DashboardLayout.vue'
+import DashboardLayout                           from '@/layouts/DashboardLayout.vue'
 import { adminDashboardLinks }                   from '@/pages/dasboardLinks'
 import { useOperationsConsole }                  from '@/composables/useOperationsConsole'
 

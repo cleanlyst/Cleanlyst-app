@@ -47,6 +47,7 @@ import { useCleanerBookings } from '@/composables/useCleanerBookings'
 import { completeBooking, startBooking as startBookingRequest } from '@/services/bookingService'
 import { upsertAvailabilityOverride } from '@/services/availabilityService'
 import { subscribeToTable, unsubscribe } from '@/lib/realtime'
+import { toUserMessage } from '@/utils/format'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
 import { cleanerDashboardLinks } from '@/pages/dasboardLinks'
 import CleanerDashboardSection from './components/CleanerDashboardSection.vue'
@@ -140,7 +141,7 @@ async function loadBookings() {
       totalPence / 100,
     )
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load bookings.'
+    errorMessage.value = toUserMessage(e, 'Failed to load bookings. Please refresh.')
     bookings.value = []
   } finally {
     loading.value = false
@@ -160,7 +161,7 @@ async function toggleAvailability() {
     if (error) throw error
     isAvailable.value = newValue
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to update availability.'
+    errorMessage.value = toUserMessage(e, 'Failed to update availability. Please try again.')
   } finally {
     toggleLoading.value = false
   }
@@ -185,12 +186,7 @@ async function acceptBooking(id: string) {
 
     await loadBookings()
   } catch (e) {
-    // Supabase wraps network errors as plain objects (not Error instances),
-    // so check .message on any thrown value.
-    const msg = (e instanceof Error ? e.message : null)
-      ?? (e !== null && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : null)
-      ?? 'Failed to accept booking.'
-    errorMessage.value = msg
+    errorMessage.value = toUserMessage(e, 'Failed to accept booking. Please try again.')
   } finally {
     actionLoadingId.value = null
   }
@@ -202,7 +198,7 @@ async function declineBooking(id: string) {
     await transition(id, 'declined')
     await loadBookings()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to decline booking.'
+    errorMessage.value = toUserMessage(e, 'Failed to decline booking. Please try again.')
   } finally {
     actionLoadingId.value = null
   }
@@ -214,7 +210,7 @@ async function startBooking(id: string) {
     await startBookingRequest(id)
     await loadBookings()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to start booking.'
+    errorMessage.value = toUserMessage(e, 'Failed to start booking. Please try again.')
   } finally {
     actionLoadingId.value = null
   }
@@ -226,7 +222,7 @@ async function markCompleted(id: string) {
     await completeBooking(id)
     await loadBookings()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Cannot complete job.'
+    errorMessage.value = toUserMessage(e, 'Cannot complete job. Please try again.')
   } finally {
     actionLoadingId.value = null
   }

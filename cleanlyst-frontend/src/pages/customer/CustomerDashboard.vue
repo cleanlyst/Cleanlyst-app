@@ -23,6 +23,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { RealtimeSubscription } from '@/lib/realtime'
+import { toUserMessage } from '@/utils/format'
 import { useRoute, useRouter } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
@@ -77,7 +78,7 @@ async function cancelBooking(id: string) {
     await cancel(id)
     await loadBookings()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to cancel booking.'
+    errorMessage.value = toUserMessage(e, 'Failed to cancel booking. Please try again.')
   } finally {
     actionLoadingId.value = null
   }
@@ -98,7 +99,7 @@ async function confirmComplete(id: string) {
     await transitionBookingState(id, 'completed')
     await loadBookings()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to confirm completion.'
+    errorMessage.value = toUserMessage(e, 'Failed to confirm completion. Please try again.')
   } finally {
     actionLoadingId.value = null
   }

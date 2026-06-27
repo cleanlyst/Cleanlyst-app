@@ -354,7 +354,7 @@ import { requireSupabase } from '@/lib/supabase'
 import { reviewCleanerApplication } from '@/services/adminService'
 import AdminCleanerListSection from './AdminCleanerListSection.vue'
 import { getSignedCleanerDocumentUrl } from '@/services/storageService'
-import { formatDate, formatStatus } from '@/utils/format'
+import { formatDate, formatStatus, toUserMessage } from '@/utils/format'
 
 interface CleanerApplicationQueryRow {
   id: string
@@ -520,7 +520,7 @@ async function loadApplications() {
     submittedCount.value = sCount.count ?? 0
     underReviewCount.value = urCount.count ?? 0
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load applications.'
+    errorMessage.value = toUserMessage(e, 'Failed to load applications. Please refresh.')
   } finally {
     loading.value = false
   }
@@ -618,7 +618,7 @@ async function viewDocument(doc: DocumentRecord) {
       document.body.removeChild(a)
     }
   } catch (e) {
-    docPreviewError.value = e instanceof Error ? e.message : 'Failed to load document.'
+    docPreviewError.value = toUserMessage(e, 'Failed to load document. Please try again.')
   } finally {
     docPreviewLoading.value = null
   }
@@ -648,7 +648,7 @@ async function submitReview(action: 'approved' | 'rejected' | 'needs_info') {
       closeReview()
     }
   } catch (e) {
-    reviewError.value = e instanceof Error ? e.message : 'Action failed.'
+    reviewError.value = toUserMessage(e, 'Action failed. Please try again.')
   } finally {
     reviewLoading.value = null
   }

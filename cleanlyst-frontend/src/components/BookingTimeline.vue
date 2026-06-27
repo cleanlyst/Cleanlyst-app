@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
 import { getSupabaseClient } from '@/services/supabaseClient'
-import { formatDateTime } from '@/utils/format'
+import { formatDateTime, toUserMessage } from '@/utils/format'
 import { getBookingStatusLabel } from '@/utils/bookingStatusLabel'
 
 interface TimelineEvent {
@@ -102,7 +102,7 @@ async function loadEvents() {
       }
     })
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load timeline.'
+    error.value = toUserMessage(e, 'Failed to load timeline. Please refresh.')
   } finally {
     loading.value = false
   }

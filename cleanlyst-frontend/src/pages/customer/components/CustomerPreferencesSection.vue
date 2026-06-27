@@ -266,6 +266,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { UK_CITIES } from '@/utils/ukCities'
+import { toUserMessage } from '@/utils/format'
 
 const PROPERTY_TYPE_OPTIONS = [
   { value: 'flat_apartment', label: 'Flat / Apartment' },
@@ -382,7 +383,7 @@ onMounted(async () => {
     // If no preferences exist yet, go straight into edit mode so the user
     // doesn't see a blank "Set Preferences" prompt unnecessarily on first visit.
   } catch (e) {
-    loadError.value = e instanceof Error ? e.message : 'Failed to load preferences.'
+    loadError.value = toUserMessage(e, 'Failed to load preferences. Please refresh.')
   }
 })
 
@@ -411,7 +412,7 @@ async function handleSave() {
     }, 1500)
   } catch (e) {
     console.error('[CustomerPreferencesSection] handleSave error', e)
-    saveError.value = e instanceof Error ? e.message : 'Failed to save preferences.'
+    saveError.value = toUserMessage(e, 'Failed to save preferences. Please try again.')
   } finally {
     saving.value = false
   }

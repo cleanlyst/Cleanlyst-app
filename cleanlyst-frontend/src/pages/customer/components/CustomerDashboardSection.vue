@@ -55,7 +55,9 @@
       </div>
 
       <div v-if="pastBookings.length === 0" class="empty-past">
-        <p class="empty-past-text">No past bookings yet.</p>
+        <span class="material-symbols-outlined empty-past-icon" aria-hidden="true">history</span>
+        <p class="empty-past-text">No completed bookings yet</p>
+        <p class="empty-past-sub">Your completed cleanings will appear here. Once a booking is finished you can re-book or leave a review.</p>
       </div>
 
       <div v-else class="past-grid">
@@ -603,11 +605,29 @@ function rebook() {
 }
 
 .empty-past {
-  padding: 2rem 0;
+  padding: 3rem 2rem;
+  text-align: center;
+  border: 1px dashed var(--outline-variant, #c4c7c7);
+  border-radius: 0.25rem;
+}
+.empty-past-icon {
+  font-size: 2.5rem;
+  color: var(--outline-variant, #c4c7c7);
+  display: block;
+  margin-bottom: 0.75rem;
 }
 .empty-past-text {
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--on-surface, #1a1c1c);
+  margin: 0 0 0.375rem;
+}
+.empty-past-sub {
+  font-size: 13px;
   color: var(--secondary, #5e5e5e);
+  max-width: 30rem;
+  margin: 0 auto;
+  line-height: 1.5;
 }
 
 .past-grid {

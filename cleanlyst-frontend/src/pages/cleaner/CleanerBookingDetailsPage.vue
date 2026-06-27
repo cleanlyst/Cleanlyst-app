@@ -431,7 +431,7 @@ import {
   isWithinStartWindow as _isWithinStartWindow,
   cannotAttend,
 } from '@/services/bookingLifecycleService'
-import { formatDate, formatDateTime, formatPence } from '@/utils/format'
+import { formatDate, formatDateTime, formatPence, toUserMessage } from '@/utils/format'
 import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
 import { upsertAvailabilityOverride } from '@/services/availabilityService'
 
@@ -510,7 +510,7 @@ async function refreshBooking() {
     editEstimatedHours.value = booking.value.estimated_hours
     editNotes.value = booking.value.notes
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load booking.'
+    errorMessage.value = toUserMessage(e, 'Failed to load booking. Please refresh.')
   } finally {
     loading.value = false
   }
@@ -535,7 +535,7 @@ async function handleAcceptBooking() {
     successMessage.value = 'Booking accepted'
     await refreshBooking()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to accept booking.'
+    errorMessage.value = toUserMessage(e, 'Failed to accept booking. Please try again.')
   } finally {
     actionLoading.value = false
     activeAction.value = null
@@ -555,7 +555,7 @@ async function confirmDecline() {
     successMessage.value = 'Booking declined'
     await refreshBooking()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to decline booking.'
+    errorMessage.value = toUserMessage(e, 'Failed to decline booking. Please try again.')
   } finally {
     actionLoading.value = false
     activeAction.value = null
@@ -575,7 +575,7 @@ async function confirmCannotAttend() {
     successMessage.value = 'Marked as cannot attend. Admin has been notified.'
     await refreshBooking()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to mark cannot attend.'
+    errorMessage.value = toUserMessage(e, 'Failed to mark as unable to attend. Please try again.')
   } finally {
     actionLoading.value = false
     activeAction.value = null
@@ -597,7 +597,7 @@ async function confirmProposeEstimate() {
     estimateNote.value = ''
     successMessage.value = 'Estimate sent to customer'
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to propose estimate.'
+    errorMessage.value = toUserMessage(e, 'Failed to propose estimate. Please try again.')
   } finally {
     actionLoading.value = false
     activeAction.value = null
@@ -615,7 +615,7 @@ async function handleStartCleaning() {
     successMessage.value = 'Cleaning in progress'
     await refreshBooking()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to start cleaning.'
+    errorMessage.value = toUserMessage(e, 'Failed to start cleaning. Please try again.')
   } finally {
     actionLoading.value = false
     activeAction.value = null
@@ -633,7 +633,7 @@ async function endJob() {
     successMessage.value = 'Job completed. Earnings credited.'
     await refreshBooking()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Cannot complete job.'
+    errorMessage.value = toUserMessage(e, 'Cannot complete job. Please try again.')
   } finally {
     actionLoading.value = false
     activeAction.value = null
@@ -654,7 +654,7 @@ async function saveBookingDetails() {
     successMessage.value = 'Changes saved'
     await refreshBooking()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to save booking.'
+    errorMessage.value = toUserMessage(e, 'Failed to save booking. Please try again.')
   } finally {
     savingBooking.value = false
   }
@@ -670,7 +670,7 @@ async function sendMessage() {
     await nextTick()
     scrollMessagesToBottom()
   } catch (e) {
-    messageError.value = e instanceof Error ? e.message : 'Failed to send message.'
+    messageError.value = toUserMessage(e, 'Failed to send message. Please try again.')
   } finally {
     messageSending.value = false
   }

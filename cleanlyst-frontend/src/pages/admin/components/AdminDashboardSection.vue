@@ -118,7 +118,8 @@
               v-else-if="pendingApplications.length === 0"
               class="p-12 text-center text-secondary text-caption"
             >
-              No pending applications.
+              <span class="material-symbols-outlined" style="font-size: 2rem; display: block; margin: 0 auto 0.5rem; opacity: 0.35;" aria-hidden="true">check_circle</span>
+              All caught up — no pending applications.
             </div>
 
             <div v-else class="divide-y divide-outline-variant">
@@ -176,7 +177,7 @@
               v-else-if="recentBookings.length === 0"
               class="p-6 text-center text-caption text-secondary"
             >
-              No recent bookings.
+              No bookings have been made yet.
             </div>
             <div v-else class="p-6 space-y-6">
               <div v-for="b in recentBookings.slice(0,3)" :key="b.id" class="flex gap-4">
@@ -206,7 +207,7 @@
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
-import { formatPence, formatRelativeTime, formatStatus } from '@/utils/format'
+import { formatPence, formatRelativeTime, formatStatus, toUserMessage } from '@/utils/format'
 import { reviewCleanerApplication } from '@/services/adminService'
 
 interface PendingApplication {
@@ -341,7 +342,7 @@ async function loadStats() {
       noShowIncidents: noShowResult.count ?? 0,
     }
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load stats.'
+    errorMessage.value = toUserMessage(e, 'Failed to load stats. Please refresh the page.')
   } finally {
     statsLoading.value = false
   }
@@ -387,7 +388,7 @@ async function loadApprovals() {
       updated_at: row.updated_at,
     }))
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load applications.'
+    errorMessage.value = toUserMessage(e, 'Failed to load pending applications. Please refresh.')
   } finally {
     approvalsLoading.value = false
   }
@@ -405,7 +406,7 @@ async function loadRecentBookings() {
     if (error) throw error
     recentBookings.value = (data ?? []) as RecentBooking[]
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load recent bookings.'
+    errorMessage.value = toUserMessage(e, 'Failed to load recent bookings. Please refresh.')
   } finally {
     recentLoading.value = false
   }
@@ -419,7 +420,7 @@ async function approveApplication(applicationId: string) {
     stats.value.pendingCleaners = Math.max(0, stats.value.pendingCleaners - 1)
     stats.value.activeCleaners += 1
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to approve application.'
+    errorMessage.value = toUserMessage(e, 'Failed to approve application. Please try again.')
   } finally {
     approveLoadingId.value = null
   }

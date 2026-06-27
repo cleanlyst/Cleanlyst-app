@@ -100,6 +100,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { toUserMessage } from '@/utils/format'
 import { useAuthStore } from '@/stores/auth'
 import { getCleanerAvailability, upsertAvailabilitySlots } from '@/services/availabilityService'
 
@@ -196,7 +197,7 @@ onMounted(async () => {
     }
     savedSnapshot = takeSnapshot()
   } catch (e) {
-    loadError.value = e instanceof Error ? e.message : 'Failed to load schedule.'
+    loadError.value = toUserMessage(e, 'Failed to load schedule. Please refresh.')
   } finally {
     pageLoading.value = false
   }
@@ -236,7 +237,7 @@ async function saveSchedule() {
     }, 2500)
   } catch (e) {
     if (e instanceof Error) {
-      saveError.value = e.message
+      saveError.value = toUserMessage(e, 'Failed to save schedule. Please try again.')
     } else if (e && typeof e === 'object' && 'message' in e) {
       saveError.value = String((e as { message: unknown }).message)
     } else {

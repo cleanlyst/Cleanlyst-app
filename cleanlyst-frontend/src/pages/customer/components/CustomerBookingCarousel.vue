@@ -214,7 +214,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { PropType } from 'vue'
-import { formatDate, formatPence } from '@/utils/format'
+import { formatDate, formatPence, toUserMessage } from '@/utils/format'
 import { isCustomerPaymentRequired, getBookingStatusLabel } from '@/utils/bookingStatusLabel'
 import { startAdditionalPayment } from '@/services/payments/paymentOrchestrator'
 
@@ -291,7 +291,7 @@ async function confirmPayment() {
     paySuccess.value = true
     emit('paymentDone', bookingId)
   } catch (e) {
-    payError.value = e instanceof Error ? e.message : 'Payment failed. Please try again.'
+    payError.value = toUserMessage(e, 'Payment failed. Please try again.')
   } finally {
     payProcessing.value = false
   }

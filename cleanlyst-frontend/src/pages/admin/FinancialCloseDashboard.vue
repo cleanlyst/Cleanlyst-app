@@ -277,7 +277,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, defineComponent, h }  from 'vue'
-import DashboardLayout   from '@/components/DashboardLayout.vue'
+import DashboardLayout   from '@/layouts/DashboardLayout.vue'
 import { adminDashboardLinks } from '@/pages/dasboardLinks'
 import { formatPence, formatRelativeTime } from '@/utils/format'
 import { useFinancialClose }               from '@/composables/useFinancialClose'

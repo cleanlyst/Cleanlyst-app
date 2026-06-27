@@ -285,7 +285,7 @@
 <script lang="ts" setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { requireSupabase } from '@/lib/supabase'
-import { formatPence, formatDate, formatStatus } from '@/utils/format'
+import { formatPence, formatDate, formatStatus, toUserMessage } from '@/utils/format'
 import AppModal from '@/components/ui/AppModal.vue'
 import {
   getAdminFinancialMetrics,
@@ -346,7 +346,7 @@ async function loadMetrics() {
     const ytdStart = `${currentYear}-01-01T00:00:00Z`
     metrics.value = await getAdminFinancialMetrics(ytdStart)
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load financial metrics.'
+    errorMessage.value = toUserMessage(e, 'Failed to load financial metrics. Please refresh.')
   } finally {
     metricsLoading.value = false
   }
@@ -357,7 +357,7 @@ async function loadChart() {
   try {
     chartData.value = await getAdminRevenueChart(currentYear)
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load chart data.'
+    errorMessage.value = toUserMessage(e, 'Failed to load chart data. Please refresh.')
   } finally {
     chartLoading.value = false
   }
@@ -368,7 +368,7 @@ async function loadTransactions() {
   try {
     transactions.value = await getAdminTransactions(10)
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load transactions.'
+    errorMessage.value = toUserMessage(e, 'Failed to load transactions. Please refresh.')
   } finally {
     txLoading.value = false
   }

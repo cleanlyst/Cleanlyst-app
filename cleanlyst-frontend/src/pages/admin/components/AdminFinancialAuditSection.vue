@@ -162,6 +162,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { getFinancialAudit, type AuditRow, formatPence } from '@/services/financialService'
 import { validateFinancials } from '@/modules/pricing/financialValidator'
+import { toUserMessage } from '@/utils/format'
 
 const PAGE_SIZE = 50
 
@@ -199,7 +200,7 @@ async function load() {
       }).valid,
     }))
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load audit data'
+    error.value = toUserMessage(e, 'Failed to load audit data. Please refresh.')
   } finally {
     loading.value = false
   }

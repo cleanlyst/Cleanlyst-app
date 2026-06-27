@@ -143,6 +143,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { toUserMessage } from '@/utils/format'
 import { requireSupabase } from '@/lib/supabase'
 
 const newPassword = ref('')
@@ -188,7 +189,7 @@ async function handleSubmit() {
     if (error) throw error
     done.value = true
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to update password.'
+    errorMessage.value = toUserMessage(e, 'Failed to update password. Please try again.')
   } finally {
     submitting.value = false
   }

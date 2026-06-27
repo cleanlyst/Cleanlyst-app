@@ -292,7 +292,7 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getBookingById, reassignBooking, type BookingDetailRow } from '@/services/bookingService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
-import { formatDate, formatDateTime, formatPence } from '@/utils/format'
+import { formatDate, formatDateTime, formatPence, toUserMessage } from '@/utils/format'
 import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
 import { requireSupabase } from '@/lib/supabase'
 
@@ -493,7 +493,7 @@ async function submitReassign() {
     closeReassignModal()
     await loadBooking(reassignTarget.value.id)
   } catch (e) {
-    reassignError.value = e instanceof Error ? e.message : 'Reassignment failed.'
+    reassignError.value = toUserMessage(e, 'Reassignment failed. Please try again.')
     reassignStep.value = 3
   } finally {
     reassignLoading.value = false

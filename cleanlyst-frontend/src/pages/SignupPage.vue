@@ -213,6 +213,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { toUserMessage } from '@/utils/format'
 
 type SignupRole = 'customer' | 'cleaner'
 
@@ -281,7 +282,7 @@ async function handleSignup() {
     await router.replace({ name: 'VerifyEmail', query: { email: email.value } })
     password.value = ''
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Something went wrong.'
+    errorMessage.value = toUserMessage(error, 'Sign-up failed. Please check your details and try again.')
   } finally {
     submitting.value = false
   }
@@ -306,8 +307,7 @@ async function handleGoogleSignup() {
       selectedRole.value === 'cleaner' ? businessName.value.trim() : undefined,
     )
   } catch (error) {
-    errorMessage.value =
-      error instanceof Error ? error.message : 'Google sign-in could not be started.'
+    errorMessage.value = toUserMessage(error, 'Google sign-in could not be started. Please try again.')
     submitting.value = false
   }
 }

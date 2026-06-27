@@ -52,6 +52,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { toUserMessage } from '@/utils/format'
 import { useRoute } from 'vue-router'
 import { requireSupabase } from '@/lib/supabase'
 
@@ -74,7 +75,7 @@ async function handleResend() {
       resent.value = false
     }, 30_000)
   } catch (e) {
-    resendError.value = e instanceof Error ? e.message : 'Failed to resend verification email.'
+    resendError.value = toUserMessage(e, 'Failed to resend verification email. Please try again.')
   } finally {
     resending.value = false
   }

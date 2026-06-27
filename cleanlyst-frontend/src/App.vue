@@ -1,4 +1,6 @@
 <template>
+  <a href="#main-content" class="skip-to-main">Skip to main content</a>
+
   <div v-if="!isComingSoonRoute" class="app-shell-spacer">
     <header class="app-header">
       <div class="app-header__inner">
@@ -71,7 +73,7 @@
             <button
               class="flex-1 md:flex-none px-4 py-2 border border-outline-variant text-label-md font-label-md hover:bg-surface-container transition-colors"
             >
-              Login
+              Log in
             </button>
           </router-link>
           <router-link
@@ -88,7 +90,7 @@
             class="flex-1 md:flex-none px-4 py-2 border border-outline-variant text-label-md font-label-md hover:bg-surface-container transition-colors hide-mobile"
             @click="handleSignOut"
           >
-            Logout
+            Log out
           </button>
         </div>
 
@@ -138,7 +140,7 @@
             class="app-mobile-menu__button"
             @click="handleSignOut"
           >
-            Logout
+            Log out
           </button>
         </nav>
       </div>
@@ -147,6 +149,8 @@
 
   <router-view />
   <FooterPage :compact="isComingSoonRoute" />
+
+  <ToastContainer />
 
   <p v-if="notificationRouteError" class="notification-route-error">
     {{ notificationRouteError }}
@@ -160,6 +164,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import FooterPage from '@/components/FooterPage.vue'
+import ToastContainer from '@/components/ui/ToastContainer.vue'
 import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNotifications } from '@/composables/useNotifications'

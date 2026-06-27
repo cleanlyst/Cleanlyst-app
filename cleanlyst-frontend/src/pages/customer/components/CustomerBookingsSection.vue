@@ -62,8 +62,17 @@
         <template v-if="list.currentTab.value === 'all'">
           When you book a cleaner, it will appear here.
         </template>
+        <template v-else-if="list.currentTab.value === 'upcoming'">
+          No upcoming bookings. Ready to schedule your next clean?
+        </template>
+        <template v-else-if="list.currentTab.value === 'past'">
+          Your completed bookings will appear here once a cleaning is finished.
+        </template>
+        <template v-else-if="list.currentTab.value === 'cancelled'">
+          No cancelled bookings — great news!
+        </template>
         <template v-else>
-          No {{ list.currentTab.value }} bookings to show.
+          No bookings in this category yet.
         </template>
       </p>
       <router-link
@@ -290,7 +299,7 @@ import { onMounted, ref } from 'vue'
 import type { PropType } from 'vue'
 import { createReview } from '@/services/reviewService'
 import { startAdditionalPayment } from '@/services/payments/paymentOrchestrator'
-import { formatPence } from '@/utils/format'
+import { formatPence, toUserMessage } from '@/utils/format'
 import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
 import { useBookingList, BOOKING_TABS } from '@/composables/useBookingList'
 import type { BookingListItem } from '@/composables/useBookingList'
@@ -386,7 +395,7 @@ async function confirmPayment() {
     paySuccess.value = true
     await list.fetch()
   } catch (e) {
-    payError.value = e instanceof Error ? e.message : 'Payment failed. Please try again.'
+    payError.value = toUserMessage(e, 'Payment failed. Please try again.')
   } finally {
     payProcessing.value = false
   }
@@ -416,7 +425,7 @@ async function submitReview() {
     reviewedIds.value = new Set([...reviewedIds.value, reviewingBookingId.value])
     closeReview()
   } catch (e) {
-    reviewError.value = e instanceof Error ? e.message : 'Failed to submit review.'
+    reviewError.value = toUserMessage(e, 'Failed to submit your review. Please try again.')
   } finally {
     reviewSubmitting.value = false
   }

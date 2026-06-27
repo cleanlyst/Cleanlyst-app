@@ -83,13 +83,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { toUserMessage } from '@/utils/format'
 import { useCleanerServicesStore } from '@/stores/cleanerServices'
 import type { ServiceDraft } from '@/stores/cleanerServices'
 import ServiceSelector from './services/ServiceSelector.vue'
 import MyServicesPanel from './services/MyServicesPanel.vue'
 
 function extractMessage(e: unknown, fallback: string): string {
-  if (e instanceof Error) return e.message
+  return toUserMessage(e, 'Save failed. Please try again.')
   if (e && typeof e === 'object' && 'message' in e) {
     const msg = (e as { message: unknown }).message
     if (typeof msg === 'string' && msg) return msg

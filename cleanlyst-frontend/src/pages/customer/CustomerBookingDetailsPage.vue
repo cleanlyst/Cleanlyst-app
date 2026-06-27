@@ -564,7 +564,7 @@ import { startAdditionalPayment } from '@/services/payments/paymentOrchestrator'
 import { cancelAsCustomer } from '@/services/bookingLifecycleService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import BookingTimeline from '@/components/BookingTimeline.vue'
-import { formatDate, formatDateTime, formatPence } from '@/utils/format'
+import { formatDate, formatDateTime, formatPence, toUserMessage } from '@/utils/format'
 import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
 
 const auth = useAuthStore()
@@ -710,7 +710,7 @@ async function goToReassignStep2() {
     await loadReassignCleanerPrices(reassignCleaners.value.map((c) => c.user_id))
     reassignStep.value = 2
   } catch (e) {
-    reassignError.value = e instanceof Error ? e.message : 'Failed to search for cleaners.'
+    reassignError.value = toUserMessage(e, 'Failed to search for cleaners. Please try again.')
   } finally {
     reassignSearchLoading.value = false
   }
@@ -773,7 +773,7 @@ async function confirmReassignment() {
     booking.value = updated
     closeReassignFlow()
   } catch (e) {
-    reassignError.value = e instanceof Error ? e.message : 'Failed to confirm reassignment.'
+    reassignError.value = toUserMessage(e, 'Failed to confirm reassignment. Please try again.')
   } finally {
     reassignConfirmLoading.value = false
   }
@@ -797,7 +797,7 @@ async function refreshBooking() {
     if (!data) throw new Error('Booking no longer available')
     booking.value = data
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load booking.'
+    errorMessage.value = toUserMessage(e, 'Failed to load booking. Please refresh.')
   } finally {
     loading.value = false
   }
@@ -817,7 +817,7 @@ async function confirmComplete() {
     successMessage.value = 'Booking marked as completed.'
     await refreshBooking()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to complete booking.'
+    errorMessage.value = toUserMessage(e, 'Failed to confirm completion. Please try again.')
   } finally {
     actionLoading.value = false
     activeAction.value = null
@@ -846,7 +846,7 @@ async function cancelBooking() {
     successMessage.value = 'Booking cancelled.'
     await refreshBooking()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to cancel booking.'
+    errorMessage.value = toUserMessage(e, 'Failed to cancel booking. Please try again.')
   } finally {
     actionLoading.value = false
     activeAction.value = null
@@ -895,7 +895,7 @@ async function requestReplacementCleaner() {
     closeNoShowModal()
     openReassignFlow()
   } catch (e) {
-    noShowError.value = e instanceof Error ? e.message : 'Failed to request another cleaner.'
+    noShowError.value = toUserMessage(e, 'Failed to request another cleaner. Please try again.')
   } finally {
     noShowActionLoading.value = null
   }
@@ -911,7 +911,7 @@ async function requestNoShowRefund() {
     booking.value = updated
     noShowSuccess.value = 'Refund processed successfully'
   } catch (e) {
-    noShowError.value = e instanceof Error ? e.message : 'Failed to process refund.'
+    noShowError.value = toUserMessage(e, 'Failed to process refund. Please try again.')
   } finally {
     noShowActionLoading.value = null
   }
@@ -927,7 +927,7 @@ async function confirmPayment() {
     await refreshBooking()
     paySuccess.value = true
   } catch (e) {
-    payModalError.value = e instanceof Error ? e.message : 'Failed to process payment.'
+    payModalError.value = toUserMessage(e, 'Failed to process payment. Please try again.')
   } finally {
     paymentProcessing.value = false
   }
@@ -944,7 +944,7 @@ async function sendMessage() {
     await nextTick()
     scrollToBottom()
   } catch (e) {
-    messageError.value = e instanceof Error ? e.message : 'Failed to send message.'
+    messageError.value = toUserMessage(e, 'Failed to send message. Please try again.')
   } finally {
     messageSending.value = false
   }

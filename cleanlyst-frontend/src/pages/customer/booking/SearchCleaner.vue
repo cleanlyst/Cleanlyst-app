@@ -490,7 +490,7 @@ import { startInitialPayment } from '@/services/payments/paymentOrchestrator'
 import { useCustomerPreferencesStore } from '@/stores/customerPreferences'
 import { useAuthStore } from '@/stores/auth'
 import { requireSupabase } from '@/lib/supabase'
-import { formatPence } from '@/utils/format'
+import { formatPence, toUserMessage } from '@/utils/format'
 import { isCityEnabled, ROLLOUT_UNAVAILABLE_MESSAGE } from '@/config/rollout'
 import { fetchPlatformSettings, getPricing, type PricingResult } from '@/services/pricingEngine'
 import {
@@ -908,7 +908,7 @@ async function confirmAndPay() {
 
     paymentSuccess.value = true
   } catch (e) {
-    payError.value = e instanceof Error ? e.message : JSON.stringify(e)
+    payError.value = toUserMessage(e, 'Payment failed. Please try again.')
   } finally {
     paying.value = false
   }

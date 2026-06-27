@@ -55,6 +55,38 @@ export function truncate(value: string, max = 80): string {
   return value.length > max ? `${value.slice(0, max)}…` : value
 }
 
+// ── Error messages ─────────────────────────────────────────────────────────
+
+const TECHNICAL_PATTERNS = [
+  /column reference/i,
+  /ambiguous/i,
+  /relation .* does not exist/i,
+  /syntax error/i,
+  /function .* does not exist/i,
+  /invalid input syntax/i,
+  /violates.*constraint/i,
+  /null value in column/i,
+  /duplicate key value/i,
+  /permission denied for/i,
+  /JWT.*expired/i,
+  /PGRST\d+/,
+  /ERROR:/i,
+]
+
+/**
+ * Converts a raw error to a user-friendly message.
+ * Strips technical PostgreSQL / network details from user-facing copy.
+ */
+export function toUserMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
+  if (!error) return fallback
+  const raw = error instanceof Error ? error.message : String(error)
+  for (const pattern of TECHNICAL_PATTERNS) {
+    if (pattern.test(raw)) return fallback
+  }
+  if (raw.length > 300) return fallback
+  return raw || fallback
+}
+
 // ── Numbers ────────────────────────────────────────────────────────────────
 
 export function formatRating(rating: number | null | undefined, reviews?: number): string {

@@ -118,6 +118,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { toUserMessage } from '@/utils/format'
 import { requireSupabase } from '@/lib/supabase'
 
 const email = ref('')
@@ -140,7 +141,7 @@ async function handleSubmit() {
     await sendReset()
     sent.value = true
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to send reset link.'
+    errorMessage.value = toUserMessage(e, 'Failed to send reset link. Please try again.')
   } finally {
     submitting.value = false
   }
@@ -151,7 +152,7 @@ async function resendReset() {
   try {
     await sendReset()
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to resend link.'
+    errorMessage.value = toUserMessage(e, 'Failed to resend link. Please try again.')
   } finally {
     resending.value = false
   }

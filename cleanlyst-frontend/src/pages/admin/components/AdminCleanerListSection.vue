@@ -50,7 +50,8 @@
         No cleaners found.
       </div>
 
-      <table v-else class="w-full text-left border-collapse">
+      <div v-else class="overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[600px]">
         <thead class="bg-surface-container-low border-b border-outline-variant">
           <tr>
             <th class="px-4 py-4 font-label-md text-label-md text-on-surface-variant">Cleaner</th>
@@ -59,8 +60,7 @@
             <th class="px-4 py-4 font-label-md text-label-md text-on-surface-variant hidden lg:table-cell">Availability</th>
             <th class="px-4 py-4 font-label-md text-label-md text-on-surface-variant hidden xl:table-cell">Bookings</th>
             <th class="px-4 py-4 font-label-md text-label-md text-on-surface-variant hidden xl:table-cell">Earnings</th>
-            <th class="px-4 py-4 font-label-md text-label-md text-on-surface-variant hidden lg:table-cell">Joined</th>
-            <th class="px-4 py-4 font-label-md text-label-md text-on-surface-variant text-right">Actions</th>
+            <th class="px-4 py-4 font-label-md text-label-md text-on-surface-variant text-right w-48">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-outline-variant">
@@ -130,26 +130,19 @@
               </span>
             </td>
 
-            <!-- Joined -->
-            <td class="px-4 py-4 hidden lg:table-cell">
-              <span class="text-caption font-caption text-on-surface-variant">
-                {{ formatDateShort(cleaner.approval_date ?? cleaner.joined_at) }}
-              </span>
-            </td>
-
             <!-- Actions -->
-            <td class="px-4 py-4 text-right">
-              <div class="flex items-center justify-end gap-2 flex-wrap">
+            <td class="px-4 py-4 text-right w-48">
+              <div class="flex flex-col items-end gap-2">
                 <button
-                  class="px-3 py-1.5 text-xs font-medium border border-outline-variant text-on-surface hover:bg-surface-container transition-colors"
+                  class="px-3 py-1.5 text-xs font-medium border border-outline-variant text-on-surface hover:bg-surface-container transition-colors whitespace-nowrap"
                   :data-testid="`view-profile-${cleaner.user_id}`"
                   @click="openProfile(cleaner)"
                 >
-                  View Profile
+                  View
                 </button>
                 <button
                   v-if="cleaner.cleaner_status === 'suspended'"
-                  class="px-3 py-1.5 text-xs font-medium border border-green-600 text-green-700 hover:bg-green-50 transition-colors"
+                  class="px-3 py-1.5 text-xs font-medium border border-green-600 text-green-700 hover:bg-green-50 transition-colors whitespace-nowrap"
                   :data-testid="`reactivate-${cleaner.user_id}`"
                   @click="openReactivate(cleaner)"
                 >
@@ -157,7 +150,7 @@
                 </button>
                 <button
                   v-if="cleaner.cleaner_status !== 'suspended' && cleaner.cleaner_status !== 'deactivated'"
-                  class="px-3 py-1.5 text-xs font-medium border border-amber-600 text-amber-700 hover:bg-amber-50 transition-colors"
+                  class="px-3 py-1.5 text-xs font-medium border border-amber-600 text-amber-700 hover:bg-amber-50 transition-colors whitespace-nowrap"
                   :data-testid="`suspend-${cleaner.user_id}`"
                   @click="openSuspend(cleaner)"
                 >
@@ -165,7 +158,7 @@
                 </button>
                 <button
                   v-if="cleaner.cleaner_status !== 'deactivated'"
-                  class="px-3 py-1.5 text-xs font-medium border border-red-600 text-red-700 hover:bg-red-50 transition-colors"
+                  class="px-3 py-1.5 text-xs font-medium border border-red-600 text-red-700 hover:bg-red-50 transition-colors whitespace-nowrap"
                   :data-testid="`deactivate-${cleaner.user_id}`"
                   @click="openDeactivate(cleaner)"
                 >
@@ -176,6 +169,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
     </div>
 
     <!-- Pagination -->
@@ -455,7 +449,7 @@ import {
   type AdminCleanerProfile,
   type CleanerStatusFilter,
 } from '@/services/adminService'
-import { formatPence, formatDate } from '@/utils/format'
+import { formatPence, formatDate, toUserMessage } from '@/utils/format'
 
 const PAGE_SIZE = 10
 
@@ -520,7 +514,7 @@ async function loadCleaners() {
     cleaners.value = rows
     total.value = count
   } catch (e) {
-    errorMessage.value = e instanceof Error ? e.message : 'Failed to load cleaners.'
+    errorMessage.value = toUserMessage(e, 'Failed to load cleaners. Please refresh.')
   } finally {
     loading.value = false
   }
@@ -563,7 +557,7 @@ async function confirmSuspend() {
     closeSuspend()
     await loadCleaners()
   } catch (e) {
-    suspendModal.error = e instanceof Error ? e.message : 'Failed to suspend cleaner.'
+    suspendModal.error = toUserMessage(e, 'Failed to suspend cleaner. Please try again.')
   } finally {
     suspendModal.loading = false
   }
@@ -592,7 +586,7 @@ async function confirmReactivate() {
     closeReactivate()
     await loadCleaners()
   } catch (e) {
-    reactivateModal.error = e instanceof Error ? e.message : 'Failed to reactivate cleaner.'
+    reactivateModal.error = toUserMessage(e, 'Failed to reactivate cleaner. Please try again.')
   } finally {
     reactivateModal.loading = false
   }
@@ -621,7 +615,7 @@ async function confirmDeactivate() {
     closeDeactivate()
     await loadCleaners()
   } catch (e) {
-    deactivateModal.error = e instanceof Error ? e.message : 'Failed to deactivate cleaner.'
+    deactivateModal.error = toUserMessage(e, 'Failed to deactivate cleaner. Please try again.')
   } finally {
     deactivateModal.loading = false
   }
@@ -636,7 +630,7 @@ async function openProfile(cleaner: AdminCleanerRow) {
   try {
     profileModal.data = await getCleanerProfile(cleaner.user_id)
   } catch (e) {
-    profileModal.error = e instanceof Error ? e.message : 'Failed to load profile.'
+    profileModal.error = toUserMessage(e, 'Failed to load cleaner profile. Please try again.')
   } finally {
     profileModal.loading = false
   }

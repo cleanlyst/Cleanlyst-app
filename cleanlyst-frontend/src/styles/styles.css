@@ -515,3 +515,165 @@ button:disabled,
 .clnst-pagination-total {
   color: var(--secondary, #5e5e5e);
 }
+
+/* ── Accessibility — visible focus outlines ───────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--primary, #000000);
+  outline-offset: 2px;
+  border-radius: var(--radius, 0.25rem);
+}
+
+/* Remove default outline only when :focus-visible is supported */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .clnst-loading-spinner {
+    animation: none;
+    border-color: var(--primary, #000000);
+    opacity: 0.4;
+  }
+}
+
+/* ── Screen reader only ───────────────────────────────────────────────────── */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ── Booking card — tappable minimum on mobile ────────────────────────────── */
+
+@media (max-width: 768px) {
+  .clnst-pagination-btn {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  .clnst-booking-ctas {
+    flex-direction: column;
+  }
+
+  .clnst-tab-group {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .clnst-tab-group::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── Sticky table headers ─────────────────────────────────────────────────── */
+
+.clnst-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.clnst-table-wrap table {
+  min-width: 40rem;
+}
+
+.clnst-table-wrap thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-container-lowest, #ffffff);
+  z-index: 1;
+}
+
+/* ── Improved disabled state ──────────────────────────────────────────────── */
+
+button:disabled,
+[disabled],
+[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ── Consistent button active state ──────────────────────────────────────── */
+
+button:not(:disabled):active {
+  transform: scale(0.98);
+  transition: transform 80ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):active {
+    transform: none;
+  }
+}
+
+/* ── Input focus ring standardization ────────────────────────────────────── */
+
+.clnst-search-input:focus {
+  border-color: var(--primary, #000000);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Success state pill (missing variant) ────────────────────────────────── */
+
+.status-pill--in-progress {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #90caf9;
+}
+
+.status-pill--refunded {
+  background: #f3e8ff;
+  color: #6b21a8;
+  border: 1px solid #d8b4fe;
+}
+
+.status-pill--suspended {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.status-pill--deactivated {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+/* ── Skip to main content link ────────────────────────────────────────────── */
+
+.skip-to-main {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  background: var(--primary, #000000);
+  color: var(--on-primary, #ffffff);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 0 0 0.25rem 0.25rem;
+  text-decoration: none;
+  transition: top 200ms ease;
+}
+
+.skip-to-main:focus {
+  top: 0;
+}

@@ -318,6 +318,24 @@ const router = createRouter({
       component: () => import('../pages/admin/AdminDashboard.vue'),
     },
     {
+      path: '/admin/ops',
+      name: 'OperationsConsole',
+      meta: { title: 'Operations Console', requiresAuth: true, requiresRole: 'admin' },
+      component: () => import('../pages/admin/OperationsConsole.vue'),
+    },
+    {
+      path: '/admin/ops/:bookingId',
+      name: 'OperationsConsoleBooking',
+      meta: { title: 'Operations Console', requiresAuth: true, requiresRole: 'admin' },
+      component: () => import('../pages/admin/OperationsConsole.vue'),
+    },
+    {
+      path: '/admin/financial-close',
+      name: 'FinancialCloseDashboard',
+      meta: { title: 'Financial Close', requiresAuth: true, requiresRole: 'admin' },
+      component: () => import('../pages/admin/FinancialCloseDashboard.vue'),
+    },
+    {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       redirect: { name: 'Home' },

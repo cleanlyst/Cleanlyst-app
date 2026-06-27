@@ -1,21 +1,7 @@
 <template>
   <main class="pt-24 pb-24 px-6 max-w-7xl mx-auto">
 
-    <!-- Payment Success -->
-    <div v-if="paymentSuccess" class="max-w-3xl mx-auto text-center py-24 space-y-6">
-      <span class="material-symbols-outlined text-6xl text-green-600 block success-icon">check_circle</span>
-      <h1 class="font-h1 text-h1 text-primary">Payment Successful</h1>
-      <p class="font-body text-body text-secondary">Your booking has been successfully placed.</p>
-      <button
-        class="inline-block px-8 py-3 bg-primary text-white font-label-md"
-        @click="router.push({ name: 'CustomerBookings' })"
-      >
-        Continue
-      </button>
-    </div>
-
     <!-- Wizard -->
-    <div v-else>
 
       <!-- Header + Progress -->
       <section class="mb-10 max-w-3xl mx-auto">
@@ -477,13 +463,11 @@
           ← Back
         </button>
       </div>
-    </div>
   </main>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import { createBookingRequest } from '@/services/bookingService'
 import { startInitialPayment } from '@/services/payments/paymentOrchestrator'
@@ -520,12 +504,10 @@ const PROPERTY_TYPE_OPTIONS = [
   { value: 'other', label: 'Other' },
 ]
 
-const router = useRouter()
 const auth = useAuthStore()
 const prefsStore = useCustomerPreferencesStore()
 
 const step = ref(1)
-const paymentSuccess = ref(false)
 
 // Step 1
 const selectedServiceSlug = ref('')
@@ -886,16 +868,8 @@ async function confirmAndPay() {
     if (!booking?.id) throw new Error('Booking creation failed — no ID returned')
 
     void track('CHECKOUT_STARTED', { booking_id: booking.id, user_id: auth.userId ?? undefined })
-    const paymentResult = await startInitialPayment(booking.id)
 
-    if (paymentResult.redirectUrl) {
-      // Stripe Checkout — browser navigates to Stripe's hosted payment page.
-      // paymentSuccess.value is set on return via the checkout redirect URL.
-      window.location.href = paymentResult.redirectUrl
-      return
-    }
-
-    // Simulation mode — payment RPC ran synchronously, booking is updated.
+    // Save address preferences before leaving the page (best-effort, non-fatal)
     if (saveAsPreferences.value) {
       try {
         await prefsStore.save({
@@ -906,11 +880,16 @@ async function confirmAndPay() {
           notes: notes.value || null,
         })
       } catch {
-        // Non-fatal — booking succeeded, preferences save failure is acceptable
+        // Non-fatal
       }
     }
 
-    paymentSuccess.value = true
+    const paymentResult = await startInitialPayment(booking.id)
+    // Always redirects to Stripe Checkout — browser navigates away.
+    // The user returns to /checkout/success after payment.
+    if (paymentResult.redirectUrl) {
+      window.location.href = paymentResult.redirectUrl
+    }
   } catch (e) {
     payError.value = toUserMessage(e, 'Payment failed. Please try again.')
   } finally {

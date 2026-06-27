@@ -55,7 +55,12 @@ async function callFunction<TResponse = unknown, TPayload extends object = objec
 
   const data = await response.json()
   if (!response.ok) {
-    throw new Error(data.error ?? 'Function call failed')
+    // Structured error: { success, code, message, details } — or legacy { error }
+    const msg = data.message ?? data.error ?? 'Function call failed'
+    const err = new Error(msg) as Error & { code?: string; details?: string }
+    err.code    = data.code
+    err.details = data.details
+    throw err
   }
 
   return data as TResponse
@@ -79,8 +84,14 @@ export interface CreateCheckoutSessionResult {
 
 export async function createCheckoutSession(
   bookingId: string,
+  successUrl: string,
+  cancelUrl: string,
 ): Promise<CreateCheckoutSessionResult> {
-  return callFunction('create-checkout-session', { booking_id: bookingId })
+  return callFunction('create-checkout-session', {
+    booking_id:  bookingId,
+    success_url: successUrl,
+    cancel_url:  cancelUrl,
+  })
 }
 
 export interface ProcessPayoutResult {

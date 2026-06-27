@@ -174,6 +174,28 @@
               Your cleaner has updated the quote. No additional payment is required.
             </div>
 
+            <!-- Retry payment: booking created but Stripe checkout was cancelled -->
+            <div
+              v-if="booking.status === 'pending_request' && booking.payment_status === 'unpaid'"
+              class="estimate-card"
+              data-testid="retry-payment-card"
+            >
+              <p class="estimate-label">Payment Required</p>
+              <p class="estimate-note">
+                Your booking is saved but payment has not been completed yet.
+              </p>
+              <p v-if="payModalError" class="text-sm text-red-600 mt-1" role="alert">{{ payModalError }}</p>
+              <button
+                type="button"
+                class="btn-primary"
+                :disabled="paymentProcessing"
+                data-testid="retry-payment-btn"
+                @click="retryInitialPayment"
+              >
+                {{ paymentProcessing ? 'Redirecting…' : `Complete Payment — ${formatPence(booking.quote_cents ?? 0, booking.currency ?? 'GBP')}` }}
+              </button>
+            </div>
+
             <!-- Legacy: pre-new-flow bookings that still require customer confirmation -->
             <button
               v-if="booking.status === 'completion_pending_customer'"
@@ -597,7 +619,7 @@ import {
   reportNoShowOverdue,
   type BookingDetailRow,
 } from '@/services/bookingService'
-import { startAdditionalPayment } from '@/services/payments/paymentOrchestrator'
+import { startAdditionalPayment, startInitialPayment } from '@/services/payments/paymentOrchestrator'
 import { cancelAsCustomer } from '@/services/bookingLifecycleService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import BookingTimeline from '@/components/BookingTimeline.vue'
@@ -983,13 +1005,33 @@ async function confirmPayment() {
   payModalError.value = ''
   successMessage.value = ''
   try {
-    await startAdditionalPayment(bookingId)
+    const result = await startAdditionalPayment(bookingId)
+    if (result.redirectUrl) {
+      // Stripe Checkout — navigate away; success page handles confirmation
+      window.location.href = result.redirectUrl
+      return
+    }
     await refreshBooking()
     paySuccess.value = true
     void track('CHECKOUT_COMPLETED', { booking_id: bookingId, user_id: auth.userId ?? undefined })
   } catch (e) {
     payModalError.value = toUserMessage(e, 'Failed to process payment. Please try again.')
   } finally {
+    paymentProcessing.value = false
+  }
+}
+
+async function retryInitialPayment() {
+  if (paymentProcessing.value) return
+  paymentProcessing.value = true
+  payModalError.value = ''
+  try {
+    const result = await startInitialPayment(bookingId)
+    if (result.redirectUrl) {
+      window.location.href = result.redirectUrl
+    }
+  } catch (e) {
+    payModalError.value = toUserMessage(e, 'Failed to restart payment. Please try again.')
     paymentProcessing.value = false
   }
 }

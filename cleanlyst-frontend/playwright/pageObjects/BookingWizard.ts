@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test'
 import { expect } from '@playwright/test'
 import { futureDate, PROPERTY_DATA } from '../helpers/dataFactory'
+import { completeStripeHostedCheckout } from '../helpers/stripe'
 
 export interface WizardOptions {
   daysAhead?:   number
@@ -54,19 +55,46 @@ export class BookingWizard {
   }
 
   // ── Step 5 — confirm & pay ──────────────────────────────────────────────────
-
+  //
+  // Clicking "Confirm and Pay" triggers a Stripe Checkout redirect.
+  // This method handles the full round-trip:
+  //   Wizard → Stripe hosted checkout → /checkout/success (our app)
+  //
   async confirmAndPay(): Promise<void> {
     const btn = this.page.getByTestId('confirm-pay-btn')
       .or(this.page.getByRole('button', { name: /confirm and pay/i }))
     await expect(btn).toBeEnabled({ timeout: 15_000 })
     await btn.click()
-    await expect(this.page.locator('text=Payment Successful')).toBeVisible({ timeout: 30_000 })
+
+    // Wait for redirect to Stripe's hosted checkout page
+    await this.page.waitForURL(/checkout\.stripe\.com/, { timeout: 20_000 })
+
+    // Fill in test card details and submit
+    await completeStripeHostedCheckout(this.page)
+
+    // Stripe redirects back to our /checkout/success page
+    await this.page.waitForURL(/\/checkout\/success/, { timeout: 30_000 })
+
+    // Wait for the success state (webhook confirmed or timeout)
+    await expect(
+      this.page.locator('[data-testid="checkout-success"], [data-testid="checkout-timeout"]'),
+    ).toBeVisible({ timeout: 35_000 })
   }
 
   async dismissSuccess(): Promise<void> {
-    const continueBtn = this.page.getByRole('button', { name: /continue/i })
-    if (await continueBtn.isVisible()) await continueBtn.click()
-    await expect(this.page).toHaveURL(/customer\/dashboard/, { timeout: 10_000 })
+    // On the /checkout/success page, click "View Booking" or "Go to Dashboard"
+    const viewBooking  = this.page.getByRole('button', { name: /view booking/i })
+    const goDashboard  = this.page.getByRole('link', { name: /go to dashboard/i })
+    const firstAction  = viewBooking.or(goDashboard)
+
+    if (await firstAction.isVisible({ timeout: 5_000 })) {
+      await firstAction.first().click()
+    }
+
+    await expect(this.page).toHaveURL(
+      /customer\/dashboard|dashboard\/bookings/,
+      { timeout: 10_000 },
+    )
   }
 
   // ── Full happy-path convenience ─────────────────────────────────────────────

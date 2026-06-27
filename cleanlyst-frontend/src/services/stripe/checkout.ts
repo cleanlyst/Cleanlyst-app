@@ -5,31 +5,37 @@ export interface CheckoutSession {
   sessionId: string
 }
 
+function buildCheckoutUrls(): { successUrl: string; cancelUrl: string } {
+  const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  return {
+    successUrl: `${origin}/checkout/success`,
+    cancelUrl:  `${origin}/checkout/cancel`,
+  }
+}
+
 /**
  * Calls the create-checkout-session Edge Function and returns the Stripe-hosted
  * checkout URL and session ID.
  *
- * BookingService calls this — components should never call paymentService directly.
+ * The success/cancel redirect targets are derived from the current window origin,
+ * so they work correctly in dev, staging, and production without per-environment
+ * env vars on the frontend.
  */
 export async function initiateCheckoutSession(bookingId: string): Promise<CheckoutSession> {
-  const result = await createCheckoutSession(bookingId)
+  const { successUrl, cancelUrl } = buildCheckoutUrls()
+  const result = await createCheckoutSession(bookingId, successUrl, cancelUrl)
   return {
     checkoutUrl: result.checkout_url,
-    sessionId: result.checkout_session_id,
+    sessionId:   result.checkout_session_id,
   }
 }
 
 /**
  * Initiates checkout and immediately redirects the browser to Stripe's hosted
  * checkout page. Control returns only if the redirect fails.
- *
- * Phase 2: After payment, Stripe redirects back to the success_url configured
- * in the create-checkout-session Edge Function. The success_url should include
- * {CHECKOUT_SESSION_ID} so the frontend can validate the session on return.
  */
 export async function redirectToCheckout(bookingId: string): Promise<never> {
   const session = await initiateCheckoutSession(bookingId)
   window.location.href = session.checkoutUrl
-  // Location change is async in some browsers — this path is only reached on failure
   throw new Error('Redirect to Stripe Checkout failed — window.location.href did not navigate')
 }

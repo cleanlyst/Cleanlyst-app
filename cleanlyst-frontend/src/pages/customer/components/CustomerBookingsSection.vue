@@ -393,7 +393,12 @@ async function confirmPayment() {
   payProcessing.value = true
   payError.value = ''
   try {
-    await startAdditionalPayment(bookingId)
+    const result = await startAdditionalPayment(bookingId)
+    if (result.redirectUrl) {
+      // Stripe Checkout — navigate away; success page handles confirmation
+      window.location.href = result.redirectUrl
+      return
+    }
     optimisticPaidIds.value = new Set([...optimisticPaidIds.value, bookingId])
     paySuccess.value = true
     await list.fetch()

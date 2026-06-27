@@ -138,6 +138,18 @@ const router = createRouter({
       component: () => import('../pages/customer/booking/SearchCleaner.vue'),
     },
     {
+      path: '/checkout/success',
+      name: 'CheckoutSuccess',
+      meta: { title: 'Payment Successful', requiresAuth: true, requiresRole: 'customer' },
+      component: () => import('../pages/customer/CheckoutSuccessPage.vue'),
+    },
+    {
+      path: '/checkout/cancel',
+      name: 'CheckoutCancel',
+      meta: { title: 'Payment Cancelled', requiresAuth: true, requiresRole: 'customer' },
+      component: () => import('../pages/customer/CheckoutCancelPage.vue'),
+    },
+    {
       path: '/customer/dashboard',
       name: 'CustomerDashboard',
       meta: { title: 'Customer Dashboard', requiresAuth: true, requiresRole: 'customer' },

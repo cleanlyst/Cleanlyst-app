@@ -43,7 +43,7 @@ test.describe('Admin dashboard', () => {
     await page.goto('/admin/dashboard')
     await page.waitForLoadState('networkidle')
 
-    const nav = page.getByRole('navigation').first()
+    const nav = page.getByRole('complementary').getByRole('navigation')
     await expect(nav).toBeVisible()
 
     // Core admin links
@@ -59,14 +59,14 @@ test.describe('Admin dashboard', () => {
     // At least one metric/stat value block should be visible
     const metrics = page.locator('[class*="stat"], [class*="metric"], [class*="kpi"], [class*="card"]').first()
     const headings = page.getByRole('heading').nth(1)
-    await expect(headings.or(metrics)).toBeVisible({ timeout: 10_000 })
+    await expect(headings.or(metrics).first()).toBeVisible({ timeout: 10_000 })
   })
 
   test('D0.5 — navigating via sidebar Cleaners link reaches cleaners page', async ({ adminPage: page }) => {
     await page.goto('/admin/dashboard')
     await page.waitForLoadState('networkidle')
 
-    const nav = page.getByRole('navigation').first()
+    const nav = page.getByRole('complementary').getByRole('navigation')
     const cleanersLink = nav.getByRole('link', { name: /cleaners/i }).first()
     await expect(cleanersLink).toBeVisible()
     await cleanersLink.click()
@@ -78,7 +78,7 @@ test.describe('Admin dashboard', () => {
     await page.goto('/admin/dashboard')
     await page.waitForLoadState('networkidle')
 
-    const nav = page.getByRole('navigation').first()
+    const nav = page.getByRole('complementary').getByRole('navigation')
     const link = nav.getByRole('link', { name: /bookings/i }).first()
     await expect(link).toBeVisible()
     await link.click()
@@ -90,7 +90,7 @@ test.describe('Admin dashboard', () => {
     await page.goto('/admin/dashboard')
     await page.waitForLoadState('networkidle')
 
-    const nav = page.getByRole('navigation').first()
+    const nav = page.getByRole('complementary').getByRole('navigation')
     const opsLink = nav.getByRole('link', { name: /ops console|operations/i }).first()
     if (await opsLink.isVisible({ timeout: 3_000 })) {
       await opsLink.click()
@@ -103,7 +103,7 @@ test.describe('Admin dashboard', () => {
     await page.goto('/admin/dashboard')
     await page.waitForLoadState('networkidle')
 
-    const nav = page.getByRole('navigation').first()
+    const nav = page.getByRole('complementary').getByRole('navigation')
     const link = nav.getByRole('link', { name: /financial close/i }).first()
     if (await link.isVisible({ timeout: 3_000 })) {
       await link.click()

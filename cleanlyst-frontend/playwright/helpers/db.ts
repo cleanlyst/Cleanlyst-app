@@ -89,20 +89,38 @@ export async function latestBookingForCustomer(
   return data as { id: string; status: string; payment_status: string } | null
 }
 
-export async function wipeDynamic(customerId: string): Promise<void> {
-  const { data: rows } = await db.from('bookings').select('id').eq('customer_id', customerId)
-  const ids = ((rows ?? []) as { id: string }[]).map((r) => r.id)
+export async function wipeDynamic(customerId: string, cleanerId?: string): Promise<void> {
+  // Collect booking IDs to wipe: all customer bookings + any stale bookings where
+  // the E2E cleaner was assigned by a test but the customer differs (prevents conflict bleed).
+  const { data: custRows } = await db.from('bookings').select('id').eq('customer_id', customerId)
+  const custIds = ((custRows ?? []) as { id: string }[]).map((r) => r.id)
+
+  let cleanerIds: string[] = []
+  if (cleanerId) {
+    // Any booking assigned to the E2E cleaner that is not already covered by custIds
+    // and that is in a non-terminal state (terminal = completed, cancelled, refunded)
+    const { data: clRows } = await db
+      .from('bookings')
+      .select('id')
+      .eq('cleaner_id', cleanerId)
+      .not('customer_id', 'eq', customerId)
+      .not('status', 'in', '("completed","cancelled","refunded","payout_released")')
+    cleanerIds = ((clRows ?? []) as { id: string }[]).map((r) => r.id)
+  }
+
+  const ids = [...new Set([...custIds, ...cleanerIds])]
   if (!ids.length) return
-  // payment_ledger_events: FK is RESTRICT and the trigger blocks CASCADE deletes
-  // (cascade runs as table owner 'postgres', not service_role). Direct service_role
-  // delete works because the trigger bypass fires when current_user = 'service_role'.
+
+  // Delete child rows in dependency order before the booking row itself.
+  // Any table with a FK to bookings must be cleared first to avoid FK violations.
   await db.from('payment_ledger_events').delete().in('booking_id', ids)
-  // transactions = ON DELETE RESTRICT, reviews = NO ACTION — must delete explicitly
   await db.from('transactions').delete().in('booking_id', ids)
   await db.from('reviews').delete().in('booking_id', ids)
-  // All remaining child tables (payments, payouts, booking_status_events,
-  // notifications, messages) have ON DELETE CASCADE and no blocking triggers.
-  await db.from('bookings').delete().eq('customer_id', customerId)
+  await db.from('booking_status_events').delete().in('booking_id', ids)
+  await db.from('notifications').delete().in('booking_id', ids)
+  await db.from('payments').delete().in('booking_id', ids)
+  await db.from('payouts').delete().in('booking_id', ids)
+  await db.from('bookings').delete().in('id', ids)
 }
 
 // ─── Authenticated client helper (uses anon key + user credentials) ───────────

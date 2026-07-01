@@ -62,6 +62,38 @@
           "**/stress/03-viewports.spec.ts"
         ],
         "timeout": 90000
+      },
+      {
+        "outputDir": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox-admin",
+        "name": "firefox-admin",
+        "testDir": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/playwright/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/admin-acceptance/**"
+        ],
+        "timeout": 90000
+      },
+      {
+        "outputDir": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-admin",
+        "name": "webkit-admin",
+        "testDir": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/playwright/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/admin-acceptance/**"
+        ],
+        "timeout": 90000
       }
     ],
     "quiet": false,
@@ -108,347 +140,6 @@
   },
   "suites": [
     {
-      "title": "admin/01-approvals.spec.ts",
-      "file": "admin/01-approvals.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Admin approvals and cleaner management",
-          "file": "admin/01-approvals.spec.ts",
-          "line": 19,
-          "column": 6,
-          "specs": [
-            {
-              "title": "A1.1 — admin can login and reach admin dashboard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3101,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:45:52.367Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "eca97e763a9dbee17893-73af14848a2dc6a057fa",
-              "file": "admin/01-approvals.spec.ts",
-              "line": 46,
-              "column": 3
-            },
-            {
-              "title": "A1.2 — admin sidebar navigation links are present",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2370,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:45:56.051Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "eca97e763a9dbee17893-efa56bbc3d6a8b358a09",
-              "file": "admin/01-approvals.spec.ts",
-              "line": 54,
-              "column": 3
-            },
-            {
-              "title": "A1.3 — admin can navigate to cleaner management page",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2478,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:45:58.427Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "eca97e763a9dbee17893-7941855555b5d91b6e60",
-              "file": "admin/01-approvals.spec.ts",
-              "line": 65,
-              "column": 3
-            },
-            {
-              "title": "A1.4 — admin can approve a pending cleaner application",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [
-                    {
-                      "type": "skip",
-                      "location": {
-                        "file": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/playwright/tests/admin/01-approvals.spec.ts",
-                        "line": 89,
-                        "column": 12
-                      }
-                    }
-                  ],
-                  "expectedStatus": "skipped",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "skipped",
-                      "duration": 2379,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:00.910Z",
-                      "annotations": [
-                        {
-                          "type": "skip",
-                          "location": {
-                            "file": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/playwright/tests/admin/01-approvals.spec.ts",
-                            "line": 89,
-                            "column": 12
-                          }
-                        }
-                      ],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "eca97e763a9dbee17893-763cc50384e72b13a5fb",
-              "file": "admin/01-approvals.spec.ts",
-              "line": 73,
-              "column": 3
-            },
-            {
-              "title": "A1.5 — admin can reject a pending cleaner application",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3754,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:03.295Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "eca97e763a9dbee17893-066cdb2e1198e76f9ec5",
-              "file": "admin/01-approvals.spec.ts",
-              "line": 95,
-              "column": 3
-            },
-            {
-              "title": "A1.6 — booking audit table loads with Booking ID column header",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2328,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:07.057Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "eca97e763a9dbee17893-4d3ed56c6b261eb6ad28",
-              "file": "admin/01-approvals.spec.ts",
-              "line": 129,
-              "column": 3
-            },
-            {
-              "title": "A1.7 — financial audit page loads",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2414,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:09.392Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "eca97e763a9dbee17893-0bdbba4f1f721f687aaf",
-              "file": "admin/01-approvals.spec.ts",
-              "line": 137,
-              "column": 3
-            },
-            {
-              "title": "A1.8 — admin cannot access /customer/dashboard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1786,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:11.812Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "eca97e763a9dbee17893-e71a3b5bc36862c1c7f7",
-              "file": "admin/01-approvals.spec.ts",
-              "line": 145,
-              "column": 3
-            },
-            {
-              "title": "A1.9 — admin cannot access /cleaner/dashboard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1847,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:13.604Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "eca97e763a9dbee17893-d5c5fc29a247800064ed",
-              "file": "admin/01-approvals.spec.ts",
-              "line": 151,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
       "title": "admin/02-payouts-and-refunds.spec.ts",
       "file": "admin/02-payouts-and-refunds.spec.ts",
       "column": 0,
@@ -458,7 +149,7 @@
         {
           "title": "Admin payouts and refunds",
           "file": "admin/02-payouts-and-refunds.spec.ts",
-          "line": 27,
+          "line": 28,
           "column": 6,
           "specs": [
             {
@@ -477,12 +168,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6196,
+                      "duration": 48466,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:46:15.565Z",
+                      "startTime": "2026-07-01T11:40:12.072Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -492,7 +183,7 @@
               ],
               "id": "2347df4889529849d980-7df05b3ae157751f1d29",
               "file": "admin/02-payouts-and-refunds.spec.ts",
-              "line": 71,
+              "line": 82,
               "column": 3
             },
             {
@@ -511,12 +202,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2552,
+                      "duration": 2374,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:46:21.859Z",
+                      "startTime": "2026-07-01T11:41:00.966Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -526,11 +217,11 @@
               ],
               "id": "2347df4889529849d980-8ff4e7518f5595d54cae",
               "file": "admin/02-payouts-and-refunds.spec.ts",
-              "line": 85,
+              "line": 95,
               "column": 3
             },
             {
-              "title": "A2.3 — admin can issue a refund for a completed booking",
+              "title": "A2.3 — invalid booking ID shows \"not found\" message, never [object Object]",
               "ok": true,
               "tags": [],
               "tests": [
@@ -545,12 +236,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7256,
+                      "duration": 2553,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:46:24.416Z",
+                      "startTime": "2026-07-01T11:41:03.347Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -558,13 +249,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "2347df4889529849d980-3ec8b3b2f4c66637b4bb",
+              "id": "2347df4889529849d980-c0796666ff69d4232b7b",
               "file": "admin/02-payouts-and-refunds.spec.ts",
-              "line": 115,
+              "line": 121,
               "column": 3
             },
             {
-              "title": "A2.4 — payout button not shown for pending_request bookings",
+              "title": "A2.4 — valid booking ID shows booking summary with payment details",
               "ok": true,
               "tags": [],
               "tests": [
@@ -579,12 +270,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6187,
+                      "duration": 47885,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:46:31.677Z",
+                      "startTime": "2026-07-01T11:41:05.905Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -592,13 +283,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "2347df4889529849d980-d8d1de8e69784f102a43",
+              "id": "2347df4889529849d980-5c7f8cbfda86bca4d421",
               "file": "admin/02-payouts-and-refunds.spec.ts",
-              "line": 144,
+              "line": 152,
               "column": 3
             },
             {
-              "title": "A2.5 — admin financial audit page shows ledger entries section",
+              "title": "A2.5 — already refunded booking shows eligibility warning, no refund button",
               "ok": true,
               "tags": [],
               "tests": [
@@ -613,12 +304,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2530,
+                      "duration": 47863,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:46:37.872Z",
+                      "startTime": "2026-07-01T11:41:53.796Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -626,13 +317,149 @@
                   "status": "expected"
                 }
               ],
-              "id": "2347df4889529849d980-7ddad08b6445deeaa8c4",
+              "id": "2347df4889529849d980-2d1d04516b76ae262811",
               "file": "admin/02-payouts-and-refunds.spec.ts",
-              "line": 164,
+              "line": 191,
               "column": 3
             },
             {
-              "title": "A2.6 — booking audit shows status event history table",
+              "title": "A2.6 — admin can issue a full refund",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 58161,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T11:42:41.665Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2347df4889529849d980-63805bbb5cd644c22870",
+              "file": "admin/02-payouts-and-refunds.spec.ts",
+              "line": 224,
+              "column": 3
+            },
+            {
+              "title": "A2.7 — admin can issue a partial refund",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 51131,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T11:43:39.833Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2347df4889529849d980-280cd610f783198c243a",
+              "file": "admin/02-payouts-and-refunds.spec.ts",
+              "line": 262,
+              "column": 3
+            },
+            {
+              "title": "A2.8 — duplicate click on Process Refund does not submit twice",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 48773,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T11:44:30.970Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2347df4889529849d980-2d3558fe95b5c900e69c",
+              "file": "admin/02-payouts-and-refunds.spec.ts",
+              "line": 305,
+              "column": 3
+            },
+            {
+              "title": "A2.9 — payout button not shown for pending_request bookings",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 47861,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T11:45:19.749Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2347df4889529849d980-e3916cd6e0e985c34a3c",
+              "file": "admin/02-payouts-and-refunds.spec.ts",
+              "line": 354,
+              "column": 3
+            },
+            {
+              "title": "A2.10 — admin financial audit page shows ledger entries section",
               "ok": true,
               "tags": [],
               "tests": [
@@ -652,7 +479,7 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:46:40.407Z",
+                      "startTime": "2026-07-01T11:46:07.616Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -660,13 +487,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "2347df4889529849d980-cd4aa4ed40cfab97bdf2",
+              "id": "2347df4889529849d980-82e1c9ec90fac13ef256",
               "file": "admin/02-payouts-and-refunds.spec.ts",
-              "line": 178,
+              "line": 374,
               "column": 3
             },
             {
-              "title": "A2.7 — admin reassign flow opens assignment UI",
+              "title": "A2.11 — booking audit shows status event history table",
               "ok": true,
               "tags": [],
               "tests": [
@@ -681,12 +508,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3346,
+                      "duration": 2280,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:46:42.739Z",
+                      "startTime": "2026-07-01T11:46:09.948Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -694,9 +521,43 @@
                   "status": "expected"
                 }
               ],
-              "id": "2347df4889529849d980-13b10d45f15705cb1569",
+              "id": "2347df4889529849d980-1119e616f6dbf222bb59",
               "file": "admin/02-payouts-and-refunds.spec.ts",
-              "line": 191,
+              "line": 387,
+              "column": 3
+            },
+            {
+              "title": "A2.12 — admin reassign flow opens assignment UI",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 90000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2426,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-07-01T11:46:12.233Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2347df4889529849d980-da96c9e25d970a636845",
+              "file": "admin/02-payouts-and-refunds.spec.ts",
+              "line": 399,
               "column": 3
             }
           ]
@@ -704,2105 +565,20 @@
       ]
     },
     {
-      "title": "cleaner/01-registration.spec.ts",
-      "file": "cleaner/01-registration.spec.ts",
+      "title": "admin-acceptance/01-cleaners.spec.ts",
+      "file": "admin-acceptance/01-cleaners.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Cleaner registration",
-          "file": "cleaner/01-registration.spec.ts",
-          "line": 21,
-          "column": 6,
-          "specs": [
-            {
-              "title": "C1.1 — new cleaner registers and lands on dashboard/onboarding",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2001,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:46.320Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "6105d2d109d854b321ed-88a5a4679c5fc25d0645",
-              "file": "cleaner/01-registration.spec.ts",
-              "line": 30,
-              "column": 3
-            },
-            {
-              "title": "C1.2 — cleaner dashboard shows pending approval for cleaner_pending role",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3985,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:48.327Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "6105d2d109d854b321ed-7b88a696bd7bbec9f161",
-              "file": "cleaner/01-registration.spec.ts",
-              "line": 52,
-              "column": 3
-            },
-            {
-              "title": "C1.3 — cleaner cannot access /customer/dashboard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2075,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:52.319Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "6105d2d109d854b321ed-a9afbcfd2e1cdd93cc7c",
-              "file": "cleaner/01-registration.spec.ts",
-              "line": 75,
-              "column": 3
-            },
-            {
-              "title": "C1.4 — cleaner cannot access /admin/dashboard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1994,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:54.399Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "6105d2d109d854b321ed-9517599bde21d798c5b3",
-              "file": "cleaner/01-registration.spec.ts",
-              "line": 80,
-              "column": 3
-            },
-            {
-              "title": "C1.5 — cleaner is redirected away from /book",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2159,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:56.398Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "6105d2d109d854b321ed-326debf71f09488b3740",
-              "file": "cleaner/01-registration.spec.ts",
-              "line": 87,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "cleaner/02-booking-flow.spec.ts",
-      "file": "cleaner/02-booking-flow.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Cleaner booking flow",
-          "file": "cleaner/02-booking-flow.spec.ts",
-          "line": 34,
-          "column": 6,
-          "specs": [
-            {
-              "title": "CL2.1 — cleaner accepts booking, status advances to paid",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6586,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:46:58.649Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2829eb9931421660b28-f6715e8cde0175439722",
-              "file": "cleaner/02-booking-flow.spec.ts",
-              "line": 67,
-              "column": 3
-            },
-            {
-              "title": "CL2.2 — cleaner declines booking, status changes",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6671,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:05.323Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2829eb9931421660b28-f89958687a5a44c32168",
-              "file": "cleaner/02-booking-flow.spec.ts",
-              "line": 81,
-              "column": 3
-            },
-            {
-              "title": "CL2.3 — cleaner can submit a revised estimate",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 7192,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:12.000Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2829eb9931421660b28-f7a423ad34bf183b11dd",
-              "file": "cleaner/02-booking-flow.spec.ts",
-              "line": 95,
-              "column": 3
-            },
-            {
-              "title": "CL2.4 — cleaner starts cleaning, status becomes in_progress",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 7081,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:19.199Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2829eb9931421660b28-40f75f13bfd3e44abcf5",
-              "file": "cleaner/02-booking-flow.spec.ts",
-              "line": 118,
-              "column": 3
-            },
-            {
-              "title": "CL2.5 — cleaner ends cleaning, status becomes completed",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 7454,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:26.286Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2829eb9931421660b28-4d0ddb35d6d21f7dbbbd",
-              "file": "cleaner/02-booking-flow.spec.ts",
-              "line": 145,
-              "column": 3
-            },
-            {
-              "title": "CL2.6 — cleaner cannot attend triggers appropriate status change",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 7979,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:33.751Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2829eb9931421660b28-ded95fc3c611cef1adf5",
-              "file": "cleaner/02-booking-flow.spec.ts",
-              "line": 180,
-              "column": 3
-            },
-            {
-              "title": "CL2.7 — earnings page loads and shows total earnings",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2984,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:41.734Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2829eb9931421660b28-ede978f19028cd3a7136",
-              "file": "cleaner/02-booking-flow.spec.ts",
-              "line": 202,
-              "column": 3
-            },
-            {
-              "title": "CL2.8 — cleaner cannot start a booking they did not accept",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2728,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:44.724Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2829eb9931421660b28-1b3563ba64bc08619fc5",
-              "file": "cleaner/02-booking-flow.spec.ts",
-              "line": 210,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "customer/01-registration.spec.ts",
-      "file": "customer/01-registration.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Customer registration",
-          "file": "customer/01-registration.spec.ts",
-          "line": 18,
-          "column": 6,
-          "specs": [
-            {
-              "title": "1.1 — new customer registers, lands on dashboard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2060,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:47.466Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b11076e5826d4443bcb5-2650f474276b61c71702",
-              "file": "customer/01-registration.spec.ts",
-              "line": 29,
-              "column": 3
-            },
-            {
-              "title": "1.2 — duplicate email is rejected with error",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4259,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:49.531Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b11076e5826d4443bcb5-19a4c0a3399ffcd11cc2",
-              "file": "customer/01-registration.spec.ts",
-              "line": 55,
-              "column": 3
-            },
-            {
-              "title": "1.3 — invalid credentials show error, stay on login",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1358,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:53.795Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b11076e5826d4443bcb5-b639797d471710a2dc33",
-              "file": "customer/01-registration.spec.ts",
-              "line": 77,
-              "column": 3
-            },
-            {
-              "title": "1.4 — unauthenticated access to protected route redirects to /auth/login",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 649,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:55.157Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b11076e5826d4443bcb5-c8843bc7c9311d6f94bb",
-              "file": "customer/01-registration.spec.ts",
-              "line": 88,
-              "column": 3
-            },
-            {
-              "title": "1.5 — password fields are masked",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1086,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:55.811Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b11076e5826d4443bcb5-a074dde106a173fba582",
-              "file": "customer/01-registration.spec.ts",
-              "line": 95,
-              "column": 3
-            }
-          ]
-        },
-        {
-          "title": "Customer role access control",
-          "file": "customer/01-registration.spec.ts",
-          "line": 105,
-          "column": 6,
-          "specs": [
-            {
-              "title": "customer cannot access /admin/dashboard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1970,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:57.055Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b11076e5826d4443bcb5-f8b25fd899bd805d99af",
-              "file": "customer/01-registration.spec.ts",
-              "line": 106,
-              "column": 3
-            },
-            {
-              "title": "customer cannot access /cleaner/dashboard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1972,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:47:59.031Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b11076e5826d4443bcb5-279aa0cc1ce74b51c580",
-              "file": "customer/01-registration.spec.ts",
-              "line": 111,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "customer/02-booking-creation.spec.ts",
-      "file": "customer/02-booking-creation.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Booking creation wizard",
-          "file": "customer/02-booking-creation.spec.ts",
-          "line": 20,
-          "column": 6,
-          "specs": [
-            {
-              "title": "2.1 — customer completes full wizard, booking created in DB",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4637,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:01.016Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "957510229f9224e2daef-9717908f223c57aef13b",
-              "file": "customer/02-booking-creation.spec.ts",
-              "line": 33,
-              "column": 3
-            },
-            {
-              "title": "2.2 — step 3 requires property type before advancing",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2172,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:05.703Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "957510229f9224e2daef-57eeb7cd10fdced4797a",
-              "file": "customer/02-booking-creation.spec.ts",
-              "line": 72,
-              "column": 3
-            },
-            {
-              "title": "2.3 — back button on step 2 returns to step 1",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2350,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:07.883Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "957510229f9224e2daef-d8bfbcf9eec0d260ac0f",
-              "file": "customer/02-booking-creation.spec.ts",
-              "line": 90,
-              "column": 3
-            },
-            {
-              "title": "2.4 — customer can view cleaner profile on step 4",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2174,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:10.237Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "957510229f9224e2daef-e0d8a798c262c3f12260",
-              "file": "customer/02-booking-creation.spec.ts",
-              "line": 108,
-              "column": 3
-            },
-            {
-              "title": "2.5 — /book redirects unauthenticated users to login",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 613,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:12.415Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "957510229f9224e2daef-5fb3e0db932415f13a46",
-              "file": "customer/02-booking-creation.spec.ts",
-              "line": 131,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "customer/03-stripe-checkout.spec.ts",
-      "file": "customer/03-stripe-checkout.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Stripe checkout",
-          "file": "customer/03-stripe-checkout.spec.ts",
-          "line": 25,
-          "column": 6,
-          "specs": [
-            {
-              "title": "3.1 — Payment Successful is shown after checkout",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3594,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:13.040Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2e2c721ce4800eac2afc-bf65ba389e36c87a245f",
-              "file": "customer/03-stripe-checkout.spec.ts",
-              "line": 38,
-              "column": 3
-            },
-            {
-              "title": "3.2 — booking.payment_status = captured after checkout",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3632,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:16.681Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2e2c721ce4800eac2afc-e0ebc412a19e5f5fd915",
-              "file": "customer/03-stripe-checkout.spec.ts",
-              "line": 60,
-              "column": 3
-            },
-            {
-              "title": "3.3 — payment ledger has at least one event after checkout",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3652,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:20.318Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2e2c721ce4800eac2afc-38b4201660cc28c3c2a3",
-              "file": "customer/03-stripe-checkout.spec.ts",
-              "line": 71,
-              "column": 3
-            },
-            {
-              "title": "3.4 — refreshing after payment shows dashboard, not duplicate payment",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4500,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:23.976Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2e2c721ce4800eac2afc-899cc02940bb55281e07",
-              "file": "customer/03-stripe-checkout.spec.ts",
-              "line": 91,
-              "column": 3
-            },
-            {
-              "title": "3.5 — pressing back after payment does not navigate to payment form",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4351,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:28.484Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2e2c721ce4800eac2afc-16ad877059a6205c9ffa",
-              "file": "customer/03-stripe-checkout.spec.ts",
-              "line": 130,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "customer/04-booking-management.spec.ts",
-      "file": "customer/04-booking-management.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Booking management",
-          "file": "customer/04-booking-management.spec.ts",
-          "line": 33,
-          "column": 6,
-          "specs": [
-            {
-              "title": "4.1 — customer sees booking detail with correct status and cancel button",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4727,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:32.850Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "34e14c1558616536667b-611b67477b131f30f00c",
-              "file": "customer/04-booking-management.spec.ts",
-              "line": 48,
-              "column": 3
-            },
-            {
-              "title": "4.2 — customer cancels pending_request booking, status becomes cancelled",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5675,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:37.655Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "34e14c1558616536667b-27718e51cc056ed72f08",
-              "file": "customer/04-booking-management.spec.ts",
-              "line": 70,
-              "column": 3
-            },
-            {
-              "title": "4.3 — cancel button is not shown once booking is paid",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5891,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:43.335Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "34e14c1558616536667b-6f41fe9052696ad581bb",
-              "file": "customer/04-booking-management.spec.ts",
-              "line": 93,
-              "column": 3
-            },
-            {
-              "title": "4.4 — customer can confirm completion once cleaning is done",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6394,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:49.232Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "34e14c1558616536667b-34d8d5c7323d9748cb2f",
-              "file": "customer/04-booking-management.spec.ts",
-              "line": 115,
-              "column": 3
-            },
-            {
-              "title": "4.5 — rebook button on cancelled booking starts new booking wizard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4614,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:48:55.632Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "34e14c1558616536667b-762df7eae93959064479",
-              "file": "customer/04-booking-management.spec.ts",
-              "line": 150,
-              "column": 3
-            },
-            {
-              "title": "4.6 — booking detail timeline shows creation event",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4642,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:00.251Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "34e14c1558616536667b-e405c701e8b8591e61ad",
-              "file": "customer/04-booking-management.spec.ts",
-              "line": 171,
-              "column": 3
-            },
-            {
-              "title": "4.7 — customer can approve a pending revised estimate",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5627,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:04.899Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "34e14c1558616536667b-61b3ff6650e644192956",
-              "file": "customer/04-booking-management.spec.ts",
-              "line": 188,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "customer/05-review.spec.ts",
-      "file": "customer/05-review.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Customer reviews",
-          "file": "customer/05-review.spec.ts",
-          "line": 23,
-          "column": 6,
-          "specs": [
-            {
-              "title": "5.1 — leave review button visible after booking completed",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5828,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:10.543Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "aa3a8a4bd30f679e10cc-c636b02694a74c896c55",
-              "file": "customer/05-review.spec.ts",
-              "line": 55,
-              "column": 3
-            },
-            {
-              "title": "5.2 — 5-star review submitted with comment",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [
-                    {
-                      "type": "skip",
-                      "location": {
-                        "file": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/playwright/tests/customer/05-review.spec.ts",
-                        "line": 83,
-                        "column": 12
-                      }
-                    }
-                  ],
-                  "expectedStatus": "skipped",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "skipped",
-                      "duration": 5622,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:16.473Z",
-                      "annotations": [
-                        {
-                          "type": "skip",
-                          "location": {
-                            "file": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/playwright/tests/customer/05-review.spec.ts",
-                            "line": 83,
-                            "column": 12
-                          }
-                        }
-                      ],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "aa3a8a4bd30f679e10cc-577c4bff0319f22d9de4",
-              "file": "customer/05-review.spec.ts",
-              "line": 74,
-              "column": 3
-            },
-            {
-              "title": "5.3 — 1-star review submitted with comment",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [
-                    {
-                      "type": "skip",
-                      "location": {
-                        "file": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/playwright/tests/customer/05-review.spec.ts",
-                        "line": 109,
-                        "column": 12
-                      }
-                    }
-                  ],
-                  "expectedStatus": "skipped",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "skipped",
-                      "duration": 4640,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:22.100Z",
-                      "annotations": [
-                        {
-                          "type": "skip",
-                          "location": {
-                            "file": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/playwright/tests/customer/05-review.spec.ts",
-                            "line": 109,
-                            "column": 12
-                          }
-                        }
-                      ],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "aa3a8a4bd30f679e10cc-a35bb85bfe4aaa634172",
-              "file": "customer/05-review.spec.ts",
-              "line": 101,
-              "column": 3
-            },
-            {
-              "title": "5.4 — review button not shown on pending_request booking",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4739,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:26.745Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "aa3a8a4bd30f679e10cc-c93949e8acf29ee6a377",
-              "file": "customer/05-review.spec.ts",
-              "line": 126,
-              "column": 3
-            },
-            {
-              "title": "5.5 — rapid double-click on submit review does not create two reviews",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [
-                    {
-                      "type": "skip",
-                      "location": {
-                        "file": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/playwright/tests/customer/05-review.spec.ts",
-                        "line": 148,
-                        "column": 12
-                      }
-                    }
-                  ],
-                  "expectedStatus": "skipped",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "skipped",
-                      "duration": 5126,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:31.491Z",
-                      "annotations": [
-                        {
-                          "type": "skip",
-                          "location": {
-                            "file": "/Users/Ghost/Desktop/Cleanlyst-app/cleanlyst-frontend/playwright/tests/customer/05-review.spec.ts",
-                            "line": 148,
-                            "column": 12
-                          }
-                        }
-                      ],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "aa3a8a4bd30f679e10cc-c00162299657bfbe3ea1",
-              "file": "customer/05-review.spec.ts",
-              "line": 140,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "stress/01-double-click.spec.ts",
-      "file": "stress/01-double-click.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Double-click protection",
-          "file": "stress/01-double-click.spec.ts",
-          "line": 23,
-          "column": 6,
-          "specs": [
-            {
-              "title": "S1.1 — rapid double-click on Confirm & Pay creates exactly one booking",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3858,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:36.629Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b2b347d847d1f4a45227-c3b686a2f064838a0441",
-              "file": "stress/01-double-click.spec.ts",
-              "line": 36,
-              "column": 3
-            },
-            {
-              "title": "S1.2 — Confirm & Pay button disables immediately after click",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3121,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:40.567Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b2b347d847d1f4a45227-1e5cda91924b59a2cadf",
-              "file": "stress/01-double-click.spec.ts",
-              "line": 67,
-              "column": 3
-            },
-            {
-              "title": "S1.3 — double-clicking Book on cleaner card selects only one cleaner",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3629,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:43.693Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b2b347d847d1f4a45227-4d5bf619acb819bff51c",
-              "file": "stress/01-double-click.spec.ts",
-              "line": 91,
-              "column": 3
-            },
-            {
-              "title": "S1.4 — double-clicking Cancel does not throw an error",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 7231,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:47.328Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b2b347d847d1f4a45227-66ff64cd9fa4f45f4507",
-              "file": "stress/01-double-click.spec.ts",
-              "line": 113,
-              "column": 3
-            },
-            {
-              "title": "S1.5 — double-clicking Accept as cleaner does not create two acceptance events",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 8552,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:49:54.564Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b2b347d847d1f4a45227-eb7d80cad3ac9077367a",
-              "file": "stress/01-double-click.spec.ts",
-              "line": 145,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "stress/02-refresh-resilience.spec.ts",
-      "file": "stress/02-refresh-resilience.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Refresh and navigation resilience",
-          "file": "stress/02-refresh-resilience.spec.ts",
-          "line": 24,
-          "column": 6,
-          "specs": [
-            {
-              "title": "S2.1 — refresh on wizard step 2 does not crash; user stays in booking flow",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 3044,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:50:03.134Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2c9ca500e90601a1f79-bfd19059d81a7e7e5f19",
-              "file": "stress/02-refresh-resilience.spec.ts",
-              "line": 37,
-              "column": 3
-            },
-            {
-              "title": "S2.2 — refresh on confirm-pay step does not create duplicate booking",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4321,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:50:06.223Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2c9ca500e90601a1f79-c055b3b1346896ef18d4",
-              "file": "stress/02-refresh-resilience.spec.ts",
-              "line": 56,
-              "column": 3
-            },
-            {
-              "title": "S2.3 — refresh on Payment Successful screen is safe",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4719,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:50:10.551Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2c9ca500e90601a1f79-b0aa381b517828a2ec5a",
-              "file": "stress/02-refresh-resilience.spec.ts",
-              "line": 83,
-              "column": 3
-            },
-            {
-              "title": "S2.4 — back button from dashboard after payment does not re-enter wizard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4457,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:50:15.277Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2c9ca500e90601a1f79-aa3e84906f492e0d155f",
-              "file": "stress/02-refresh-resilience.spec.ts",
-              "line": 102,
-              "column": 3
-            },
-            {
-              "title": "S2.5 — clearing storage from dashboard redirects to login on next navigation",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1854,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:50:19.742Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2c9ca500e90601a1f79-2e105001c9de00aad0ec",
-              "file": "stress/02-refresh-resilience.spec.ts",
-              "line": 123,
-              "column": 3
-            },
-            {
-              "title": "S2.6 — booking detail is consistent across two tabs",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5034,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:50:21.601Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2c9ca500e90601a1f79-38c93ced0f6a848c72a6",
-              "file": "stress/02-refresh-resilience.spec.ts",
-              "line": 138,
-              "column": 3
-            },
-            {
-              "title": "S2.7 — going offline then back online does not corrupt booking state",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5892,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:50:26.643Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2c9ca500e90601a1f79-e8b693e6375785ad855b",
-              "file": "stress/02-refresh-resilience.spec.ts",
-              "line": 168,
-              "column": 3
-            },
-            {
-              "title": "S2.8 — loading states appear under slow network",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 8844,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:50:32.544Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "a2c9ca500e90601a1f79-956de2422dee6e3c3f45",
-              "file": "stress/02-refresh-resilience.spec.ts",
-              "line": 196,
-              "column": 3
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "title": "stress/03-viewports.spec.ts",
-      "file": "stress/03-viewports.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Mobile viewport (375×667)",
-          "file": "stress/03-viewports.spec.ts",
+          "title": "Admin — All Cleaners",
+          "file": "admin-acceptance/01-cleaners.spec.ts",
           "line": 28,
           "column": 6,
           "specs": [
             {
-              "title": "M1 — login page is usable on mobile",
+              "title": "CL1.0 — REGRESSION: All Cleaners page loads without SQL error (user_id ambiguity fix)",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2817,12 +593,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1053,
+                      "duration": 2456,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:50:41.402Z",
+                      "startTime": "2026-07-01T11:46:15.145Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2830,13 +606,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-d5d3b74318b9643f3d31",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 31,
+              "id": "c7eaec01b52d30e676b6-908ef4607242dad02e12",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 69,
               "column": 3
             },
             {
-              "title": "M2 — customer dashboard is usable on mobile",
+              "title": "CL1.1 — All Cleaners section renders heading and table",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2851,12 +627,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3145,
+                      "duration": 2411,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:50:42.460Z",
+                      "startTime": "2026-07-01T11:46:17.916Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2864,13 +640,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-2659c414e8791d9b1e7c",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 46,
+              "id": "c7eaec01b52d30e676b6-8499f627ea971ba9abbf",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 86,
               "column": 3
             },
             {
-              "title": "M3 — mobile navigation (hamburger/drawer) opens on mobile",
+              "title": "CL1.2 — search input filters cleaner list",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2885,12 +661,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3134,
+                      "duration": 3071,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:50:45.609Z",
+                      "startTime": "2026-07-01T11:46:20.332Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2898,13 +674,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-b4980431213f19908fde",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 58,
+              "id": "c7eaec01b52d30e676b6-a279202bc46924ad2ac6",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 99,
               "column": 3
             },
             {
-              "title": "M4 — booking wizard step 1 is usable on mobile",
+              "title": "CL1.3 — searching unknown text shows empty state",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2919,12 +695,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3085,
+                      "duration": 3110,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:50:48.749Z",
+                      "startTime": "2026-07-01T11:46:23.410Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2932,13 +708,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-daf73c693b34c3c0cff2",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 82,
+              "id": "c7eaec01b52d30e676b6-8161404fa329aded428a",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 116,
               "column": 3
             },
             {
-              "title": "M5 — admin dashboard headings visible on mobile",
+              "title": "CL1.4 — status filter \"approved\" shows only approved cleaners",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2953,12 +729,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2980,
+                      "duration": 2410,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:50:51.838Z",
+                      "startTime": "2026-07-01T11:46:26.536Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -2966,13 +742,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-78d7e7d67854a885e4d9",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 95,
+              "id": "c7eaec01b52d30e676b6-c5b1529174ce1dbec05d",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 130,
               "column": 3
             },
             {
-              "title": "M1 — login page is usable on mobile",
+              "title": "CL1.5 — status filter \"suspended\" shows only suspended cleaners",
               "ok": true,
               "tags": [],
               "tests": [
@@ -2980,19 +756,19 @@
                   "timeout": 90000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1161,
+                      "duration": 2730,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:51:22.073Z",
+                      "startTime": "2026-07-01T11:46:28.950Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3000,13 +776,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-9d3858af1b1f6a982879",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 31,
+              "id": "c7eaec01b52d30e676b6-92b538934b32ae0f313c",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 146,
               "column": 3
             },
             {
-              "title": "M2 — customer dashboard is usable on mobile",
+              "title": "CL1.6 — pagination controls render when total > page size",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3014,19 +790,19 @@
                   "timeout": 90000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3168,
+                      "duration": 2360,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:51:23.346Z",
+                      "startTime": "2026-07-01T11:46:31.685Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3034,13 +810,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-3dbac95aef841c8faa0f",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 46,
+              "id": "c7eaec01b52d30e676b6-751f4ab13e18d3edcf56",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 166,
               "column": 3
             },
             {
-              "title": "M3 — mobile navigation (hamburger/drawer) opens on mobile",
+              "title": "CL1.7 — View Profile opens modal with cleaner details",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3048,19 +824,19 @@
                   "timeout": 90000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3173,
+                      "duration": 2510,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:51:26.521Z",
+                      "startTime": "2026-07-01T11:46:34.049Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3068,13 +844,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-db819c95b6746e3758cd",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 58,
+              "id": "c7eaec01b52d30e676b6-513ba2928df825766669",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 180,
               "column": 3
             },
             {
-              "title": "M4 — booking wizard step 1 is usable on mobile",
+              "title": "CL1.8 — admin can suspend a cleaner",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3082,19 +858,19 @@
                   "timeout": 90000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3158,
+                      "duration": 2649,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:51:29.700Z",
+                      "startTime": "2026-07-01T11:46:36.564Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3102,13 +878,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-417336578dbc254fec3e",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 82,
+              "id": "c7eaec01b52d30e676b6-3562c300cdf2e9921530",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 198,
               "column": 3
             },
             {
-              "title": "M5 — admin dashboard headings visible on mobile",
+              "title": "CL1.9 — admin can reactivate a suspended cleaner",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3116,19 +892,19 @@
                   "timeout": 90000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3279,
+                      "duration": 2677,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:51:32.863Z",
+                      "startTime": "2026-07-01T11:46:39.217Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3136,13 +912,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-24d6e8e02c1ae030852f",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 95,
+              "id": "c7eaec01b52d30e676b6-b5e9721edbe82f29480e",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 224,
               "column": 3
             },
             {
-              "title": "M1 — login page is usable on mobile",
+              "title": "CL1.10 — reactivation shows Suspend button again (status restored in UI)",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3150,19 +926,19 @@
                   "timeout": 90000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1949,
+                      "duration": 2505,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:52:03.794Z",
+                      "startTime": "2026-07-01T11:46:41.917Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3170,13 +946,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-29e67c881ec0a61168f0",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 31,
+              "id": "c7eaec01b52d30e676b6-b6eef1836256cdbce732",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 244,
               "column": 3
             },
             {
-              "title": "M2 — customer dashboard is usable on mobile",
+              "title": "CL1.11 — admin can deactivate a cleaner (irreversible via UI)",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3184,19 +960,19 @@
                   "timeout": 90000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3575,
+                      "duration": 2766,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:52:06.226Z",
+                      "startTime": "2026-07-01T11:46:44.428Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3204,13 +980,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-d7a20c543ec2f4400008",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 46,
+              "id": "c7eaec01b52d30e676b6-7552035510f311c62be0",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 261,
               "column": 3
             },
             {
-              "title": "M3 — mobile navigation (hamburger/drawer) opens on mobile",
+              "title": "CL1.12 — accessibility: landmarks, headings, table headers",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3218,19 +994,19 @@
                   "timeout": 90000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3288,
+                      "duration": 2458,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:52:09.807Z",
+                      "startTime": "2026-07-01T11:46:47.198Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3238,13 +1014,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-441c09cc9a9974c8b2c0",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 58,
+              "id": "c7eaec01b52d30e676b6-f60036188df883b776a3",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 287,
               "column": 3
             },
             {
-              "title": "M4 — booking wizard step 1 is usable on mobile",
+              "title": "CL1.13 — performance: cleaners list loads under 3 seconds",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3252,19 +1028,19 @@
                   "timeout": 90000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
+                      "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3260,
+                      "duration": 2648,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:52:13.101Z",
+                      "startTime": "2026-07-01T11:46:49.661Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3272,55 +1048,30 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-b853cd5bed3a42ee0670",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 82,
-              "column": 3
-            },
-            {
-              "title": "M5 — admin dashboard headings visible on mobile",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2962,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:52:16.367Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-4de152d1b1da1529515c",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 95,
+              "id": "c7eaec01b52d30e676b6-e0f60696574cc0da1a98",
+              "file": "admin-acceptance/01-cleaners.spec.ts",
+              "line": 302,
               "column": 3
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "title": "admin-acceptance/02-pending-approvals.spec.ts",
+      "file": "admin-acceptance/02-pending-approvals.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
         {
-          "title": "Tablet viewport (768×1024)",
-          "file": "stress/03-viewports.spec.ts",
-          "line": 105,
+          "title": "Admin — Pending Approvals",
+          "file": "admin-acceptance/02-pending-approvals.spec.ts",
+          "line": 18,
           "column": 6,
           "specs": [
             {
-              "title": "T1 — login page renders correctly on tablet",
+              "title": "PA2.1 — Pending Applications page loads without errors",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3335,12 +1086,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1086,
+                      "duration": 2469,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:50:54.822Z",
+                      "startTime": "2026-07-01T11:46:52.605Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3348,13 +1099,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-31bb0f0dd3b9eb98b07b",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 108,
+              "id": "e998665bca5583ab6b7f-3dcb5e3d146a2b3bf1c7",
+              "file": "admin-acceptance/02-pending-approvals.spec.ts",
+              "line": 47,
               "column": 3
             },
             {
-              "title": "T2 — customer dashboard renders on tablet without overflow",
+              "title": "PA2.2 — counts panel shows numeric totals",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3369,12 +1120,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2591,
+                      "duration": 2389,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:50:55.913Z",
+                      "startTime": "2026-07-01T11:46:55.084Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3382,13 +1133,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-020746469a080961a110",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 116,
+              "id": "e998665bca5583ab6b7f-976b3babd838c6441ef3",
+              "file": "admin-acceptance/02-pending-approvals.spec.ts",
+              "line": 66,
               "column": 3
             },
             {
-              "title": "T3 — cleaner dashboard renders on tablet",
+              "title": "PA2.3 — admin can approve a pending cleaner application",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3403,12 +1154,16 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2552,
+                      "duration": 3234,
                       "errors": [],
                       "stdout": [],
-                      "stderr": [],
+                      "stderr": [
+                        {
+                          "text": "[PA2.3] Approval RPC did not commit: role=cleaner_pending. Check that the admin profile has role=\"admin\" in the staging database.\n"
+                        }
+                      ],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:50:58.510Z",
+                      "startTime": "2026-07-01T11:46:57.480Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3416,13 +1171,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-b14144c8f5e2353b104d",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 126,
+              "id": "e998665bca5583ab6b7f-5ede8a726f247f2c86f3",
+              "file": "admin-acceptance/02-pending-approvals.spec.ts",
+              "line": 78,
               "column": 3
             },
             {
-              "title": "T4 — booking wizard renders on tablet",
+              "title": "PA2.4 — admin can reject a pending cleaner application with reason",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3437,12 +1192,16 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2479,
+                      "duration": 3394,
                       "errors": [],
                       "stdout": [],
-                      "stderr": [],
+                      "stderr": [
+                        {
+                          "text": "[PA2.4] Rejection RPC did not commit: action=undefined, status=submitted. Check that the admin profile has role=\"admin\" in the staging database.\n"
+                        }
+                      ],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:51:01.067Z",
+                      "startTime": "2026-07-01T11:47:00.719Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3450,293 +1209,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-3f018cd8835cc0ba0188",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 134,
+              "id": "e998665bca5583ab6b7f-52da35f8de6344dccc83",
+              "file": "admin-acceptance/02-pending-approvals.spec.ts",
+              "line": 135,
               "column": 3
             },
             {
-              "title": "T1 — login page renders correctly on tablet",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1168,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:51:36.147Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-9bebd7ccd3c23700e7e5",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 108,
-              "column": 3
-            },
-            {
-              "title": "T2 — customer dashboard renders on tablet without overflow",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2728,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:51:37.320Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-e93a9faec770d1fb1b8c",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 116,
-              "column": 3
-            },
-            {
-              "title": "T3 — cleaner dashboard renders on tablet",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2639,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:51:40.055Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-cc7db63e0bf56b10d5b7",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 126,
-              "column": 3
-            },
-            {
-              "title": "T4 — booking wizard renders on tablet",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2616,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:51:42.700Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-8057ef81ee6c50d9d15e",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 134,
-              "column": 3
-            },
-            {
-              "title": "T1 — login page renders correctly on tablet",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1377,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:52:19.335Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-3bb0d32868ee2751b792",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 108,
-              "column": 3
-            },
-            {
-              "title": "T2 — customer dashboard renders on tablet without overflow",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2912,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:52:20.717Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-59cfa62d4fae1a9c615a",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 116,
-              "column": 3
-            },
-            {
-              "title": "T3 — cleaner dashboard renders on tablet",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2903,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:52:23.635Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-c6712ee2bcd26873c286",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 126,
-              "column": 3
-            },
-            {
-              "title": "T4 — booking wizard renders on tablet",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2872,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:52:26.545Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-ad9b09332af98f8ef147",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 134,
-              "column": 3
-            }
-          ]
-        },
-        {
-          "title": "Desktop viewport (1280×800)",
-          "file": "stress/03-viewports.spec.ts",
-          "line": 145,
-          "column": 6,
-          "specs": [
-            {
-              "title": "D1 — login page renders on desktop",
+              "title": "PA2.5 — approved application no longer shown in pending list",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3751,12 +1230,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1135,
+                      "duration": 3119,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:51:03.551Z",
+                      "startTime": "2026-07-01T11:47:04.118Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3764,13 +1243,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-6748c431709496d18763",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 148,
+              "id": "e998665bca5583ab6b7f-eddf8b04e55bee58b8c2",
+              "file": "admin-acceptance/02-pending-approvals.spec.ts",
+              "line": 204,
               "column": 3
             },
             {
-              "title": "D2 — customer dashboard renders on desktop",
+              "title": "PA2.6 — admin can request changes on an application",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3785,12 +1264,16 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2611,
+                      "duration": 3050,
                       "errors": [],
                       "stdout": [],
-                      "stderr": [],
+                      "stderr": [
+                        {
+                          "text": "[PA2.6] Request-changes RPC did not commit: action=undefined, status=submitted. Check that the admin profile has role=\"admin\" in the staging database.\n"
+                        }
+                      ],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:51:04.691Z",
+                      "startTime": "2026-07-01T11:47:07.242Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3798,13 +1281,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-9131745e4459d718480e",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 155,
+              "id": "e998665bca5583ab6b7f-a09962adc479e3812b2f",
+              "file": "admin-acceptance/02-pending-approvals.spec.ts",
+              "line": 238,
               "column": 3
             },
             {
-              "title": "D3 — admin dashboard renders on desktop",
+              "title": "PA2.7 — Review modal shows document status",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3819,12 +1302,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2506,
+                      "duration": 2876,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:51:07.307Z",
+                      "startTime": "2026-07-01T11:47:10.297Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3832,13 +1315,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-b324de21ecd8d70ee456",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 161,
+              "id": "e998665bca5583ab6b7f-b6f7a380927d42959ae7",
+              "file": "admin-acceptance/02-pending-approvals.spec.ts",
+              "line": 296,
               "column": 3
             },
             {
-              "title": "D4 — sidebar navigation is fully visible on desktop",
+              "title": "PA2.8 — accessibility: tables have column headers",
               "ok": true,
               "tags": [],
               "tests": [
@@ -3853,12 +1336,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2630,
+                      "duration": 2378,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-26T20:51:09.818Z",
+                      "startTime": "2026-07-01T11:47:13.177Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -3866,621 +1349,10 @@
                   "status": "expected"
                 }
               ],
-              "id": "b1efc3bf2cbbc260c473-6b4b8e5edc949e5328c9",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 167,
+              "id": "e998665bca5583ab6b7f-18491bf66e4a8d5f96be",
+              "file": "admin-acceptance/02-pending-approvals.spec.ts",
+              "line": 325,
               "column": 3
-            },
-            {
-              "title": "D1 — login page renders on desktop",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1247,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:51:45.322Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-299cf2427d96d1f95a55",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 148,
-              "column": 3
-            },
-            {
-              "title": "D2 — customer dashboard renders on desktop",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2750,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:51:46.575Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-ca7e719025bebc88329d",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 155,
-              "column": 3
-            },
-            {
-              "title": "D3 — admin dashboard renders on desktop",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2530,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:51:49.330Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-5596568531bed08e0afb",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 161,
-              "column": 3
-            },
-            {
-              "title": "D4 — sidebar navigation is fully visible on desktop",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "mobile-chrome",
-                  "projectName": "mobile-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2471,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:51:51.865Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-a1dc043e4c8aa218e216",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 167,
-              "column": 3
-            },
-            {
-              "title": "D1 — login page renders on desktop",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1447,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:52:29.423Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-356173a144d26b61ae6d",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 148,
-              "column": 3
-            },
-            {
-              "title": "D2 — customer dashboard renders on desktop",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2896,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:52:30.875Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-74c35b05a0f0d9b2c3a6",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 155,
-              "column": 3
-            },
-            {
-              "title": "D3 — admin dashboard renders on desktop",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2727,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:52:33.777Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-b8bb7d9f10a03aebd8de",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 161,
-              "column": 3
-            },
-            {
-              "title": "D4 — sidebar navigation is fully visible on desktop",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 90000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "tablet-chrome",
-                  "projectName": "tablet-chrome",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2685,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-26T20:52:36.509Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b1efc3bf2cbbc260c473-0b068b6f3e4f7c025ced",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 167,
-              "column": 3
-            }
-          ]
-        },
-        {
-          "title": "Cross-viewport status consistency",
-          "file": "stress/03-viewports.spec.ts",
-          "line": 180,
-          "column": 6,
-          "specs": [],
-          "suites": [
-            {
-              "title": "mobile viewport",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 181,
-              "column": 8,
-              "specs": [
-                {
-                  "title": "status labels visible on mobile (375×667)",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 90000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [
-                        {
-                          "workerIndex": 0,
-                          "parallelIndex": 0,
-                          "status": "passed",
-                          "duration": 3184,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2026-06-26T20:51:12.455Z",
-                          "annotations": [],
-                          "attachments": []
-                        }
-                      ],
-                      "status": "expected"
-                    }
-                  ],
-                  "id": "b1efc3bf2cbbc260c473-194c710d464be3a539ee",
-                  "file": "stress/03-viewports.spec.ts",
-                  "line": 184,
-                  "column": 5
-                },
-                {
-                  "title": "status labels visible on mobile (375×667)",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 90000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "mobile-chrome",
-                      "projectName": "mobile-chrome",
-                      "results": [
-                        {
-                          "workerIndex": 1,
-                          "parallelIndex": 0,
-                          "status": "passed",
-                          "duration": 3192,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2026-06-26T20:51:54.341Z",
-                          "annotations": [],
-                          "attachments": []
-                        }
-                      ],
-                      "status": "expected"
-                    }
-                  ],
-                  "id": "b1efc3bf2cbbc260c473-1a7c74c18509e015c19a",
-                  "file": "stress/03-viewports.spec.ts",
-                  "line": 184,
-                  "column": 5
-                },
-                {
-                  "title": "status labels visible on mobile (375×667)",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 90000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "tablet-chrome",
-                      "projectName": "tablet-chrome",
-                      "results": [
-                        {
-                          "workerIndex": 2,
-                          "parallelIndex": 0,
-                          "status": "passed",
-                          "duration": 3248,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2026-06-26T20:52:39.200Z",
-                          "annotations": [],
-                          "attachments": []
-                        }
-                      ],
-                      "status": "expected"
-                    }
-                  ],
-                  "id": "b1efc3bf2cbbc260c473-d871a35e77554384c8cf",
-                  "file": "stress/03-viewports.spec.ts",
-                  "line": 184,
-                  "column": 5
-                }
-              ]
-            },
-            {
-              "title": "tablet viewport",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 195,
-              "column": 8,
-              "specs": [
-                {
-                  "title": "status labels visible on tablet (768×1024)",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 90000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [
-                        {
-                          "workerIndex": 0,
-                          "parallelIndex": 0,
-                          "status": "passed",
-                          "duration": 2588,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2026-06-26T20:51:15.644Z",
-                          "annotations": [],
-                          "attachments": []
-                        }
-                      ],
-                      "status": "expected"
-                    }
-                  ],
-                  "id": "b1efc3bf2cbbc260c473-f497335e8ed1d56618f4",
-                  "file": "stress/03-viewports.spec.ts",
-                  "line": 198,
-                  "column": 5
-                },
-                {
-                  "title": "status labels visible on tablet (768×1024)",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 90000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "mobile-chrome",
-                      "projectName": "mobile-chrome",
-                      "results": [
-                        {
-                          "workerIndex": 1,
-                          "parallelIndex": 0,
-                          "status": "passed",
-                          "duration": 2796,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2026-06-26T20:51:57.538Z",
-                          "annotations": [],
-                          "attachments": []
-                        }
-                      ],
-                      "status": "expected"
-                    }
-                  ],
-                  "id": "b1efc3bf2cbbc260c473-d447ef593134001cdd30",
-                  "file": "stress/03-viewports.spec.ts",
-                  "line": 198,
-                  "column": 5
-                },
-                {
-                  "title": "status labels visible on tablet (768×1024)",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 90000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "tablet-chrome",
-                      "projectName": "tablet-chrome",
-                      "results": [
-                        {
-                          "workerIndex": 2,
-                          "parallelIndex": 0,
-                          "status": "passed",
-                          "duration": 3025,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2026-06-26T20:52:42.452Z",
-                          "annotations": [],
-                          "attachments": []
-                        }
-                      ],
-                      "status": "expected"
-                    }
-                  ],
-                  "id": "b1efc3bf2cbbc260c473-1ad43244791fcc112cdb",
-                  "file": "stress/03-viewports.spec.ts",
-                  "line": 198,
-                  "column": 5
-                }
-              ]
-            },
-            {
-              "title": "desktop viewport",
-              "file": "stress/03-viewports.spec.ts",
-              "line": 209,
-              "column": 8,
-              "specs": [
-                {
-                  "title": "status labels visible on desktop (1280×800)",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 90000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [
-                        {
-                          "workerIndex": 0,
-                          "parallelIndex": 0,
-                          "status": "passed",
-                          "duration": 2623,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2026-06-26T20:51:18.237Z",
-                          "annotations": [],
-                          "attachments": []
-                        }
-                      ],
-                      "status": "expected"
-                    }
-                  ],
-                  "id": "b1efc3bf2cbbc260c473-34d0f60a81c31605a901",
-                  "file": "stress/03-viewports.spec.ts",
-                  "line": 212,
-                  "column": 5
-                },
-                {
-                  "title": "status labels visible on desktop (1280×800)",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 90000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "mobile-chrome",
-                      "projectName": "mobile-chrome",
-                      "results": [
-                        {
-                          "workerIndex": 1,
-                          "parallelIndex": 0,
-                          "status": "passed",
-                          "duration": 2964,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2026-06-26T20:52:00.339Z",
-                          "annotations": [],
-                          "attachments": []
-                        }
-                      ],
-                      "status": "expected"
-                    }
-                  ],
-                  "id": "b1efc3bf2cbbc260c473-90acb5f31c3be879605b",
-                  "file": "stress/03-viewports.spec.ts",
-                  "line": 212,
-                  "column": 5
-                },
-                {
-                  "title": "status labels visible on desktop (1280×800)",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 90000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "tablet-chrome",
-                      "projectName": "tablet-chrome",
-                      "results": [
-                        {
-                          "workerIndex": 2,
-                          "parallelIndex": 0,
-                          "status": "passed",
-                          "duration": 2921,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2026-06-26T20:52:45.483Z",
-                          "annotations": [],
-                          "attachments": []
-                        }
-                      ],
-                      "status": "expected"
-                    }
-                  ],
-                  "id": "b1efc3bf2cbbc260c473-9cc2e51592a4a47fa240",
-                  "file": "stress/03-viewports.spec.ts",
-                  "line": 212,
-                  "column": 5
-                }
-              ]
             }
           ]
         }
@@ -4489,10 +1361,10 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-06-26T20:45:50.106Z",
-    "duration": 418380.759,
-    "expected": 115,
-    "skipped": 4,
+    "startTime": "2026-07-01T11:40:09.701Z",
+    "duration": 426437.33999999997,
+    "expected": 34,
+    "skipped": 0,
     "unexpected": 0,
     "flaky": 0
   }

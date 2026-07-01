@@ -40,7 +40,7 @@ test.describe('Booking management', () => {
   })
 
   test.afterEach(async () => {
-    await wipeDynamic(customerUserId)
+    await wipeDynamic(customerUserId, cleanerUserId)
   })
 
   // ── 4.1  View booking detail ─────────────────────────────────────────────────

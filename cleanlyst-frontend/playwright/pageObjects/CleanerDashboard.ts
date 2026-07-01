@@ -94,6 +94,6 @@ export class CleanerDashboard {
   // ── Earnings ───────────────────────────────────────────────────────────────────
 
   async earningsTotalVisible(): Promise<void> {
-    await expect(this.page.getByText(/total earnings|lifetime/i).first()).toBeVisible({ timeout: 10_000 })
+    await expect(this.page.getByText(/all-time earnings|total earnings|lifetime/i).first()).toBeVisible({ timeout: 10_000 })
   }
 }

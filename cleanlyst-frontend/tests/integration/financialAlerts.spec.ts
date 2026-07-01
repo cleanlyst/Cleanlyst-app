@@ -3,7 +3,7 @@
  * Mocks Supabase and ledger resolver.
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { detectBookingAlerts, filterAlertsBySeverity } from '@/services/payments/financialAlerts'
+import { detectBookingAlerts, filterAlertsBySeverity, type AlertType } from '@/services/payments/financialAlerts'
 import {
   makeAuthorized,
   makeCaptured,
@@ -136,7 +136,7 @@ describe('detectBookingAlerts()', () => {
 
 describe('filterAlertsBySeverity()', () => {
   const makeAlert = (alertType: string, severity: 'info' | 'warning' | 'critical') => ({
-    id: 'a-1', bookingId: BOOKING_ID, alertType: alertType as any,
+    id: 'a-1', bookingId: BOOKING_ID, alertType: alertType as AlertType,
     severity, title: alertType, description: alertType, detectedAt: '', metadata: {},
   })
 

@@ -198,9 +198,9 @@
 
   <!-- ── Suspend Modal ─────────────────────────────────── -->
   <div v-if="suspendModal.open" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="closeSuspend">
-    <div class="bg-white rounded-lg w-full max-w-md shadow-2xl">
+    <div ref="suspendDialogEl" role="dialog" aria-modal="true" aria-labelledby="suspend-modal-title" tabindex="-1" class="bg-white rounded-lg w-full max-w-md shadow-2xl outline-none" @keydown.esc="closeSuspend">
       <div class="flex items-center justify-between p-6 border-b border-outline-variant">
-        <h3 class="font-h2 text-h2 text-on-surface">Suspend Cleaner</h3>
+        <h3 id="suspend-modal-title" class="font-h2 text-h2 text-on-surface">Suspend Cleaner</h3>
         <button class="text-on-surface-variant hover:text-on-surface" :disabled="suspendModal.loading" @click="closeSuspend">
           <span class="material-symbols-outlined">close</span>
         </button>
@@ -236,10 +236,10 @@
   </div>
 
   <!-- ── Reactivate Modal ──────────────────────────────── -->
-  <div v-if="reactivateModal.open" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="closeReactivate">
-    <div class="bg-white rounded-lg w-full max-w-md shadow-2xl">
+  <div v-if="reactivateModal.open" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="closeReactivate" @keydown.esc="closeReactivate">
+    <div role="dialog" aria-modal="true" aria-labelledby="reactivate-modal-title" class="bg-white rounded-lg w-full max-w-md shadow-2xl">
       <div class="flex items-center justify-between p-6 border-b border-outline-variant">
-        <h3 class="font-h2 text-h2 text-on-surface">Reactivate Cleaner</h3>
+        <h3 id="reactivate-modal-title" class="font-h2 text-h2 text-on-surface">Reactivate Cleaner</h3>
         <button class="text-on-surface-variant hover:text-on-surface" :disabled="reactivateModal.loading" @click="closeReactivate">
           <span class="material-symbols-outlined">close</span>
         </button>
@@ -266,10 +266,10 @@
   </div>
 
   <!-- ── Deactivate Modal ──────────────────────────────── -->
-  <div v-if="deactivateModal.open" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="closeDeactivate">
-    <div class="bg-white rounded-lg w-full max-w-md shadow-2xl">
+  <div v-if="deactivateModal.open" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="closeDeactivate" @keydown.esc="closeDeactivate">
+    <div role="dialog" aria-modal="true" aria-labelledby="deactivate-modal-title" class="bg-white rounded-lg w-full max-w-md shadow-2xl">
       <div class="flex items-center justify-between p-6 border-b border-outline-variant">
-        <h3 class="font-h2 text-h2 text-on-surface">Deactivate Cleaner</h3>
+        <h3 id="deactivate-modal-title" class="font-h2 text-h2 text-on-surface">Deactivate Cleaner</h3>
         <button class="text-on-surface-variant hover:text-on-surface" :disabled="deactivateModal.loading" @click="closeDeactivate">
           <span class="material-symbols-outlined">close</span>
         </button>
@@ -438,7 +438,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import {
   getAllCleaners,
   getCleanerProfile,
@@ -474,6 +474,10 @@ const suspendModal = reactive({
   error: '',
   reason: '',
   cleaner: null as AdminCleanerRow | null,
+})
+const suspendDialogEl = ref<HTMLElement | null>(null)
+watch(() => suspendModal.open, (open) => {
+  if (open) nextTick(() => suspendDialogEl.value?.focus())
 })
 
 // ── Reactivate modal ────────────────────────────────────────────
@@ -554,7 +558,10 @@ async function confirmSuspend() {
   suspendModal.error = ''
   try {
     await suspendCleaner(suspendModal.cleaner.user_id, suspendModal.reason.trim() || undefined)
-    closeSuspend()
+    // Reset directly — closeSuspend() guards against loading=true which would
+    // block this close when called from inside the async submit path.
+    suspendModal.open = false
+    suspendModal.cleaner = null
     await loadCleaners()
   } catch (e) {
     suspendModal.error = toUserMessage(e, 'Failed to suspend cleaner. Please try again.')
@@ -583,7 +590,8 @@ async function confirmReactivate() {
   reactivateModal.error = ''
   try {
     await reactivateCleaner(reactivateModal.cleaner.user_id)
-    closeReactivate()
+    reactivateModal.open = false
+    reactivateModal.cleaner = null
     await loadCleaners()
   } catch (e) {
     reactivateModal.error = toUserMessage(e, 'Failed to reactivate cleaner. Please try again.')
@@ -612,7 +620,8 @@ async function confirmDeactivate() {
   deactivateModal.error = ''
   try {
     await deactivateCleaner(deactivateModal.cleaner.user_id)
-    closeDeactivate()
+    deactivateModal.open = false
+    deactivateModal.cleaner = null
     await loadCleaners()
   } catch (e) {
     deactivateModal.error = toUserMessage(e, 'Failed to deactivate cleaner. Please try again.')

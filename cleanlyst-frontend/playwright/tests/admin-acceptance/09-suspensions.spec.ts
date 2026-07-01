@@ -99,7 +99,7 @@ test.describe('Admin — Suspensions', () => {
       await suspendBtn.click()
       await expect(page.getByTestId('confirm-suspend-btn')).toBeVisible({ timeout: 5_000 })
       await page.getByTestId('confirm-suspend-btn').click()
-      await page.waitForLoadState('networkidle')
+      await expect(page.getByTestId('confirm-suspend-btn')).not.toBeVisible({ timeout: 10_000 })
 
       const status = await getCleanerStatusInDb(suspCleanerId)
       expect(status).toBe('suspended')
@@ -133,7 +133,7 @@ test.describe('Admin — Suspensions', () => {
       await reactivateBtn.click()
       await expect(page.getByTestId('confirm-reactivate-btn')).toBeVisible({ timeout: 5_000 })
       await page.getByTestId('confirm-reactivate-btn').click()
-      await page.waitForLoadState('networkidle')
+      await expect(page.getByTestId('confirm-reactivate-btn')).not.toBeVisible({ timeout: 10_000 })
 
       const status = await getCleanerStatusInDb(suspCleanerId)
       expect(status).toBe('approved')
@@ -164,7 +164,7 @@ test.describe('Admin — Suspensions', () => {
       const confirmBtn = page.getByTestId('confirm-deactivate-btn')
       await expect(confirmBtn).toBeVisible({ timeout: 5_000 })
       await confirmBtn.click()
-      await page.waitForLoadState('networkidle')
+      await expect(confirmBtn).not.toBeVisible({ timeout: 10_000 })
 
       const status = await getCleanerStatusInDb(suspCleanerId)
       expect(status).toBe('deactivated')

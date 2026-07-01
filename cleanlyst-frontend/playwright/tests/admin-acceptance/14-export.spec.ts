@@ -152,8 +152,7 @@ test.describe('Admin — Export', () => {
     const fc = new FinancialClose(page)
     await fc.goto()
     await fc.selectPeriodType('monthly')
-    const monthDate = fc.pastDateStr(60)
-    await fc.setDate(monthDate)
+    // Monthly uses the current month automatically — no date input is shown.
     await fc.runClose()
 
     const csvBtn = fc.downloadCsvButton()

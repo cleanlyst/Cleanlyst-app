@@ -27,7 +27,9 @@ export class FinancialClose {
     const labels: Record<PeriodType, string> = {
       daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly', manual: 'Manual',
     }
-    return this.page.getByRole('button', { name: new RegExp(labels[type], 'i') })
+    // Use .first() — the period type selector button appears before close history items
+    // which also contain the period label in their text
+    return this.page.getByRole('button', { name: new RegExp(labels[type], 'i') }).first()
   }
 
   get dateInput() {
@@ -91,7 +93,8 @@ export class FinancialClose {
   }
 
   printButton() {
-    return this.page.getByRole('button', { name: /print/i })
+    // Use .first() — history entries may also contain "Print" buttons, causing strict violations
+    return this.page.getByRole('button', { name: /print/i }).first()
   }
 
   async assertCloseResultLoaded() {

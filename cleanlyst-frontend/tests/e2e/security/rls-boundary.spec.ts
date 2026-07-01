@@ -27,8 +27,8 @@ test.describe('Security: RLS boundary', () => {
     const result = await page.evaluate(async (cleanerId: string) => {
       const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
       // Use whatever anon key is in the page environment
-      const supabaseUrl  = (window as any).__SUPABASE_URL__ || ''
-      const supabaseAnon = (window as any).__SUPABASE_ANON_KEY__ || ''
+      const supabaseUrl  = (window as Record<string, string>).__SUPABASE_URL__ || ''
+      const supabaseAnon = (window as Record<string, string>).__SUPABASE_ANON_KEY__ || ''
       if (!supabaseUrl) return { count: -1, error: 'no supabase URL in window' }
 
       const client = createClient(supabaseUrl, supabaseAnon)
@@ -60,7 +60,7 @@ test.describe('Security: RLS boundary', () => {
     const bookingId = booking?.id
 
     const insertResult = await page.evaluate(
-      async ({ supabaseUrl, supabaseAnon, bookingId }: any) => {
+      async ({ supabaseUrl, supabaseAnon, bookingId }: { supabaseUrl: string; supabaseAnon: string; bookingId: string }) => {
         const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
         const client = createClient(supabaseUrl || '', supabaseAnon || '')
         const { error } = await client.from('payment_ledger_events').insert({
@@ -73,8 +73,8 @@ test.describe('Security: RLS boundary', () => {
         return { error: error?.message ?? null, code: error?.code ?? null }
       },
       {
-        supabaseUrl:  (await page.evaluate(() => (window as any).__SUPABASE_URL__)) ?? '',
-        supabaseAnon: (await page.evaluate(() => (window as any).__SUPABASE_ANON_KEY__)) ?? '',
+        supabaseUrl:  (await page.evaluate(() => (window as Record<string, string>).__SUPABASE_URL__)) ?? '',
+        supabaseAnon: (await page.evaluate(() => (window as Record<string, string>).__SUPABASE_ANON_KEY__)) ?? '',
         bookingId,
       },
     )

@@ -5,11 +5,12 @@ export interface CheckoutSession {
   sessionId: string
 }
 
-function buildCheckoutUrls(): { successUrl: string; cancelUrl: string } {
+function buildCheckoutUrls(bookingId: string): { successUrl: string; cancelUrl: string } {
   const origin = typeof window !== 'undefined' ? window.location.origin : ''
+  const id = encodeURIComponent(bookingId)
   return {
-    successUrl: `${origin}/checkout/success`,
-    cancelUrl:  `${origin}/checkout/cancel`,
+    successUrl: `${origin}/checkout/success?booking_id=${id}`,
+    cancelUrl:  `${origin}/checkout/cancel?booking_id=${id}`,
   }
 }
 
@@ -22,7 +23,7 @@ function buildCheckoutUrls(): { successUrl: string; cancelUrl: string } {
  * env vars on the frontend.
  */
 export async function initiateCheckoutSession(bookingId: string): Promise<CheckoutSession> {
-  const { successUrl, cancelUrl } = buildCheckoutUrls()
+  const { successUrl, cancelUrl } = buildCheckoutUrls(bookingId)
   const result = await createCheckoutSession(bookingId, successUrl, cancelUrl)
   return {
     checkoutUrl: result.checkout_url,

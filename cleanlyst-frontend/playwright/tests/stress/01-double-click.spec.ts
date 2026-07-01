@@ -11,6 +11,7 @@
  */
 import { test, expect }  from '../../fixtures'
 import { BookingWizard } from '../../pageObjects/BookingWizard'
+import { completeStripeHostedCheckout } from '../../helpers/stripe'
 import {
   getUserIdByEmail,
   latestBookingForCustomer,
@@ -22,13 +23,15 @@ test.describe.configure({ mode: 'serial' })
 
 test.describe('Double-click protection', () => {
   let customerUserId: string
+  let cleanerUserId: string
 
   test.beforeAll(async () => {
     customerUserId = await getUserIdByEmail(process.env.E2E_CUSTOMER_EMAIL!)
+    cleanerUserId  = await getUserIdByEmail(process.env.E2E_CLEANER_EMAIL!)
   })
 
   test.afterEach(async () => {
-    await wipeDynamic(customerUserId)
+    await wipeDynamic(customerUserId, cleanerUserId)
   })
 
   // ── S1.1  Double-click Confirm & Pay ─────────────────────────────────────────
@@ -52,9 +55,17 @@ test.describe('Double-click protection', () => {
     await confirmBtn.click()
     await confirmBtn.click({ delay: 100, force: true })
 
-    await expect(page.locator('text=Payment Successful')).toBeVisible({ timeout: 30_000 })
+    // App redirects to Stripe's hosted checkout — complete payment with test card
+    await page.waitForURL(/checkout\.stripe\.com/, { timeout: 20_000 })
+    await completeStripeHostedCheckout(page)
 
-    // DB: exactly one booking
+    // Stripe redirects back to our success page
+    await page.waitForURL(/\/checkout\/success/, { timeout: 30_000 })
+    await expect(
+      page.locator('[data-testid="checkout-success"], [data-testid="checkout-timeout"]'),
+    ).toBeVisible({ timeout: 45_000 })
+
+    // DB: exactly one booking (double-click produced no duplicate)
     const { data } = await db
       .from('bookings')
       .select('id')

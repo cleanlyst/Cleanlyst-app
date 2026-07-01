@@ -209,7 +209,9 @@ test.describe('Admin — All Cleaners', () => {
       const confirmBtn = page.getByTestId('confirm-suspend-btn')
       await expect(confirmBtn).toBeVisible({ timeout: 5_000 })
       await confirmBtn.click()
-      await page.waitForLoadState('networkidle')
+      // Wait for the modal to close (confirmSuspend() calls closeSuspend() on success)
+      // instead of networkidle — which may resolve before the RPC dispatches.
+      await expect(confirmBtn).not.toBeVisible({ timeout: 10_000 })
 
       // DB should reflect suspended
       const status = await getCleanerStatusInDb(ephemeralCleanerId)
@@ -232,7 +234,7 @@ test.describe('Admin — All Cleaners', () => {
       const confirmBtn = page.getByTestId('confirm-reactivate-btn')
       await expect(confirmBtn).toBeVisible({ timeout: 5_000 })
       await confirmBtn.click()
-      await page.waitForLoadState('networkidle')
+      await expect(confirmBtn).not.toBeVisible({ timeout: 10_000 })
 
       const status = await getCleanerStatusInDb(ephemeralCleanerId)
       expect(status).toBe('approved')
@@ -270,7 +272,7 @@ test.describe('Admin — All Cleaners', () => {
       const confirmBtn = page.getByTestId('confirm-deactivate-btn')
       await expect(confirmBtn).toBeVisible({ timeout: 5_000 })
       await confirmBtn.click()
-      await page.waitForLoadState('networkidle')
+      await expect(confirmBtn).not.toBeVisible({ timeout: 10_000 })
 
       const status = await getCleanerStatusInDb(ephemeralCleanerId)
       expect(status).toBe('deactivated')

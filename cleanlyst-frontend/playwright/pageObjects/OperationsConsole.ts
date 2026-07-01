@@ -23,7 +23,9 @@ export class OperationsConsole {
   }
 
   async selectFirstResult() {
-    const result = this.page.locator('[class*="border"][class*="outline"]').filter({ hasText: /[0-9a-f-]{36}/i }).first()
+    // Search results render as <button> elements (not divs) containing the UUID text.
+    // getByRole('button') avoids matching the container div which shares border/outline classes.
+    const result = this.page.getByRole('button').filter({ hasText: /[0-9a-f]{8}-/ }).first()
     if (await result.isVisible({ timeout: 8_000 })) {
       await result.click()
       await this.page.waitForLoadState('networkidle')
@@ -33,7 +35,9 @@ export class OperationsConsole {
   }
 
   get bookingSummary() {
-    return this.page.getByText(/booking summary|booking id/i).first()
+    // BookingSummaryCard has no heading — detect bundle load via the always-present
+    // Financial Summary OpsSection title which renders immediately after the card.
+    return this.page.getByText(/financial summary|event timeline/i).first()
   }
 
   get financialSummary() {

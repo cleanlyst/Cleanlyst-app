@@ -47,6 +47,7 @@ test.describe('Admin — Filters & Pagination', () => {
       status:        'cancelled',
       paymentStatus: 'refunded',
       amountCents:   3500,
+      payoutCents:   2800,
     })
   })
 
@@ -147,7 +148,7 @@ test.describe('Admin — Filters & Pagination', () => {
 
     const filter = page.getByRole('combobox').first()
     if (await filter.isVisible({ timeout: 5_000 })) {
-      await filter.selectOption('confirmed')
+      await filter.selectOption('accepted')
       await page.waitForLoadState('networkidle')
 
       const cancelledRow = page.getByText(filterBookingId.slice(0, 8))

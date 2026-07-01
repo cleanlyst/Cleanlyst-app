@@ -41,7 +41,7 @@ test.describe('Cleaner booking flow', () => {
   })
 
   test.afterEach(async () => {
-    await wipeDynamic(customerUserId)
+    await wipeDynamic(customerUserId, cleanerUserId)
   })
 
   // ── Helper: create a booking and assign to E2E cleaner ────────────────────────

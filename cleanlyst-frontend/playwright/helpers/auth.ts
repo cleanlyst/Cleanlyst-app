@@ -7,7 +7,7 @@ export async function loginAs(page: Page, email: string, password: string): Prom
   await page.goto('/auth/login')
   await page.getByLabel('Email Address').fill(email)
   await page.getByLabel('Password').fill(password)
-  await page.getByRole('button', { name: /log in/i }).click()
+  await page.locator('form button[type="submit"]').click()
   await expect(page).toHaveURL(/customer|cleaner|admin/, { timeout: 15_000 })
   await page.waitForLoadState('networkidle')
 }

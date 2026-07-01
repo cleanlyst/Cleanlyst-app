@@ -51,7 +51,7 @@ test.describe('Authentication and role guards', () => {
     await page.goto('/auth/login')
     await page.getByLabel('Email Address').fill('notareal@email.com')
     await page.getByLabel('Password').fill('wrongpassword')
-    await page.getByRole('button', { name: /log in/i }).click()
+    await page.locator('form button[type="submit"]').click()
     await expect(page).toHaveURL(/auth\/login/)
     await expect(page.locator('text=Invalid').first()).toBeVisible({ timeout: 10_000 })
   })

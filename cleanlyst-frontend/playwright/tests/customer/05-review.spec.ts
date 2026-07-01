@@ -30,7 +30,7 @@ test.describe('Customer reviews', () => {
   })
 
   test.afterEach(async () => {
-    await wipeDynamic(customerUserId)
+    await wipeDynamic(customerUserId, cleanerUserId)
     // Remove any review left by the test
     await db.from('reviews').delete().eq('reviewer_id', customerUserId)
   })

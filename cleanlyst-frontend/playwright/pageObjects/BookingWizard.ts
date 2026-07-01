@@ -51,7 +51,13 @@ export class BookingWizard {
 
   async selectFirstCleaner(): Promise<void> {
     await expect(this.page.locator('text=Available Cleaners')).toBeVisible({ timeout: 20_000 })
-    await this.page.getByRole('button', { name: /^book$/i }).first().click()
+    // Wait for the loading skeleton to disappear before looking for Book buttons
+    await expect(this.page.locator('.animate-pulse').first())
+      .not.toBeVisible({ timeout: 30_000 })
+      .catch(() => { /* fast responses may skip the skeleton entirely */ })
+    const bookBtn = this.page.getByRole('button', { name: /^book$/i }).first()
+    await expect(bookBtn).toBeVisible({ timeout: 20_000 })
+    await bookBtn.click()
   }
 
   // ── Step 5 — confirm & pay ──────────────────────────────────────────────────
@@ -75,24 +81,26 @@ export class BookingWizard {
     // Stripe redirects back to our /checkout/success page
     await this.page.waitForURL(/\/checkout\/success/, { timeout: 30_000 })
 
-    // Wait for the success state (webhook confirmed or timeout)
+    // Wait for the success state (webhook confirmed) or timeout state (30s polling exhausted)
     await expect(
       this.page.locator('[data-testid="checkout-success"], [data-testid="checkout-timeout"]'),
-    ).toBeVisible({ timeout: 35_000 })
+    ).toBeVisible({ timeout: 45_000 })
   }
 
   async dismissSuccess(): Promise<void> {
-    // On the /checkout/success page, click "View Booking" or "Go to Dashboard"
-    const viewBooking  = this.page.getByRole('button', { name: /view booking/i })
-    const goDashboard  = this.page.getByRole('link', { name: /go to dashboard/i })
-    const firstAction  = viewBooking.or(goDashboard)
+    // On the /checkout/success page, prefer "Go to Dashboard" so we land on a predictable URL.
+    // "View Booking" would navigate to /customer/bookings/:id instead.
+    const goDashboard = this.page.getByRole('link', { name: /go to dashboard/i })
+    const viewBooking = this.page.getByRole('button', { name: /view booking/i })
 
-    if (await firstAction.isVisible({ timeout: 5_000 })) {
-      await firstAction.first().click()
+    if (await goDashboard.isVisible({ timeout: 5_000 })) {
+      await goDashboard.click()
+    } else if (await viewBooking.isVisible({ timeout: 2_000 })) {
+      await viewBooking.click()
     }
 
     await expect(this.page).toHaveURL(
-      /customer\/dashboard|dashboard\/bookings/,
+      /customer\/dashboard|customer\/bookings/,
       { timeout: 10_000 },
     )
   }

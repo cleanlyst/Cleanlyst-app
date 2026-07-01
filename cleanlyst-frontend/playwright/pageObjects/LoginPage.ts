@@ -11,7 +11,7 @@ export class LoginPage {
 
   get emailInput()    { return this.page.getByLabel('Email Address') }
   get passwordInput() { return this.page.getByLabel('Password') }
-  get submitBtn()     { return this.page.getByRole('button', { name: /log in/i }) }
+  get submitBtn()     { return this.page.locator('form button[type="submit"]') }
   get errorMessage()  { return this.page.getByText(/invalid|incorrect|wrong|error/i).first() }
   get registerLink()  { return this.page.getByRole('link', { name: /register|sign up/i }) }
   get forgotLink()    { return this.page.getByRole('link', { name: /forgot/i }) }

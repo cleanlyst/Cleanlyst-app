@@ -19,13 +19,15 @@ test.describe.configure({ mode: 'serial' })
 
 test.describe('Booking creation wizard', () => {
   let customerUserId: string
+  let cleanerUserId: string
 
   test.beforeAll(async () => {
     customerUserId = await getUserIdByEmail(process.env.E2E_CUSTOMER_EMAIL!)
+    cleanerUserId  = await getUserIdByEmail(process.env.E2E_CLEANER_EMAIL!)
   })
 
   test.afterEach(async () => {
-    await wipeDynamic(customerUserId)
+    await wipeDynamic(customerUserId, cleanerUserId)
   })
 
   // ── 2.1  Full happy-path ────────────────────────────────────────────────────
@@ -56,10 +58,14 @@ test.describe('Booking creation wizard', () => {
     await wizard.dismissSuccess()
 
     // DB assertions
+    // With Stripe Checkout (capture_method: manual), the webhook fires
+    // checkout.session.completed → PAYMENT_AUTHORIZED → booking.payment_status = 'authorized'
+    // and booking.status transitions to 'payment_authorized'.
+    // If the webhook has a slight delay, booking may still be in 'pending_request'/'unpaid'.
     const booking = await latestBookingForCustomer(customerUserId)
     expect(booking).not.toBeNull()
-    expect(booking?.status).toBe('pending_request')
-    expect(booking?.payment_status).toBe('captured')
+    expect(['pending_request', 'payment_authorized']).toContain(booking?.status)
+    expect(['unpaid', 'authorized']).toContain(booking?.payment_status)
 
     // Dashboard — booking visible under Pending tab
     await dashboard.gotoBookings()

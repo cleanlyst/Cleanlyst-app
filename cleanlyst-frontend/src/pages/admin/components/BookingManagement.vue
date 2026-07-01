@@ -650,9 +650,14 @@ async function loadBookings() {
     if (term) {
       const parts: string[] = [
         `service_title_snapshot.ilike.%${term}%`,
-        `id.ilike.%${term}%`,
         `status.ilike.%${term}%`,
       ]
+      // UUID columns (id) do not support ILIKE in PostgreSQL — use exact match
+      // only when the search term resembles a full or partial UUID.
+      const uuidLike = /^[0-9a-f-]{8,36}$/i.test(term)
+      if (uuidLike) {
+        parts.push(`id.eq.${term}`)
+      }
       if (matchingProfileIds && matchingProfileIds.length > 0) {
         parts.push(`customer_id.in.(${matchingProfileIds.join(',')})`)
         parts.push(`cleaner_id.in.(${matchingProfileIds.join(',')})`)
@@ -681,6 +686,8 @@ async function loadBookings() {
       reassigned_at: row.reassigned_at ?? null,
     }))
   } catch (e) {
+    bookings.value = []
+    totalCount.value = 0
     errorMessage.value = toUserMessage(e, 'Failed to load bookings. Please refresh.')
   } finally {
     loading.value = false
@@ -1009,6 +1016,11 @@ async function lookupRefundBooking() {
       supabase.from('profiles').select('full_name').eq('id', row.cleaner_id ?? '').maybeSingle(),
     ])
 
+    // Load payment BEFORE showing booking summary so eligibility is known atomically.
+    // (Previously the booking was set first, causing a race where tests could proceed
+    // between the booking-summary appearing and the eligibility error being set.)
+    const payment = await loadRefundPayment(row.id)
+
     refundModal.booking = {
       id: row.id,
       status: row.status,
@@ -1024,9 +1036,6 @@ async function lookupRefundBooking() {
       original_cleaner_id: row.original_cleaner_id ?? null,
       reassigned_at: row.reassigned_at ?? null,
     }
-
-    // Load payment using the full resolved UUID (not the short prefix the user typed)
-    const payment = await loadRefundPayment(row.id)
 
     if (!payment) {
       refundModal.eligibilityError = 'No payment record found for this booking. It may not have been paid yet.'

@@ -40,8 +40,8 @@ test.describe('Admin — Investigations', () => {
 
   test.afterAll(async () => {
     if (invBookingId) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (db as any).from('booking_investigations').delete().eq('booking_id', invBookingId).catch(() => {})
+      // Supabase builder is thenable but lacks .catch() — use try/catch
+      try { await db.from('booking_investigations').delete().eq('booking_id', invBookingId) } catch {}
       await deleteBooking(invBookingId)
     }
   })
@@ -114,12 +114,14 @@ test.describe('Admin — Investigations', () => {
 
   test('IV10.4 — admin can resolve / close an investigation', async ({ adminPage: page }) => {
     // Ensure there's an open investigation (if table exists)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (db as any).from('booking_investigations').upsert({
-      booking_id: invBookingId,
-      status:     'open',
-      notes:      'Opened by acceptance test',
-    }, { onConflict: 'booking_id' }).catch(() => {})
+    // Supabase builder is thenable but lacks .catch() — use try/catch
+    try {
+      await db.from('booking_investigations').upsert({
+        booking_id: invBookingId,
+        status:     'open',
+        notes:      'Opened by acceptance test',
+      }, { onConflict: 'booking_id' })
+    } catch {}
 
     const ops = new OperationsConsole(page)
     await ops.goto(invBookingId)
@@ -142,10 +144,11 @@ test.describe('Admin — Investigations', () => {
 
     // Timeline section should reflect investigation events
     await expect(ops.timeline).toBeVisible({ timeout: 15_000 })
+    // Both invEvent ("Investigation" section) and noEvents may be simultaneously
+    // visible — add .first() on the combined locator to avoid strict mode violation.
     const invEvent = page.getByText(/investigation|flagged|resolved/i).first()
-    // If investigations exist — they should appear; otherwise pass (no history)
-    const noEvents = page.getByText(/no events|no history/i)
-    await expect(invEvent.or(noEvents).or(ops.timeline)).toBeVisible({ timeout: 10_000 })
+    const noEvents = page.getByText(/no events|no history/i).first()
+    await expect(invEvent.or(noEvents).first()).toBeVisible({ timeout: 10_000 })
   })
 
   // ── No active investigation default ───────────────────────────────────────
@@ -154,9 +157,10 @@ test.describe('Admin — Investigations', () => {
     // Seed a fresh booking with no investigation
     const serviceId = await getServiceIdForCleaner(CLEANER_ID)
     const cleanBid = await seedBookingDirect(CUSTOMER_ID, CLEANER_ID, serviceId, {
-      status:        'confirmed',
+      status:        'accepted',
       paymentStatus: 'unpaid',
       amountCents:   3000,
+      payoutCents:   2400, // must be < amountCents to satisfy booking_financials_nonnegative constraint
     })
 
     try {

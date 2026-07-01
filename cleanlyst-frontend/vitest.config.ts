@@ -13,6 +13,7 @@ export default mergeConfig(
         'tests/e2e/**',
         'tests/database/**',   // real DB — run separately with test:db
         'tests/stripe/**',     // real Stripe — run separately with test:stripe
+        'playwright/**',       // Playwright E2E — run separately with test:pw
       ],
       root: fileURLToPath(new URL('./', import.meta.url)),
       coverage: {

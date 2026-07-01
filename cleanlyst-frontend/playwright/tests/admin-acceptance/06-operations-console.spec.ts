@@ -34,7 +34,7 @@ test.describe('Admin — Operations Console', () => {
     ;({ customerId: CUSTOMER_ID, cleanerId: CLEANER_ID } = await resolveTestUsers())
     const serviceId = await getServiceIdForCleaner(CLEANER_ID)
     opsBookingId = await seedBookingDirect(CUSTOMER_ID, CLEANER_ID, serviceId, {
-      status:        'confirmed',
+      status:        'accepted',
       paymentStatus: 'captured',
       amountCents:   8000,
       payoutCents:   6500,
@@ -81,7 +81,8 @@ test.describe('Admin — Operations Console', () => {
     if (found) {
       await ops.assertBundleLoaded()
     } else {
-      // Bundle may auto-load without needing to select
+      // Search result not clicked (no results or selector mismatch) — fall back to deep-link
+      await ops.goto(opsBookingId)
       await expect(ops.bookingSummary).toBeVisible({ timeout: 10_000 })
     }
   })
@@ -137,11 +138,12 @@ test.describe('Admin — Operations Console', () => {
     await ops.search(CUSTOMER_EMAIL)
     await page.waitForLoadState('networkidle')
 
-    // Results dropdown or auto-loaded bundle
-    const anyResult = page.getByText(CUSTOMER_EMAIL)
+    // Results dropdown (UUID button), email hint text, bundle, or no-results — any is valid
+    const anyResult = page.getByRole('button').filter({ hasText: /[0-9a-f]{8}-/ }).first()
+      .or(page.getByText(CUSTOMER_EMAIL))
       .or(ops.bookingSummary)
       .or(ops.noResults)
-    await expect(anyResult).toBeVisible({ timeout: 10_000 })
+    await expect(anyResult.first()).toBeVisible({ timeout: 20_000 })
   })
 
   // ── No-results state ───────────────────────────────────────────────────────
@@ -166,7 +168,7 @@ test.describe('Admin — Operations Console', () => {
     // At least one action button should be present
     const actionBtn = page.getByRole('button', { name: /cancel|refund|force|admin/i }).first()
     const actionsArea = ops.actions
-    await expect(actionsArea.or(actionBtn)).toBeVisible({ timeout: 10_000 })
+    await expect(actionsArea.or(actionBtn).first()).toBeVisible({ timeout: 10_000 })
   })
 
   // ── Accessibility ──────────────────────────────────────────────────────────

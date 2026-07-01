@@ -58,7 +58,9 @@ test.describe('Admin — Financial Close', () => {
     await fc.goto()
 
     await fc.selectPeriodType('monthly')
-    await expect(fc.dateInput).toBeVisible({ timeout: 5_000 })
+    // Monthly uses the current month automatically — no date input appears.
+    // Verify the Run Close button is ready to fire.
+    await expect(fc.runCloseButton).toBeEnabled({ timeout: 5_000 })
   })
 
   test('FC7.5 — Manual period type shows dual date pickers', async ({ adminPage: page }) => {
@@ -216,10 +218,10 @@ test.describe('Admin — Financial Close', () => {
     const fc = new FinancialClose(page)
     await fc.goto()
 
-    // After running closes in prior tests, history should appear
-    const history = page.getByText(/close history|past closes|previous/i).first()
-    const noHistory = page.getByText(/no close history|no records/i)
-    await expect(history.or(noHistory)).toBeVisible({ timeout: 10_000 })
+    // The history section heading is "History" (h2); empty state is "No closes recorded yet."
+    const history  = page.getByRole('heading', { name: /^history$/i }).first()
+    const noRecord = page.getByText(/no closes recorded yet/i).first()
+    await expect(history.or(noRecord)).toBeVisible({ timeout: 10_000 })
   })
 
   // ── Re-run idempotency ─────────────────────────────────────────────────────
@@ -239,7 +241,8 @@ test.describe('Admin — Financial Close', () => {
     await fc.runClose()
 
     // Should either block with error, or succeed idempotently
-    const anyState = fc.metricsGrid.or(page.getByText(/already closed|duplicate|0 bookings|no data/i).first())
+    // .first() prevents strict mode violations when both locators match simultaneously
+    const anyState = fc.metricsGrid.or(page.getByText(/already closed|duplicate|0 bookings|no data/i).first()).first()
     await expect(anyState).toBeVisible({ timeout: 20_000 })
   })
 

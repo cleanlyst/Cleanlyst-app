@@ -85,9 +85,13 @@ async function createAuthUser(email: string, password: string, fullName: string)
 }
 
 async function upsertProfile(userId: string, email: string, role: string, extraValues: Record<string, unknown> = {}) {
+  // is_verified must be set explicitly: the DB trigger only fires on cleaner_profiles.status
+  // changes (not INSERTs), so a fresh cleaner seeded with status='approved' starts
+  // unverified unless we set it here — making them invisible in the marketplace.
+  const is_verified = ['customer', 'cleaner_active', 'admin'].includes(role)
   const { error } = await serviceClient
     .from('profiles')
-    .upsert({ id: userId, email, role, ...extraValues }, { onConflict: 'id' })
+    .upsert({ id: userId, email, role, is_verified, ...extraValues }, { onConflict: 'id' })
   if (error) throw error
 }
 

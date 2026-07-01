@@ -57,7 +57,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { requireSupabase } from '@/services/supabaseClient'
+import { requireSupabase } from '@/lib/supabase'
 import { track } from '@/utils/analytics'
 import { useAuthStore } from '@/stores/auth'
 

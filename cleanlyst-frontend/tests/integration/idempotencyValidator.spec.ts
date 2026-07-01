@@ -26,8 +26,6 @@ vi.mock('@/services/payments/paymentLedgerResolver', () => ({
   getLedgerEvents: (...args: unknown[]) => mockGetLedgerEvents(...args),
 }))
 
-// We need two different .from() responses depending on table name
-let fromCallCount = 0
 vi.mock('@/services/supabaseClient', () => ({
   getSupabaseClient: () => ({
     from: (table: string) => {

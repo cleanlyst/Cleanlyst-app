@@ -23,11 +23,12 @@ import {
 import type {
   StoredFinancialClose,
   ClosePeriodType,
+  CloseStatus,
   FinancialCloseReport,
   ClosePeriod,
 } from '@/services/financialClose/types'
 
-export type { StoredFinancialClose, ClosePeriodType }
+export type { StoredFinancialClose, ClosePeriodType, CloseStatus }
 
 export function useFinancialClose() {
   const supabase = getSupabaseClient()

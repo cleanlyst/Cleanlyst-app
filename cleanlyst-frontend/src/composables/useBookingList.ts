@@ -15,23 +15,32 @@ export const BOOKING_TABS: { key: BookingTab; label: string }[] = [
   { key: 'cancelled', label: 'Cancelled' },
 ]
 
-const TAB_STATUSES: Record<BookingTab, string[] | null> = {
+// Customer pending: booking created but not yet in progress
+const CUSTOMER_PENDING_STATUSES = [
+  'pending_request',
+  'awaiting_customer_payment',
+  'payment_authorized',
+  'estimate_proposed',
+]
+
+// Cleaner pending: paid bookings awaiting cleaner acceptance (no pending_request — RLS hides those)
+const CLEANER_PENDING_STATUSES = [
+  'payment_authorized',
+  'estimate_proposed',
+  'awaiting_customer_payment',
+]
+
+const SHARED_TAB_STATUSES = {
   all: null,
-  pending: [
-    'pending_request',
-    'awaiting_customer_payment',
-    'payment_authorized',
-    'estimate_proposed',
-  ],
   active: [
     'accepted',
-    'paid',           // EPIC 4: upfront-payment bookings auto-advance from accepted → paid
+    'paid',
     'paid_pending_start',
     'scheduled',
     'in_progress',
     'completion_pending_customer',
     'cleaner_no_show',
-    'reassign_requested', // waiting for replacement cleaner
+    'reassign_requested',
   ],
   completed: ['completed'],
   cancelled: [
@@ -127,7 +136,11 @@ export function useBookingList(role: 'customer' | 'cleaner') {
         .order('scheduled_start', { ascending: false })
         .range(start, end)
 
-      const tabStatuses = TAB_STATUSES[currentTab.value]
+      const pendingStatuses = role === 'cleaner' ? CLEANER_PENDING_STATUSES : CUSTOMER_PENDING_STATUSES
+      const tabStatuses =
+        currentTab.value === 'pending'
+          ? pendingStatuses
+          : SHARED_TAB_STATUSES[currentTab.value as keyof typeof SHARED_TAB_STATUSES]
       if (tabStatuses) {
         q = q.in('status', tabStatuses)
       }

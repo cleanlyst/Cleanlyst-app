@@ -7,6 +7,7 @@
         :to="{ name: item.name }"
         class="dashboard-nav-link"
         :class="{ 'dashboard-nav-link--active': activeRouteName === item.name }"
+        :aria-current="activeRouteName === item.name ? 'page' : undefined"
       >
         <span v-if="item.icon" class="material-symbols-outlined dashboard-nav-link__icon">
           {{ item.icon }}

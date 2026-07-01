@@ -23,8 +23,7 @@ await auth.init()
 auth.bindAuthListener()
 
 // Sync auth state into analytics so page-view events carry user_id
-const user = auth.user
-if (user) setAnalyticsUser(user.id)
+if (auth.userId) setAnalyticsUser(auth.userId)
 
 app.use(pinia)
 app.use(router)

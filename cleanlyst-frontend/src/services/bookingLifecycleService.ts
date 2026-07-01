@@ -42,13 +42,22 @@ interface TransitionRule {
 export const LIFECYCLE_TRANSITIONS: Partial<
   Record<BookingStatus, Partial<Record<BookingStatus, TransitionRule>>>
 > = {
+  // pay-before-accept: cleaner can no longer accept/decline from pending_request.
+  // Admin retains the ability to decline/cancel unpaid bookings (fraud/admin ops).
   pending_request: {
-    accepted:         { allowedActors: ['cleaner', 'admin'] },
-    declined:         { allowedActors: ['cleaner', 'admin'] },
-    cleaner_declined: { allowedActors: ['cleaner', 'admin'] },
-    cancelled:        { allowedActors: ['customer', 'admin'] },
+    declined:          { allowedActors: ['admin'] },
+    cancelled:         { allowedActors: ['customer', 'admin'] },
     estimate_proposed: { allowedActors: ['cleaner'] },
+    cleaner_cancelled: { allowedActors: ['admin'] },
+  },
+  // Canonical pay-before-accept path: cleaner accepts AFTER the customer has paid.
+  payment_authorized: {
+    accepted:          { allowedActors: ['cleaner', 'admin'] },
+    cleaner_declined:  { allowedActors: ['cleaner', 'admin'] },
+    cancelled:         { allowedActors: ['customer', 'admin'] },
     cleaner_cancelled: { allowedActors: ['cleaner', 'admin'] },
+    in_progress:       { allowedActors: ['admin'] }, // admin fast-track only
+    refunded:          { allowedActors: ['admin'] },
   },
   accepted: {
     paid:              { allowedActors: ['admin'] },
@@ -88,11 +97,6 @@ export const LIFECYCLE_TRANSITIONS: Partial<
     // payment_authorized is written by the Stripe webhook (service_role), not this RPC.
     payment_authorized: { allowedActors: ['customer'] },
     cancelled:          { allowedActors: ['customer', 'admin'] },
-  },
-  payment_authorized: {
-    // Cancellation of authorized payment goes through refund-payment EF → Stripe → webhook.
-    in_progress: { allowedActors: ['cleaner', 'admin'] },
-    refunded:    { allowedActors: ['admin'] },
   },
   completion_pending_customer: {
     completed: { allowedActors: ['customer', 'admin'] },
@@ -135,9 +139,10 @@ export function canStartCleaning(
   derivedPaymentState?: DerivedPaymentState,
 ): boolean {
   if (booking.started_at) return false
-  // Stripe Checkout path: authorized hold — cleaner can start, capture happens later.
-  if (booking.status === 'payment_authorized') return true
+  // pay-before-accept: start requires explicit acceptance first — never from payment_authorized
   if (!['paid', 'accepted'].includes(booking.status)) return false
+  // Stripe authorized hold is sufficient to start cleaning; capture happens at payout time.
+  if (booking.payment_status === 'authorized' || booking.payment_status === 'captured') return true
   // Prefer ledger-derived state when available; fall back to cached booking field.
   if (derivedPaymentState !== undefined) return derivedPaymentState === 'captured'
   return derivePaymentReadiness(booking.payment_status)
@@ -160,7 +165,8 @@ export function canCancelCustomer(booking: BookingDetailRow): boolean {
 }
 
 export function cannotAttend(booking: BookingDetailRow): boolean {
-  if (!['pending_request', 'accepted', 'paid'].includes(booking.status)) return false
+  // pay-before-accept: cleaners can report cannot-attend only after payment confirmation
+  if (!['payment_authorized', 'accepted', 'paid'].includes(booking.status)) return false
   return !booking.started_at
 }
 

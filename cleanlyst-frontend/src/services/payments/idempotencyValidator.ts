@@ -123,7 +123,7 @@ export async function validateBookingIdempotency(bookingId: string): Promise<Ide
 
   if (!valid) {
     for (const v of violations) {
-      log.idempotencyViolation(v.metadata.stripeEventIds?.[0] as string ?? '', {
+      log.idempotencyViolation((v.metadata.stripeEventIds as string[] | undefined)?.[0] ?? '', {
         bookingId,
         violationType: v.type,
         detail: v.detail,

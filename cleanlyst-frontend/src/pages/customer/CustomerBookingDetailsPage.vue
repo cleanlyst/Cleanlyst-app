@@ -940,7 +940,7 @@ async function reportOverdueNoShow() {
     await reportNoShowOverdue(bookingId)
     overdueReportSuccess.value = true
     // Reload booking so the status badge updates
-    await loadBooking()
+    await refreshBooking()
   } catch (e) {
     overdueReportError.value = toUserMessage(e, 'Failed to report no-show. Please try again.')
   } finally {

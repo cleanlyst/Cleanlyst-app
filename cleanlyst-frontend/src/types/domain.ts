@@ -21,6 +21,8 @@ export type BookingStatus =
   | 'payout_released'
   | 'cleaner_cancelled'
   | 'reassign_requested'
+  | 'awaiting_resolution'
+  | 'no_show_reported'
 
 export type ApplicationStatus =
   | 'draft'

@@ -452,7 +452,7 @@ router.beforeEach(async (to) => {
 
 router.afterEach((to) => {
   const auth = useAuthStore(pinia)
-  const userId = auth.user?.id
+  const userId = auth.userId ?? undefined
   if (userId) setAnalyticsUser(userId)
   trackPageView(to.fullPath, userId)
 })

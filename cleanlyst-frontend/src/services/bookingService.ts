@@ -185,6 +185,8 @@ export async function getCleanerBookings(cleanerId: string): Promise<BookingList
     .from('bookings')
     .select(BOOKING_LIST_SELECT)
     .eq('cleaner_id', cleanerId)
+    // RLS also enforces this; the filter here documents the pay-before-accept contract.
+    .neq('status', 'pending_request')
     .order('scheduled_start', { ascending: true })
 
   if (error) throw error

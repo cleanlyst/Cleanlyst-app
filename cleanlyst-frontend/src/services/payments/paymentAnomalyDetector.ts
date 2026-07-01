@@ -129,13 +129,13 @@ export async function detectBookingAnomalies(bookingId: string): Promise<Anomaly
       bookingId,
       'AUTHORIZATION_EXPIRED',
       `Authorization is ${ageHours}h old with no capture or refund — Stripe hold may have expired`,
-      { authorizedAt: authorized[0].createdAt, ageHours },
+      { authorizedAt: authorized[0]!.createdAt, ageHours },
     ))
   }
 
   // ── Captured but never completed ───────────────────────────────────────────
   if (captured.length > 0 && booking.status && !TERMINAL_STATUSES.has(booking.status)) {
-    const capturedAt = captured[0].createdAt
+    const capturedAt = captured[0]!.createdAt
     const capturedAgeH = Math.round((now - (captureTime ?? 0)) / (1000 * 60 * 60))
     if (capturedAgeH > 48) {
       anomalies.push(makeAnomaly(
@@ -169,8 +169,8 @@ export async function detectBookingAnomalies(bookingId: string): Promise<Anomaly
       'REFUND_AFTER_PAYOUT',
       'PAYMENT_REFUNDED timestamp is after PAYOUT_RELEASED — cleaner may have already been paid',
       {
-        payoutReleasedAt: payouts[0].createdAt,
-        refundIssuedAt:   refunded[0].createdAt,
+        payoutReleasedAt: payouts[0]!.createdAt,
+        refundIssuedAt:   refunded[0]!.createdAt,
       },
     ))
   }
@@ -217,7 +217,7 @@ export async function detectBookingAnomalies(bookingId: string): Promise<Anomaly
       bookingId,
       'UNEXPECTED_LEDGER_ORDER',
       'PAYMENT_CAPTURED precedes PAYMENT_AUTHORIZED — chronological impossibility',
-      { authorizedAt: authorized[0].createdAt, capturedAt: captured[0].createdAt },
+      { authorizedAt: authorized[0]!.createdAt, capturedAt: captured[0]!.createdAt },
     ))
   }
   if (authTime && refundTime && refundTime < authTime) {
@@ -225,7 +225,7 @@ export async function detectBookingAnomalies(bookingId: string): Promise<Anomaly
       bookingId,
       'UNEXPECTED_LEDGER_ORDER',
       'PAYMENT_REFUNDED precedes PAYMENT_AUTHORIZED — chronological impossibility',
-      { authorizedAt: authorized[0].createdAt, refundedAt: refunded[0].createdAt },
+      { authorizedAt: authorized[0]!.createdAt, refundedAt: refunded[0]!.createdAt },
     ))
   }
 

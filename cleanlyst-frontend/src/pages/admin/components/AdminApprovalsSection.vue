@@ -20,6 +20,8 @@
             class="w-full pl-10 pr-4 h-12 bg-surface-container-lowest border border-outline-variant rounded font-body text-body focus:border-primary focus:ring-0 outline-none"
             placeholder="Search by name or city..."
             type="text"
+            aria-label="Search applications"
+            autocomplete="off"
             @input="onSearchInput"
           />
         </div>

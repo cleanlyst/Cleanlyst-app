@@ -11,9 +11,9 @@
 
     <section class="stats-grid">
       <div class="stat-card">
-        <span class="metric-label">Incoming</span>
+        <span class="metric-label">Awaiting review</span>
         <p class="metric-value">{{ props.bookingTotals.pending }}</p>
-        <p class="metric-sub">Requests to review</p>
+        <p class="metric-sub">Paid bookings awaiting acceptance</p>
       </div>
       <div class="stat-card">
         <span class="metric-label">Upcoming</span>
@@ -95,7 +95,7 @@
           </div>
           <div class="booking-ctas">
             <button
-              v-if="b.status === 'pending_request'"
+              v-if="b.status === 'payment_authorized'"
               class="btn-start"
               type="button"
               data-testid="accept-booking-btn"
@@ -105,7 +105,7 @@
               Accept
             </button>
             <button
-              v-if="b.status === 'pending_request'"
+              v-if="b.status === 'payment_authorized'"
               class="btn-decline"
               type="button"
               data-testid="decline-booking-btn"
@@ -245,7 +245,9 @@ async function handleStartBooking(id: string) {
 }
 
 function canStartCleaning(booking: { status: string; payment_status: string | null; scheduled_start: string }): boolean {
-  if (!['accepted', 'paid'].includes(booking.status) || booking.payment_status !== 'captured') return false
+  if (!['accepted', 'paid'].includes(booking.status)) return false
+  // Stripe authorized hold is sufficient — capture happens when payout is released
+  if (booking.payment_status !== 'captured' && booking.payment_status !== 'authorized') return false
   const start = new Date(booking.scheduled_start)
   if (Number.isNaN(start.valueOf())) return false
   return Date.now() >= start.getTime() - 60 * 60 * 1000

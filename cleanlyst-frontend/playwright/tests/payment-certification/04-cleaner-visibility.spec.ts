@@ -119,9 +119,9 @@ test.describe('PC — Cleaner Visibility', () => {
     }
   })
 
-  // ── PC-31: Document pending_request visibility (architectural finding) ─────
+  // ── PC-19: Cleaner CANNOT see pending_request bookings (RLS enforced) ────────
 
-  test('PC-19 — ARCHITECTURAL FINDING: pending_request IS visible to cleaners (RLS has no status filter)', async () => {
+  test('PC-19 — RLS blocks cleaner from SELECT on pending_request bookings (pay-before-accept)', async () => {
     const serviceId = await getServiceIdForCleaner(cleanerUserId)
     const bookingId = await seedBookingDirect(customerUserId, cleanerUserId, serviceId, {
       status: 'pending_request',
@@ -132,8 +132,10 @@ test.describe('PC — Cleaner Visibility', () => {
     })
 
     try {
-      // DB-level check: RLS allows cleaner to SELECT pending_request bookings
-      // (the "Users view own bookings" policy has no status filter)
+      // migration 20260701000002 splits "Users view own bookings" into:
+      //   "Customer views own bookings"  — all statuses
+      //   "Cleaner views paid bookings"  — status != 'pending_request'
+      // This test verifies the cleaner policy: pending_request MUST NOT be queryable.
       const { data: rlsCheck } = await db
         .from('bookings')
         .select('id, status')
@@ -141,19 +143,7 @@ test.describe('PC — Cleaner Visibility', () => {
         .eq('cleaner_id', cleanerUserId)
         .maybeSingle()
 
-      // This WILL return data — confirming the architectural finding
-      const isVisible = rlsCheck !== null
-      if (isVisible) {
-        console.warn(
-          '[PC-19] ARCHITECTURAL FINDING: pending_request booking is queryable by cleaner ' +
-          'via RLS (policy "Users view own bookings" has no status filter). ' +
-          'Certification spec requires cleaner to be hidden until payment_authorized. ' +
-          'Current implementation shows it (accept-before-pay model). ' +
-          'See CERTIFICATION REPORT Section H-2 for remediation plan.',
-        )
-      }
-      // Soft assertion: document but do not fail certification for this finding
-      expect(typeof isVisible).toBe('boolean')
+      expect(rlsCheck).toBeNull()
     } finally {
       await deleteBooking(bookingId)
     }

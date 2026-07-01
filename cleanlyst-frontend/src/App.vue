@@ -31,17 +31,19 @@
         </nav>
 
         <div class="app-actions">
-          <div v-if="auth.isAuthenticated" class="notification-menu">
+          <div v-if="auth.isAuthenticated" ref="notificationMenuRef" class="notification-menu">
             <button
               type="button"
               class="notification-button"
-              aria-label="Notifications"
+              :aria-label="unreadCount ? `Notifications (${unreadCount} unread)` : 'Notifications'"
+              :aria-expanded="notificationsOpen"
+              aria-haspopup="listbox"
               @click="notificationsOpen = !notificationsOpen"
             >
-              <span class="material-symbols-outlined">notifications</span>
-              <span v-if="unreadCount" class="notification-count">{{ unreadCount }}</span>
+              <span class="material-symbols-outlined" aria-hidden="true">notifications</span>
+              <span v-if="unreadCount" class="notification-count" aria-hidden="true">{{ unreadCount }}</span>
             </button>
-            <div v-if="notificationsOpen" class="notification-popover">
+            <div v-if="notificationsOpen" class="notification-popover" role="listbox" aria-label="Notifications">
               <div class="notification-popover__header">
                 <span>Notifications</span>
                 <button v-if="unreadCount" type="button" @click="markAllRead">Mark all read</button>
@@ -94,7 +96,7 @@
           </button>
         </div>
 
-        <button class="app-menu-button" type="button" @click="toggleNav" aria-label="Open menu">
+        <button class="app-menu-button" type="button" @click="toggleNav" :aria-label="open ? 'Close menu' : 'Open menu'" :aria-expanded="open">
           <span></span>
           <span></span>
           <span></span>
@@ -162,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
 import FooterPage from '@/components/FooterPage.vue'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
 import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router'
@@ -177,6 +179,7 @@ const auth = useAuthStore()
 const open = ref(false)
 const signingOut = ref(false)
 const notificationsOpen = ref(false)
+const notificationMenuRef = ref<HTMLElement | null>(null)
 const {
   notifications,
   loading: notificationsLoading,
@@ -206,12 +209,19 @@ const showDashboardLink = computed(() => {
 const notificationRouteError = ref('')
 let notificationRouteErrorTimeout: ReturnType<typeof setTimeout> | null = null
 
+function handleClickOutsideNotifications(event: MouseEvent) {
+  if (notificationsOpen.value && notificationMenuRef.value && !notificationMenuRef.value.contains(event.target as Node)) {
+    notificationsOpen.value = false
+  }
+}
+
 onMounted(async () => {
   if (!auth.initialized) await auth.init()
   if (auth.isAuthenticated) {
     await loadNotifications()
     subscribeToNotificationUpdates()
   }
+  document.addEventListener('click', handleClickOutsideNotifications)
 })
 
 watch(
@@ -239,6 +249,7 @@ watch(
 
 onBeforeUnmount(() => {
   if (notificationRouteErrorTimeout) clearTimeout(notificationRouteErrorTimeout)
+  document.removeEventListener('click', handleClickOutsideNotifications)
 })
 
 function navLinkClass(routeName?: string) {

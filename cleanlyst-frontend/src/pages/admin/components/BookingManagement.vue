@@ -111,6 +111,8 @@
           class="search-input"
           placeholder="Search by service or status…"
           type="text"
+          aria-label="Search bookings"
+          autocomplete="off"
           @input="onSearchInput"
         />
       </div>
@@ -264,11 +266,11 @@
 
   <!-- ── Refund Modal ──────────────────────────────────────── -->
   <div v-if="refundModal.open" class="modal-backdrop" @click.self="closeRefundModal">
-    <div class="modal-box refund-modal-box">
+    <div class="modal-box refund-modal-box" role="dialog" aria-modal="true" aria-labelledby="refund-modal-title">
       <div class="modal-header">
-        <h2 class="modal-title">Process Refund</h2>
-        <button class="modal-close" type="button" :disabled="refundModal.loading" @click="closeRefundModal">
-          <span class="material-symbols-outlined">close</span>
+        <h2 id="refund-modal-title" class="modal-title">Process Refund</h2>
+        <button class="modal-close" type="button" aria-label="Close" :disabled="refundModal.loading" @click="closeRefundModal">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
       </div>
       <div class="refund-modal-body">
@@ -1010,7 +1012,7 @@ async function lookupRefundBooking() {
     }
 
     // Fetch customer and cleaner names separately (no FK join — avoids PostgREST ambiguity)
-    const row = bookingData as BookingQueryRow & { customer_id: string }
+    const row = bookingData as unknown as BookingQueryRow & { customer_id: string }
     const [customerResult, cleanerResult] = await Promise.all([
       supabase.from('profiles').select('full_name').eq('id', row.customer_id).maybeSingle(),
       supabase.from('profiles').select('full_name').eq('id', row.cleaner_id ?? '').maybeSingle(),

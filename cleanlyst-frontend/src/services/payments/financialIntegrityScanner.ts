@@ -60,7 +60,7 @@ function totalCents(events: LedgerEvent[]): number {
 
 function earliest(events: LedgerEvent[]): string | null {
   if (!events.length) return null
-  return events.map((e) => e.createdAt).sort()[0]
+  return events.map((e) => e.createdAt).sort()[0] ?? null
 }
 
 /**

@@ -9,7 +9,7 @@
           <span
             class="px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide"
             :class="statusColor"
-          >{{ formatStatus(booking.status) }}</span>
+          >{{ formatStatus(booking.status ?? '') }}</span>
           <span
             v-if="booking.paymentStatus"
             class="px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide"
@@ -83,7 +83,7 @@ const statusColor = computed(() => {
     cleaner_cancelled:'bg-error-container text-on-error-container',
     refunded:         'bg-error-container text-on-error-container',
   }
-  return map[props.booking.status] ?? 'bg-surface-container text-secondary'
+  return map[props.booking.status ?? ''] ?? 'bg-surface-container text-secondary'
 })
 
 const paymentStatusColor = computed(() => {

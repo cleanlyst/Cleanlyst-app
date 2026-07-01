@@ -34,16 +34,18 @@
           <!-- Manual date range -->
           <div v-if="selectedPeriodType === 'manual'" class="flex gap-3 flex-wrap mb-4">
             <div class="flex flex-col gap-1">
-              <label class="font-label-sm text-label-sm text-secondary">Start date</label>
+              <label for="manual-start-date" class="font-label-sm text-label-sm text-secondary">Start date</label>
               <input
+                id="manual-start-date"
                 v-model="manualStart"
                 type="date"
                 class="border border-outline rounded-md px-3 py-2 text-sm bg-surface text-on-surface"
               />
             </div>
             <div class="flex flex-col gap-1">
-              <label class="font-label-sm text-label-sm text-secondary">End date</label>
+              <label for="manual-end-date" class="font-label-sm text-label-sm text-secondary">End date</label>
               <input
+                id="manual-end-date"
                 v-model="manualEnd"
                 type="date"
                 class="border border-outline rounded-md px-3 py-2 text-sm bg-surface text-on-surface"
@@ -53,10 +55,11 @@
 
           <!-- Date picker for daily/weekly -->
           <div v-if="selectedPeriodType === 'daily' || selectedPeriodType === 'weekly'" class="mb-4">
-            <label class="font-label-sm text-label-sm text-secondary block mb-1">
+            <label for="period-date" class="font-label-sm text-label-sm text-secondary block mb-1">
               {{ selectedPeriodType === 'daily' ? 'Date' : 'Week containing date' }}
             </label>
             <input
+              id="period-date"
               v-model="selectedDate"
               type="date"
               class="border border-outline rounded-md px-3 py-2 text-sm bg-surface text-on-surface"

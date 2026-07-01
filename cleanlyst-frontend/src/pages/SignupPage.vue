@@ -95,6 +95,7 @@
                   placeholder="name@example.com"
                   required
                   type="email"
+                  autocomplete="email"
                   v-model="email"
                 />
               </div>
@@ -110,6 +111,7 @@
                   required
                   minlength="8"
                   type="password"
+                  autocomplete="new-password"
                   v-model="password"
                 />
                 <p class="font-caption text-caption text-zinc-500">
@@ -129,13 +131,14 @@
                   placeholder="Your business name"
                   required
                   type="text"
+                  autocomplete="organization"
                   v-model="businessName"
                 />
               </div>
               <p v-if="errorMessage" class="font-caption text-caption text-error" role="alert">
                 {{ errorMessage }}
               </p>
-              <p v-if="successMessage" class="font-caption text-caption text-secondary">
+              <p v-if="successMessage" class="font-caption text-caption text-secondary" role="status" aria-live="polite">
                 {{ successMessage }}
               </p>
               <!-- Primary CTA -->
@@ -265,7 +268,7 @@ async function handleSignup() {
       selectedRole.value === 'cleaner' ? businessName.value.trim() : undefined,
     )
     await auth.init()
-    void track('REGISTRATION_COMPLETED', { role: selectedRole.value, user_id: auth.user?.id })
+    void track('REGISTRATION_COMPLETED', { role: selectedRole.value, user_id: auth.userId ?? undefined })
 
     if (auth.isAuthenticated) {
       await redirectAfterAuth()

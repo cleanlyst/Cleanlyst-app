@@ -190,7 +190,6 @@ export async function refundPayment(
     bookingId,
     paymentType:    options.amountCents ? 'partial_refund' : 'refund',
     provider:       'stripe_checkout',
-    simulationMode: false,
     refundId:       efResult.refund_id ?? undefined,
     amountCents:    options.amountCents,
     reason:         options.reason,

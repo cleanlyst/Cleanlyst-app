@@ -114,14 +114,14 @@ export async function detectBookingAlerts(bookingId: string): Promise<FinancialA
 
   // ── Capture missing ────────────────────────────────────────────────────────
   if (authorized.length > 0 && captured.length === 0 && refunded.length === 0) {
-    const authAge = now - new Date(authorized[0].createdAt).getTime()
+    const authAge = now - new Date(authorized[0]!.createdAt).getTime()
     if (authAge > CAPTURE_MISSING_THRESHOLD_H * 60 * 60 * 1000) {
       const ageH = Math.round(authAge / (1000 * 60 * 60))
       alerts.push(makeAlert(
         bookingId,
         'CAPTURE_MISSING',
         `Payment authorized ${ageH}h ago but never captured. Stripe hold may expire.`,
-        { authorizedAt: authorized[0].createdAt, ageHours: ageH },
+        { authorizedAt: authorized[0]!.createdAt, ageHours: ageH },
       ))
     }
   }
@@ -146,7 +146,7 @@ export async function detectBookingAlerts(bookingId: string): Promise<FinancialA
       bookingId,
       'REFUND_FAILED',
       'Ledger shows PAYMENT_REFUNDED but payments.status is still "captured" — projection sync may have failed.',
-      { ledgerRefundAt: refunded[0].createdAt, paymentStatus: payment.status },
+      { ledgerRefundAt: refunded[0]!.createdAt, paymentStatus: payment.status },
     ))
   }
 

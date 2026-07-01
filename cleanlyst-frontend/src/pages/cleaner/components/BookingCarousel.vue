@@ -76,11 +76,11 @@
               </div>
 
               <div
-                v-if="b.status === 'accepted' && b.payment_status !== 'captured'"
+                v-if="b.status === 'payment_authorized'"
                 class="countdown-banner"
               >
                 <span class="material-symbols-outlined">payments</span>
-                Waiting for customer payment
+                Payment received — review and accept this booking
               </div>
 
               <div
@@ -115,7 +115,7 @@
             </div>
 
             <div class="booking-ctas">
-              <template v-if="b.status === 'pending_request'">
+              <template v-if="b.status === 'payment_authorized'">
                 <button
                   class="btn-primary"
                   type="button"
@@ -194,13 +194,14 @@ interface CarouselBooking {
   customer?: { id: string; full_name: string; avatar_url: string | null } | null
 }
 
+// pay-before-accept: pending_request excluded — cleaners never see unpaid bookings
 const ACTIVE_STATUSES = [
-  'pending_request',
+  'payment_authorized',
   'accepted',
+  'paid',
   'paid_pending_start',
   'estimate_proposed',
   'awaiting_customer_payment',
-  'payment_authorized',
   'in_progress',
   'completion_pending_customer',
   'cleaner_no_show',
@@ -237,7 +238,11 @@ function next() {
 }
 
 function isPaidAndStartable(b: CarouselBooking): boolean {
-  return b.status === 'accepted' && b.payment_status === 'captured'
+  // Stripe authorized hold is sufficient — capture happens when payout is released
+  return (
+    ['accepted', 'paid'].includes(b.status) &&
+    (b.payment_status === 'captured' || b.payment_status === 'authorized')
+  )
 }
 
 function isWithinStartWindow(b: CarouselBooking): boolean {

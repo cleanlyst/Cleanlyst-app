@@ -10,15 +10,15 @@ export function useCleanerBookings() {
   const errorMessage = ref('')
 
   const bookingTotals = computed(() => ({
-    pending: bookings.value.filter((b) => b.status === 'pending_request').length,
+    // pay-before-accept: "pending" for the cleaner means paid bookings awaiting acceptance
+    pending: bookings.value.filter((b) => b.status === 'payment_authorized').length,
     accepted: bookings.value.filter((b) =>
       [
         'accepted',
-        'paid',              // EPIC 4: upfront-payment bookings live here after acceptance
+        'paid',
         'paid_pending_start',
         'estimate_proposed',
         'awaiting_customer_payment',
-        'payment_authorized',
         'in_progress',
         'completion_pending_customer',
         'cleaner_no_show',

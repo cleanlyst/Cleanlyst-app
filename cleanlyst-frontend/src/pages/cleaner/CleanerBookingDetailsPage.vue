@@ -88,7 +88,7 @@
 
           <div class="action-group">
             <button
-              v-if="booking.status === 'pending_request'"
+              v-if="booking.status === 'payment_authorized'"
               type="button"
               class="btn-start"
               data-testid="accept-booking-btn"
@@ -98,23 +98,13 @@
               {{ actionLoading && activeAction === 'accept' ? 'Accepting…' : 'Accept booking' }}
             </button>
             <button
-              v-if="booking.status === 'pending_request'"
+              v-if="booking.status === 'payment_authorized'"
               type="button"
               class="btn-decline"
               :disabled="actionLoading"
               @click="declineModalOpen = true"
             >
               Decline booking
-            </button>
-
-            <button
-              v-if="booking.status === 'pending_request'"
-              type="button"
-              class="btn-action"
-              :disabled="actionLoading"
-              @click="estimateModalOpen = true"
-            >
-              Propose Estimate
             </button>
 
             <button
@@ -175,31 +165,11 @@
               Awaiting customer payment
             </button>
 
-            <!-- payment_authorized: Stripe Checkout complete, cleaner can start -->
+            <!-- payment_authorized: customer paid — accept/decline buttons shown above -->
             <div v-if="booking.status === 'payment_authorized'" class="status-info">
               <span class="material-symbols-outlined status-info-icon">payments</span>
-              Payment received — ready to start once confirmed
+              Customer payment confirmed — please accept or decline this booking
             </div>
-            <template v-if="booking.status === 'payment_authorized'">
-              <button
-                v-if="!isWithinStartWindow(booking)"
-                type="button"
-                class="btn-secondary"
-                disabled
-              >
-                Available in {{ countdownText(booking.scheduled_start) }}
-              </button>
-              <button
-                v-if="isWithinStartWindow(booking)"
-                type="button"
-                class="btn-start"
-                data-testid="start-cleaning-stripe-btn"
-                :disabled="actionLoading"
-                @click="handleStartCleaning"
-              >
-                {{ actionLoading && activeAction === 'start' ? 'Starting…' : 'Start Cleaning (pending payment confirmation)' }}
-              </button>
-            </template>
 
             <button
               v-if="cannotAttend(booking) && booking.status !== 'cleaner_cancelled'"
@@ -487,7 +457,7 @@ const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
 
 function canEditBooking(status: string): boolean {
-  return ['pending_request', 'accepted', 'estimate_proposed'].includes(status)
+  return ['accepted', 'payment_authorized', 'estimate_proposed'].includes(status)
 }
 
 function orderTimeRange(start: string, end: string | null) {

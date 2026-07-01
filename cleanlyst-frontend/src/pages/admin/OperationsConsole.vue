@@ -20,6 +20,8 @@
               type="text"
               placeholder="Booking UUID · email · pi_ · cs_ · tr_"
               class="w-full pl-10 pr-4 py-3 border border-outline bg-surface rounded-md font-body-md text-body-md text-on-surface placeholder:text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/60"
+              aria-label="Search bookings, customers, or Stripe IDs"
+              autocomplete="off"
               @input="onInput"
               @keydown.enter="search(query)"
               @keydown.escape="searchResults = []"
@@ -27,9 +29,11 @@
             <button
               v-if="query"
               class="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-on-surface"
+              type="button"
+              aria-label="Clear search"
               @click="query = ''; searchResults = []"
             >
-              <span class="material-symbols-outlined text-base">close</span>
+              <span class="material-symbols-outlined text-base" aria-hidden="true">close</span>
             </button>
           </div>
 

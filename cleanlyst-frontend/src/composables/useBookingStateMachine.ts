@@ -1,18 +1,20 @@
 import type { BookingStatus } from '@/types/domain'
 
 const transitions: Partial<Record<BookingStatus, BookingStatus[]>> = {
-  // EPIC 4 canonical path
-  pending_request: ['accepted', 'declined', 'cleaner_declined', 'cancelled', 'estimate_proposed'],
-  accepted: ['paid', 'in_progress', 'cancelled'],
+  // pay-before-accept canonical path:
+  // pending_request → (estimate flow) or customer cancels
+  // payment_authorized → cleaner accepts → in_progress → completed
+  pending_request: ['declined', 'cancelled', 'estimate_proposed'],
+  payment_authorized: ['accepted', 'cleaner_declined', 'cancelled', 'cleaner_cancelled', 'in_progress'],
+  accepted: ['paid', 'in_progress', 'cancelled', 'cleaner_cancelled'],
   paid: ['in_progress', 'cancelled', 'cleaner_cancelled'],
   in_progress: ['completion_pending_customer', 'disputed'],
   completed: ['disputed', 'payout_released'],
   payout_released: [],
 
-  // Alternate / legacy paths
+  // Estimate flow paths
   estimate_proposed: ['awaiting_customer_payment', 'cancelled'],
   awaiting_customer_payment: ['payment_authorized', 'cancelled'],
-  payment_authorized: ['in_progress'],
   paid_pending_start: ['in_progress', 'cancelled'],
   scheduled: ['in_progress', 'cancelled'],
   completion_pending_customer: ['completed', 'disputed'],

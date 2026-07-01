@@ -93,7 +93,7 @@
                   type="submit"
                 >
                   {{ submitting ? 'Sending…' : 'Send reset link' }}
-                  <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                  <span class="material-symbols-outlined text-sm" aria-hidden="true">arrow_forward</span>
                 </button>
               </form>
 

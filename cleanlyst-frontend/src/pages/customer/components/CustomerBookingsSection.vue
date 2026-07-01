@@ -43,6 +43,8 @@
           class="clnst-search-input"
           placeholder="Search bookings…"
           type="text"
+          aria-label="Search bookings"
+          autocomplete="off"
           @input="onSearchInput"
         />
       </div>
@@ -62,10 +64,10 @@
         <template v-if="list.currentTab.value === 'all'">
           When you book a cleaner, it will appear here.
         </template>
-        <template v-else-if="list.currentTab.value === 'upcoming'">
+        <template v-else-if="list.currentTab.value === 'active'">
           No upcoming bookings. Ready to schedule your next clean?
         </template>
-        <template v-else-if="list.currentTab.value === 'past'">
+        <template v-else-if="list.currentTab.value === 'completed'">
           Your completed bookings will appear here once a cleaning is finished.
         </template>
         <template v-else-if="list.currentTab.value === 'cancelled'">
@@ -175,17 +177,18 @@
 
     <!-- Payment modal -->
     <div v-if="payingBooking" class="modal-backdrop" @click.self="closePayModal">
-      <div class="modal-box">
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="pay-modal-title">
         <template v-if="!paySuccess">
           <div class="modal-header">
-            <h2 class="modal-title">Additional Payment</h2>
+            <h2 id="pay-modal-title" class="modal-title">Additional Payment</h2>
             <button
               class="modal-close"
               type="button"
+              aria-label="Close"
               :disabled="payProcessing"
               @click="closePayModal"
             >
-              <span class="material-symbols-outlined">close</span>
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
           </div>
           <div class="modal-body">
@@ -249,11 +252,11 @@
 
     <!-- Review modal -->
     <div v-if="reviewingBookingId" class="modal-backdrop" @click.self="closeReview">
-      <div class="modal-box">
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
         <div class="modal-header">
-          <h2 class="modal-title">Leave a Review</h2>
-          <button class="modal-close" type="button" @click="closeReview">
-            <span class="material-symbols-outlined">close</span>
+          <h2 id="review-modal-title" class="modal-title">Leave a Review</h2>
+          <button class="modal-close" type="button" aria-label="Close" @click="closeReview">
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
           </button>
         </div>
         <div class="modal-body">
@@ -273,7 +276,9 @@
               }}</span>
             </button>
           </div>
+          <label for="review-comment" class="sr-only">Review comment</label>
           <textarea
+            id="review-comment"
             v-model="reviewComment"
             class="review-textarea"
             rows="3"
@@ -469,6 +474,18 @@ function formatDate(value: string): string {
   word-wrap: normal;
   white-space: nowrap;
   direction: ltr;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .customer-bookings-page {

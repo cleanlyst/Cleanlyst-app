@@ -6,9 +6,11 @@
       <!-- Header + Progress -->
       <section class="mb-10 max-w-3xl mx-auto">
         <h1 class="font-h1 text-h1 text-primary mb-1">Book Cleaner</h1>
-        <div class="flex items-center gap-2 mt-4">
+        <div class="flex items-center gap-2 mt-4" role="list" aria-label="Booking progress">
           <template v-for="(label, i) in STEP_LABELS" :key="i">
             <div
+              role="listitem"
+              :aria-current="step === i + 1 ? 'step' : undefined"
               :class="[
                 'flex items-center gap-1.5 text-xs font-medium',
                 step === i + 1 ? 'text-primary' : step > i + 1 ? 'text-green-700' : 'text-on-surface-variant',
@@ -155,25 +157,33 @@
             </div>
           </div>
           <div>
-            <label class="block font-label-md text-label-md text-primary mb-2">Address</label>
+            <label for="address-line1" class="block font-label-md text-label-md text-primary mb-2">Address</label>
             <input
+              id="address-line1"
               v-model="addressLine1"
               type="text"
               placeholder="Address line 1"
+              autocomplete="address-line1"
               class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none mb-2"
             />
+            <label for="address-line2" class="sr-only">Address line 2</label>
             <input
+              id="address-line2"
               v-model="addressLine2"
               type="text"
               placeholder="Address line 2 (optional)"
+              autocomplete="address-line2"
               class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none mb-2"
             />
             <div class="grid grid-cols-2 gap-2">
               <div class="flex flex-col gap-1">
+                <label for="address-city" class="sr-only">City</label>
                 <input
+                  id="address-city"
                   v-model="addressCity"
                   type="text"
                   placeholder="City"
+                  autocomplete="address-level2"
                   class="w-full h-12 px-3 border bg-white font-body focus:ring-0 outline-none"
                   :class="cityOutsideRollout ? 'border-amber-400' : 'border-outline-variant focus:border-primary'"
                 />
@@ -181,12 +191,17 @@
                   {{ ROLLOUT_UNAVAILABLE_MESSAGE }}
                 </p>
               </div>
-              <input
-                v-model="addressPostcode"
-                type="text"
-                placeholder="Postcode"
-                class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
-              />
+              <div class="flex flex-col gap-1">
+                <label for="address-postcode" class="sr-only">Postcode</label>
+                <input
+                  id="address-postcode"
+                  v-model="addressPostcode"
+                  type="text"
+                  placeholder="Postcode"
+                  autocomplete="postal-code"
+                  class="w-full h-12 px-3 border border-outline-variant bg-white font-body focus:border-primary focus:ring-0 outline-none"
+                />
+              </div>
             </div>
           </div>
           <div>
@@ -245,10 +260,12 @@
 
         <!-- Cleaner cards -->
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div
+          <button
             v-for="c in cleaners"
             :key="c.user_id"
-            class="bg-white border border-outline-variant overflow-hidden group hover:border-primary transition-colors cursor-pointer"
+            type="button"
+            class="bg-white border border-outline-variant overflow-hidden group hover:border-primary transition-colors cursor-pointer text-left w-full"
+            :aria-label="`Select ${displayName(c)}`"
             @click="selectCleaner(c)"
           >
             <div class="aspect-[16/9] w-full relative overflow-hidden bg-surface-variant">
@@ -296,14 +313,15 @@
                   <span class="material-symbols-outlined text-secondary text-sm">verified</span>
                   <span class="font-caption text-caption text-secondary">Verified cleaner</span>
                 </div>
-                <button
-                  class="w-full py-2.5 bg-primary text-on-primary font-label-md text-sm active:scale-95 transition-all"
+                <span
+                  class="block w-full py-2.5 bg-primary text-on-primary font-label-md text-sm text-center"
+                  aria-hidden="true"
                 >
-                  Book
-                </button>
+                  Select
+                </span>
               </div>
             </div>
-          </div>
+          </button>
         </div>
       </section>
 

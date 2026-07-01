@@ -67,6 +67,7 @@
                   placeholder="name@company.com"
                   required
                   type="email"
+                  autocomplete="email"
                   v-model="email"
                 />
               </div>
@@ -88,6 +89,7 @@
                   placeholder="••••••••"
                   required
                   type="password"
+                  autocomplete="current-password"
                   v-model="password"
                 />
               </div>
@@ -152,9 +154,9 @@ async function handleLogin() {
 
   try {
     await auth.signIn(email.value, password.value)
-    if (auth.user) {
-      setAnalyticsUser(auth.user.id)
-      void track('LOGIN', { user_id: auth.user.id, role: auth.userRole ?? undefined })
+    if (auth.userId) {
+      setAnalyticsUser(auth.userId)
+      void track('LOGIN', { user_id: auth.userId, role: auth.userRole ?? undefined })
     }
     await redirectAfterAuth()
   } catch (error) {

@@ -53,14 +53,17 @@ Deno.serve(async (req) => {
     if (payoutCents <= 0) return err(400, 'Booking has no cleaner payout amount set')
 
     // ── Check for duplicate payout ─────────────────────────────────────────
+    // Guard on stripe_transfer_id (not status) because complete_booking sets
+    // payouts.status = 'released' before the real Stripe transfer is made.
+    // A row with stripe_transfer_id = NULL means no actual transfer has occurred.
     const { data: existingPayout } = await admin
       .from('payouts')
       .select('id, status, stripe_transfer_id')
       .eq('booking_id', booking_id)
       .maybeSingle()
 
-    if (existingPayout?.status === 'released' || existingPayout?.status === 'paid') {
-      return err(409, `Payout already processed (status: ${existingPayout.status})`)
+    if (existingPayout?.stripe_transfer_id) {
+      return err(409, `Payout already processed (transfer: ${existingPayout.stripe_transfer_id})`)
     }
 
     // ── Load payment record ────────────────────────────────────────────────
@@ -89,7 +92,10 @@ Deno.serve(async (req) => {
     const currency = String(booking.currency ?? 'GBP').toLowerCase()
 
     // ── Capture PaymentIntent if still authorized ──────────────────────────
-    if (payment.status === 'authorized') {
+    // 'authorized' = Stripe manual capture hold (most common Stripe path).
+    // 'released' = legacy status written by the old complete_booking RPC before
+    //   20260701000001 fixed it. Treat as authorized and attempt capture.
+    if (payment.status === 'authorized' || payment.status === 'released') {
       await stripePost(
         `payment_intents/${payment.stripe_payment_intent_id}/capture`,
         new URLSearchParams(),

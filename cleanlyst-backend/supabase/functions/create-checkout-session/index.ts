@@ -13,10 +13,16 @@ function getEnv(name: string): string {
 }
 
 // Booking statuses that are eligible for a Stripe checkout session.
-//   pending_request          — initial payment (wizard flow, immediate after booking creation)
-//   awaiting_customer_payment — additional payment explicitly requested by cleaner
-//   estimate_proposed        — additional payment for a revised estimate
-const PAYABLE_STATUSES = new Set(['pending_request', 'awaiting_customer_payment', 'estimate_proposed'])
+//   pending_request               — initial payment (wizard flow, immediate after booking creation)
+//   awaiting_customer_payment     — additional payment explicitly requested by cleaner (legacy)
+//   estimate_proposed             — additional payment for a revised estimate (legacy)
+//   estimate_adjustment_requested — additional payment for a price adjustment (new Pay-Before-Accept flow)
+const PAYABLE_STATUSES = new Set([
+  'pending_request',
+  'awaiting_customer_payment',
+  'estimate_proposed',
+  'estimate_adjustment_requested',
+])
 
 async function createStripeCheckoutSession(params: URLSearchParams, stripeSecretKey: string) {
   const response = await fetch('https://api.stripe.com/v1/checkout/sessions', {
@@ -110,7 +116,7 @@ Deno.serve(async (req) => {
 
     const { data: booking, error: bookingError } = await adminClient
       .from('bookings')
-      .select('id, customer_id, status, quote_cents, currency, service_title_snapshot')
+      .select('id, customer_id, status, quote_cents, adjustment_amount_cents, currency, service_title_snapshot')
       .eq('id', booking_id)
       .single()
 
@@ -137,21 +143,40 @@ Deno.serve(async (req) => {
       })
     }
 
-    const amountCents = Math.max(Number(booking.quote_cents ?? 0), 0)
+    // For estimate_adjustment_requested: charge only the difference (adjustment_amount_cents).
+    // For all other payable statuses: charge the full quote_cents.
+    const isAdjustmentPayment = booking.status === 'estimate_adjustment_requested'
+    const amountCents = isAdjustmentPayment
+      ? Math.max(Number(booking.adjustment_amount_cents ?? 0), 0)
+      : Math.max(Number(booking.quote_cents ?? 0), 0)
+
+    if (isAdjustmentPayment && amountCents <= 0) {
+      return new Response(JSON.stringify({
+        error: 'Adjustment amount is zero or negative — no Stripe checkout required. Use accept_price_adjustment_no_charge RPC instead.',
+      }), {
+        status: 409,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const currency    = String(booking.currency ?? 'GBP').toLowerCase()
     const serviceName = booking.service_title_snapshot ?? 'Cleaning service'
+    const lineItemName = isAdjustmentPayment
+      ? `${serviceName} — price adjustment`
+      : serviceName
 
     const params = new URLSearchParams({
       mode:                                      'payment',
       success_url:                               `${rawSuccessUrl}?booking_id=${booking.id}`,
       cancel_url:                                `${rawCancelUrl}?booking_id=${booking.id}`,
       'line_items[0][price_data][currency]':     currency,
-      'line_items[0][price_data][product_data][name]': serviceName,
+      'line_items[0][price_data][product_data][name]': lineItemName,
       'line_items[0][price_data][unit_amount]':  String(amountCents),
       'line_items[0][quantity]':                 '1',
       'payment_intent_data[capture_method]':     'manual',
       'metadata[booking_id]':                    booking.id,
       'metadata[customer_id]':                   booking.customer_id,
+      'metadata[payment_type]':                  isAdjustmentPayment ? 'adjustment' : 'initial',
     })
 
     const session = await createStripeCheckoutSession(params, stripeSecretKey)

@@ -223,7 +223,20 @@ Deno.serve(async (req) => {
     if (emitError) throw emitError
 
     // ── Write to ledger (if this event type maps to a financial event) ────────
-    const ledgerEventType = STRIPE_TO_LEDGER_EVENT[event.type]
+    let ledgerEventType = STRIPE_TO_LEDGER_EVENT[event.type]
+
+    // Detect adjustment payments: checkout.session.completed with payment_type=adjustment
+    // emits ADDITIONAL_PAYMENT_AUTHORIZED instead of PAYMENT_AUTHORIZED.
+    if (
+      event.type === 'checkout.session.completed' &&
+      ledgerEventType === 'PAYMENT_AUTHORIZED'
+    ) {
+      const sessionMetadata = event.data.object.metadata as Record<string, unknown> | undefined
+      if (sessionMetadata?.payment_type === 'adjustment') {
+        ledgerEventType = 'ADDITIONAL_PAYMENT_AUTHORIZED'
+      }
+    }
+
     if (ledgerEventType) {
       const bookingId = await resolveBookingId(event, admin)
 

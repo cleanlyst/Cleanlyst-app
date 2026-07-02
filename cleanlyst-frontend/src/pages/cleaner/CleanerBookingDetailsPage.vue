@@ -108,6 +108,33 @@
             </button>
 
             <button
+              v-if="booking.status === 'payment_authorized'"
+              type="button"
+              class="btn-action"
+              :disabled="actionLoading"
+              data-testid="request-adjustment-btn"
+              @click="openAdjustmentModal"
+            >
+              Request Price Adjustment
+            </button>
+
+            <!-- estimate_adjustment_requested: awaiting customer decision -->
+            <div v-if="booking.status === 'estimate_adjustment_requested'" class="status-info" data-testid="adjustment-pending-info">
+              <span class="material-symbols-outlined status-info-icon">price_change</span>
+              Price adjustment requested — awaiting customer response
+            </div>
+            <div v-if="booking.status === 'estimate_adjustment_requested' && booking.proposed_total_cents" class="estimate-breakdown">
+              <span class="estimate-row">
+                <span>Proposed total</span>
+                <strong>{{ formatPence(booking.proposed_total_cents, booking.currency ?? 'GBP') }}</strong>
+              </span>
+              <span v-if="booking.adjustment_reason" class="estimate-row">
+                <span>Reason</span>
+                <em>"{{ booking.adjustment_reason }}"</em>
+              </span>
+            </div>
+
+            <button
               v-if="booking.status === 'estimate_proposed' && booking.requires_additional_payment"
               type="button"
               class="btn-secondary"
@@ -297,44 +324,54 @@
         </template>
       </AppModal>
 
-      <AppModal v-model="estimateModalOpen" title="Propose Estimate" size="md">
+      <AppModal v-model="adjustmentModalOpen" title="Request Price Adjustment" size="md">
         <p class="modal-hint">
-          Set a revised quote for this job. The customer will be notified and can accept or
-          cancel.
+          Propose a new total for this job. The customer will be notified and can accept, request another cleaner, or cancel.
         </p>
         <div class="modal-field">
-          <label class="modal-label" for="estimateAmount">New Quote (£)</label>
+          <label class="modal-label" for="adjustmentTotal">New Total (£)</label>
           <input
-            id="estimateAmount"
-            v-model.number="estimateAmount"
+            id="adjustmentTotal"
+            v-model.number="adjustmentProposedTotal"
             type="number"
-            min="1"
+            min="0.01"
             step="0.01"
             class="modal-input"
             placeholder="0.00"
           />
+          <p v-if="adjustmentProposedTotal && booking" class="modal-hint" style="margin-top:0.5rem">
+            <template v-if="Math.round((adjustmentProposedTotal ?? 0) * 100) > (booking.quote_cents ?? 0)">
+              Customer pays an extra {{ formatPence(Math.round((adjustmentProposedTotal ?? 0) * 100) - (booking.quote_cents ?? 0), booking.currency ?? 'GBP') }} via Stripe Checkout.
+            </template>
+            <template v-else-if="Math.round((adjustmentProposedTotal ?? 0) * 100) < (booking.quote_cents ?? 0)">
+              Customer receives a {{ formatPence((booking.quote_cents ?? 0) - Math.round((adjustmentProposedTotal ?? 0) * 100), booking.currency ?? 'GBP') }} discount — no additional charge.
+            </template>
+            <template v-else>No change in price.</template>
+          </p>
         </div>
         <div class="modal-field">
-          <label class="modal-label" for="estimateNote">Note to Customer (optional)</label>
+          <label class="modal-label" for="adjustmentReason">Reason (required, min 10 characters)</label>
           <textarea
-            id="estimateNote"
+            id="adjustmentReason"
             rows="3"
             class="modal-textarea"
-            v-model="estimateNote"
-            placeholder="e.g. 'The property is larger than described, so I've adjusted the price.'"
+            v-model="adjustmentReason"
+            placeholder="e.g. 'The property is larger than described — additional rooms require extra time.'"
           />
+          <p v-if="adjustmentReason && adjustmentReason.length < 10" class="error-text" style="margin-top:0.25rem">
+            Please provide at least 10 characters.
+          </p>
         </div>
+        <p v-if="adjustmentError" class="error-text" style="margin-top:0.5rem" role="alert">{{ adjustmentError }}</p>
         <template #footer>
-          <button type="button" class="btn-action" @click="estimateModalOpen = false">Cancel</button>
+          <button type="button" class="btn-action" @click="closeAdjustmentModal">Cancel</button>
           <button
             type="button"
             class="btn-start"
-            :disabled="actionLoading || !estimateAmount || estimateAmount <= 0"
-            @click="confirmProposeEstimate"
+            :disabled="actionLoading || !adjustmentProposedTotal || (adjustmentProposedTotal ?? 0) <= 0 || adjustmentReason.length < 10"
+            @click="confirmRequestAdjustment"
           >
-            {{
-              actionLoading && activeAction === 'estimate' ? 'Sending…' : 'Send Estimate'
-            }}
+            {{ actionLoading && activeAction === 'adjustment' ? 'Sending…' : 'Send Request' }}
           </button>
         </template>
       </AppModal>
@@ -408,7 +445,7 @@ import type { RealtimeSubscription } from '@/lib/realtime'
 import {
   getBookingById,
   updateBookingDetails,
-  proposeEstimate,
+  requestPriceAdjustment,
   type BookingDetailRow,
 } from '@/services/bookingService'
 import {
@@ -441,9 +478,11 @@ const declineModalOpen = ref(false)
 const declineReason = ref('')
 const cannotAttendModalOpen = ref(false)
 const cannotAttendReason = ref('')
-const estimateModalOpen = ref(false)
-const estimateAmount = ref<number | null>(null)
-const estimateNote = ref('')
+// Price adjustment flow
+const adjustmentModalOpen = ref(false)
+const adjustmentProposedTotal = ref<number | null>(null)
+const adjustmentReason = ref('')
+const adjustmentError = ref('')
 const messageDraft = ref('')
 const messageSending = ref(false)
 const errorMessage = ref('')
@@ -457,7 +496,7 @@ const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
 
 function canEditBooking(status: string): boolean {
-  return ['accepted', 'payment_authorized', 'estimate_proposed'].includes(status)
+  return ['accepted', 'payment_authorized', 'estimate_proposed', 'estimate_adjustment_requested'].includes(status)
 }
 
 function orderTimeRange(start: string, end: string | null) {
@@ -572,22 +611,36 @@ async function confirmCannotAttend() {
   }
 }
 
-async function confirmProposeEstimate() {
-  if (!booking.value || !estimateAmount.value || estimateAmount.value <= 0) return
+function openAdjustmentModal() {
+  adjustmentProposedTotal.value = booking.value ? (booking.value.quote_cents ?? 0) / 100 : null
+  adjustmentReason.value = ''
+  adjustmentError.value = ''
+  adjustmentModalOpen.value = true
+}
+
+function closeAdjustmentModal() {
+  if (actionLoading.value) return
+  adjustmentModalOpen.value = false
+}
+
+async function confirmRequestAdjustment() {
+  if (!booking.value || !adjustmentProposedTotal.value || adjustmentProposedTotal.value <= 0) return
+  if (adjustmentReason.value.length < 10) return
   actionLoading.value = true
-  activeAction.value = 'estimate'
+  activeAction.value = 'adjustment'
+  adjustmentError.value = ''
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    const quoteCents = Math.round(estimateAmount.value * 100)
-    const updated = await proposeEstimate(bookingId, quoteCents, estimateNote.value || undefined)
+    const proposedTotalCents = Math.round(adjustmentProposedTotal.value * 100)
+    const updated = await requestPriceAdjustment(bookingId, proposedTotalCents, adjustmentReason.value)
     booking.value = updated
-    estimateModalOpen.value = false
-    estimateAmount.value = null
-    estimateNote.value = ''
-    successMessage.value = 'Estimate sent to customer'
+    adjustmentModalOpen.value = false
+    adjustmentProposedTotal.value = null
+    adjustmentReason.value = ''
+    successMessage.value = 'Price adjustment request sent to customer'
   } catch (e) {
-    errorMessage.value = toUserMessage(e, 'Failed to propose estimate. Please try again.')
+    adjustmentError.value = toUserMessage(e, 'Failed to send adjustment request. Please try again.')
   } finally {
     actionLoading.value = false
     activeAction.value = null

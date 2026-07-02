@@ -70,6 +70,33 @@
         <p class="detail-value">{{ booking.notes || 'No notes provided.' }}</p>
       </div>
 
+      <!-- Adjustment Details (estimate_adjustment_requested flow) -->
+      <div v-if="booking.proposed_total_cents != null" class="reassignment-history" data-testid="adjustment-details">
+        <h2 class="reassignment-history__title">Price Adjustment Details</h2>
+        <div class="reassignment-grid">
+          <div class="reassignment-block">
+            <span class="detail-label">Proposed Total</span>
+            <p class="detail-value">{{ formatPence(booking.proposed_total_cents ?? 0, booking.currency ?? 'GBP') }}</p>
+          </div>
+          <div class="reassignment-block">
+            <span class="detail-label">Adjustment Amount</span>
+            <p class="detail-value">{{ formatPence(booking.adjustment_amount_cents ?? 0, booking.currency ?? 'GBP') }}</p>
+          </div>
+          <div class="reassignment-block">
+            <span class="detail-label">Requested At</span>
+            <p class="detail-value">{{ booking.adjustment_requested_at ? formatDateTime(booking.adjustment_requested_at) : '—' }}</p>
+          </div>
+          <div class="reassignment-block">
+            <span class="detail-label">Customer Response</span>
+            <p class="detail-value">{{ booking.customer_adjustment_response_at ? formatDateTime(booking.customer_adjustment_response_at) : 'Pending' }}</p>
+          </div>
+        </div>
+        <div v-if="booking.adjustment_reason" class="detail-notes" style="margin-top:0.75rem">
+          <span class="detail-label">Reason</span>
+          <p class="detail-value">"{{ booking.adjustment_reason }}"</p>
+        </div>
+      </div>
+
       <!-- Reassignment History -->
       <div v-if="booking.original_cleaner_id" class="reassignment-history">
         <h2 class="reassignment-history__title">Reassignment History</h2>
@@ -299,6 +326,7 @@ import { requireSupabase } from '@/lib/supabase'
 const REASSIGNABLE_STATUSES = new Set([
   'cleaner_no_show', 'accepted', 'in_progress', 'paid',
   'cleaner_cancelled', 'reassign_requested', 'pending_request',
+  'estimate_adjustment_requested',
 ])
 
 const today = new Date().toISOString().slice(0, 10)

@@ -52,22 +52,30 @@ defineProps<{ events: LedgerEvent[] }>()
 
 function eventColor(type: LedgerEventType): string {
   const map: Record<LedgerEventType, string> = {
-    PAYMENT_AUTHORIZED: 'bg-primary-container text-on-primary-container',
-    PAYMENT_CAPTURED:   'bg-secondary-container text-on-secondary-container',
-    PAYMENT_REFUNDED:   'bg-error-container text-on-error-container',
-    PAYOUT_RELEASED:    'bg-tertiary-container text-on-tertiary-container',
-    PAYOUT_REVERSED:    'bg-error-container text-on-error-container',
+    PAYMENT_AUTHORIZED:              'bg-primary-container text-on-primary-container',
+    PAYMENT_CAPTURED:                'bg-secondary-container text-on-secondary-container',
+    PAYMENT_REFUNDED:                'bg-error-container text-on-error-container',
+    PAYOUT_RELEASED:                 'bg-tertiary-container text-on-tertiary-container',
+    PAYOUT_REVERSED:                 'bg-error-container text-on-error-container',
+    ESTIMATE_ADJUSTMENT_REQUESTED:   'bg-surface-container text-secondary',
+    ESTIMATE_ADJUSTMENT_ACCEPTED:    'bg-secondary-container text-on-secondary-container',
+    ESTIMATE_ADJUSTMENT_REJECTED:    'bg-error-container text-on-error-container',
+    ADDITIONAL_PAYMENT_AUTHORIZED:   'bg-primary-container text-on-primary-container',
   }
   return map[type] ?? 'bg-surface-container text-secondary'
 }
 
 function eventIcon(type: LedgerEventType): string {
   const map: Record<LedgerEventType, string> = {
-    PAYMENT_AUTHORIZED: 'lock',
-    PAYMENT_CAPTURED:   'payments',
-    PAYMENT_REFUNDED:   'undo',
-    PAYOUT_RELEASED:    'send_money',
-    PAYOUT_REVERSED:    'remove_circle',
+    PAYMENT_AUTHORIZED:              'lock',
+    PAYMENT_CAPTURED:                'payments',
+    PAYMENT_REFUNDED:                'undo',
+    PAYOUT_RELEASED:                 'send_money',
+    PAYOUT_REVERSED:                 'remove_circle',
+    ESTIMATE_ADJUSTMENT_REQUESTED:   'price_change',
+    ESTIMATE_ADJUSTMENT_ACCEPTED:    'check_circle',
+    ESTIMATE_ADJUSTMENT_REJECTED:    'cancel',
+    ADDITIONAL_PAYMENT_AUTHORIZED:   'add_card',
   }
   return map[type] ?? 'receipt'
 }

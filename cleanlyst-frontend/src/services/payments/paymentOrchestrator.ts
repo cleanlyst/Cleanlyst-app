@@ -205,6 +205,49 @@ export function partialRefund(bookingId: string, amountCents: number): Promise<O
 }
 
 /**
+ * Initiates Stripe Checkout for a price adjustment (positive difference only).
+ *
+ * Use this when booking.status === 'estimate_adjustment_requested' and
+ * booking.adjustment_amount_cents > 0. The create-checkout-session Edge Function
+ * charges only the adjustment_amount_cents and sets metadata.payment_type = 'adjustment'.
+ * The Stripe webhook emits ADDITIONAL_PAYMENT_AUTHORIZED which transitions the booking
+ * back to payment_authorized.
+ *
+ * For zero/negative adjustments use acceptPriceAdjustmentNoCharge() from bookingService.
+ */
+export async function startAdjustmentPayment(
+  bookingId: string,
+): Promise<OrchestratorResult> {
+  warnIfCalledOutsideServiceLayer('startAdjustmentPayment')
+  const route = resolvePaymentRoute({})
+
+  if (route === 'simulation') {
+    throw new Error(
+      '[PaymentOrchestrator] Stripe is not configured. ' +
+      'Set VITE_STRIPE_TEST_KEY to enable adjustment payments.',
+    )
+  }
+
+  const session = await initiateCheckoutSession(bookingId)
+  const result: OrchestratorResult = {
+    success:        true,
+    provider:       'stripe_checkout',
+    redirectUrl:    session.checkoutUrl,
+    simulationMode: false,
+  }
+
+  console.info('[payment:adjustment_started]', makePaymentStartedEvent({
+    bookingId,
+    paymentType:    'additional',
+    provider:       result.provider,
+    simulationMode: result.simulationMode,
+    redirectUrl:    result.redirectUrl,
+  }))
+
+  return result
+}
+
+/**
  * Releases the cleaner payout for a completed booking via the process-payout Edge Function.
  * Admin-only operation.
  */

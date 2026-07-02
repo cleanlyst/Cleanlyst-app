@@ -302,6 +302,13 @@ export interface BookingDetailRow extends BookingListRow {
   requires_additional_payment: boolean
   additional_payment_cents: number | null
   initial_quote_cents: number | null
+  // Price adjustment (estimate_adjustment_requested flow)
+  proposed_total_cents?: number | null
+  adjustment_amount_cents?: number | null
+  adjustment_reason?: string | null
+  adjustment_requested_at?: string | null
+  adjustment_requested_by?: string | null
+  customer_adjustment_response_at?: string | null
   // Reassignment tracking
   original_cleaner_id?: string | null
   reassigned_at?: string | null
@@ -435,6 +442,31 @@ function normalizeBookingDetailRow(raw: unknown): BookingDetailRow | null {
       row.reassignment_requested_at === null || row.reassignment_requested_at === undefined
         ? null
         : String(row.reassignment_requested_at),
+    // Price adjustment fields
+    proposed_total_cents:
+      row.proposed_total_cents === null || row.proposed_total_cents === undefined
+        ? null
+        : Number(row.proposed_total_cents),
+    adjustment_amount_cents:
+      row.adjustment_amount_cents === null || row.adjustment_amount_cents === undefined
+        ? null
+        : Number(row.adjustment_amount_cents),
+    adjustment_reason:
+      row.adjustment_reason === null || row.adjustment_reason === undefined
+        ? null
+        : String(row.adjustment_reason),
+    adjustment_requested_at:
+      row.adjustment_requested_at === null || row.adjustment_requested_at === undefined
+        ? null
+        : String(row.adjustment_requested_at),
+    adjustment_requested_by:
+      row.adjustment_requested_by === null || row.adjustment_requested_by === undefined
+        ? null
+        : String(row.adjustment_requested_by),
+    customer_adjustment_response_at:
+      row.customer_adjustment_response_at === null || row.customer_adjustment_response_at === undefined
+        ? null
+        : String(row.customer_adjustment_response_at),
     original_cleaner_name: extractProfileName(row.original_cleaner),
     reassigned_by_name: extractProfileName(row.reassigned_by_profile),
     current_cleaner_name: extractProfileName(row.current_cleaner),
@@ -634,5 +666,58 @@ export async function proposeEstimate(
   if (error) throw error
   const booking = normalizeBookingDetailRow(data)
   if (!booking) throw new Error('Failed to propose estimate.')
+  return booking
+}
+
+// ─── Price Adjustment (new Pay-Before-Accept estimate flow) ───────────────────
+
+/** Cleaner requests a price adjustment from payment_authorized or accepted. */
+export async function requestPriceAdjustment(
+  bookingId: string,
+  proposedTotalCents: number,
+  reason: string,
+): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('request_price_adjustment', {
+    p_booking_id: bookingId,
+    p_proposed_total_cents: proposedTotalCents,
+    p_reason: reason,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to request price adjustment.')
+  return booking
+}
+
+/**
+ * Customer accepts an adjustment where adjustment_amount_cents ≤ 0.
+ * For positive adjustments, call paymentOrchestrator.startAdjustmentPayment() instead.
+ */
+export async function acceptPriceAdjustmentNoCharge(
+  bookingId: string,
+): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('accept_price_adjustment_no_charge', {
+    p_booking_id: bookingId,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to accept price adjustment.')
+  return booking
+}
+
+/** Customer rejects an adjustment. action: 'reassign' | 'cancel'. */
+export async function rejectPriceAdjustment(
+  bookingId: string,
+  action: 'reassign' | 'cancel',
+): Promise<BookingDetailRow> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.rpc('reject_price_adjustment', {
+    p_booking_id: bookingId,
+    p_action: action,
+  })
+  if (error) throw error
+  const booking = normalizeBookingDetailRow(data)
+  if (!booking) throw new Error('Failed to reject price adjustment.')
   return booking
 }

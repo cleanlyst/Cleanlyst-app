@@ -42,6 +42,28 @@
         Issue Refund
       </button>
 
+      <!-- Admin overrides for estimate_adjustment_requested -->
+      <template v-if="bookingStatus === 'estimate_adjustment_requested'">
+        <button
+          :disabled="actioning"
+          class="flex items-center gap-1.5 px-4 py-2 rounded-md bg-secondary-container text-on-secondary-container font-label-md text-label-md hover:opacity-90 disabled:opacity-50 transition-opacity"
+          data-testid="admin-force-accept-btn"
+          @click="forceAcceptAdjustment"
+        >
+          <span class="material-symbols-outlined text-base">check_circle</span>
+          Force Accept (no charge)
+        </button>
+        <button
+          :disabled="actioning"
+          class="flex items-center gap-1.5 px-4 py-2 rounded-md bg-error-container text-on-error-container font-label-md text-label-md hover:opacity-90 disabled:opacity-50 transition-opacity"
+          data-testid="admin-force-cancel-btn"
+          @click="forceCancelAdjustment"
+        >
+          <span class="material-symbols-outlined text-base">cancel</span>
+          Force Cancel &amp; Refund
+        </button>
+      </template>
+
     </div>
 
     <!-- Action feedback -->
@@ -79,8 +101,8 @@ const canRefund = computed(() =>
 )
 
 async function triggerRefund(): Promise<void> {
-  actioning.value    = true
-  actionError.value  = null
+  actioning.value     = true
+  actionError.value   = null
   actionSuccess.value = null
 
   const supabase = getSupabaseClient()
@@ -94,6 +116,45 @@ async function triggerRefund(): Promise<void> {
     actionError.value = error.message
   } else {
     actionSuccess.value = 'Refund initiated. The booking will update shortly.'
+    emit('refresh')
+  }
+}
+
+async function forceAcceptAdjustment(): Promise<void> {
+  actioning.value     = true
+  actionError.value   = null
+  actionSuccess.value = null
+
+  const supabase = getSupabaseClient()
+  const { error } = await supabase.rpc('accept_price_adjustment_no_charge', {
+    p_booking_id: props.bookingId,
+  })
+
+  actioning.value = false
+  if (error) {
+    actionError.value = error.message
+  } else {
+    actionSuccess.value = 'Adjustment accepted. Booking is now confirmed.'
+    emit('refresh')
+  }
+}
+
+async function forceCancelAdjustment(): Promise<void> {
+  actioning.value     = true
+  actionError.value   = null
+  actionSuccess.value = null
+
+  const supabase = getSupabaseClient()
+  const { error } = await supabase.rpc('reject_price_adjustment', {
+    p_booking_id: props.bookingId,
+    p_action:     'cancel',
+  })
+
+  actioning.value = false
+  if (error) {
+    actionError.value = error.message
+  } else {
+    actionSuccess.value = 'Booking cancelled. Admin should process refund via Issue Refund.'
     emit('refresh')
   }
 }

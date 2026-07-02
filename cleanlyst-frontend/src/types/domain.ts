@@ -23,6 +23,7 @@ export type BookingStatus =
   | 'reassign_requested'
   | 'awaiting_resolution'
   | 'no_show_reported'
+  | 'estimate_adjustment_requested'
 
 export type ApplicationStatus =
   | 'draft'

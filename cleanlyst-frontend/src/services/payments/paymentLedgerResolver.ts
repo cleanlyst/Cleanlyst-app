@@ -19,6 +19,10 @@ export type LedgerEventType =
   | 'PAYMENT_REFUNDED'
   | 'PAYOUT_RELEASED'
   | 'PAYOUT_REVERSED'
+  | 'ESTIMATE_ADJUSTMENT_REQUESTED'
+  | 'ESTIMATE_ADJUSTMENT_ACCEPTED'
+  | 'ESTIMATE_ADJUSTMENT_REJECTED'
+  | 'ADDITIONAL_PAYMENT_AUTHORIZED'
 
 export type DerivedPaymentState = 'unpaid' | 'authorized' | 'captured' | 'refunded'
 

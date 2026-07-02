@@ -63,6 +63,11 @@ export function getBookingStatusLabel(booking: StatusLabelInput, role: BookingRo
     case 'completion_pending_customer':
       return role === 'customer' ? 'Confirm Completion' : 'Awaiting Confirmation'
 
+    case 'estimate_adjustment_requested':
+      if (role === 'cleaner') return 'Awaiting customer response'
+      if (role === 'admin') return 'Adjustment Requested'
+      return 'Price Adjustment Requested'
+
     case 'awaiting_resolution':
       if (role === 'cleaner') return 'Requires resolution'
       if (role === 'admin') return 'Awaiting resolution'
@@ -100,7 +105,7 @@ export function isOverdueBooking(status: string): boolean {
 }
 
 export function getStatusPillClass(status: string): string {
-  if (['pending_request', 'estimate_proposed', 'awaiting_customer_payment'].includes(status))
+  if (['pending_request', 'estimate_proposed', 'awaiting_customer_payment', 'estimate_adjustment_requested'].includes(status))
     return 'status-pill--pending'
   if (
     [

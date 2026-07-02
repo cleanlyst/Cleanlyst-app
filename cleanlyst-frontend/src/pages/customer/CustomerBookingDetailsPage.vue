@@ -143,6 +143,73 @@
               </div>
             </div>
 
+            <!-- estimate_adjustment_requested: new Pay-Before-Accept flow -->
+            <div v-if="booking.status === 'estimate_adjustment_requested'" class="estimate-card" data-testid="adjustment-card">
+              <p class="estimate-label">Your cleaner has requested a price adjustment</p>
+              <div class="estimate-breakdown">
+                <span class="estimate-row">
+                  <span>Original price</span>
+                  <strong>{{ formatPence(booking.initial_quote_cents ?? booking.quote_cents ?? 0, booking.currency ?? 'GBP') }}</strong>
+                </span>
+                <span class="estimate-row">
+                  <span>New total</span>
+                  <strong>{{ formatPence(booking.proposed_total_cents ?? 0, booking.currency ?? 'GBP') }}</strong>
+                </span>
+                <span v-if="(booking.adjustment_amount_cents ?? 0) > 0" class="estimate-row estimate-row--due">
+                  <span>Additional amount</span>
+                  <strong>+{{ formatPence(booking.adjustment_amount_cents ?? 0, booking.currency ?? 'GBP') }}</strong>
+                </span>
+                <span v-else-if="(booking.adjustment_amount_cents ?? 0) < 0" class="estimate-row" style="color:var(--on-secondary-container)">
+                  <span>Discount</span>
+                  <strong>{{ formatPence(booking.adjustment_amount_cents ?? 0, booking.currency ?? 'GBP') }}</strong>
+                </span>
+              </div>
+              <p v-if="booking.adjustment_reason" class="estimate-note">
+                "{{ booking.adjustment_reason }}"
+              </p>
+              <p v-if="adjustmentError" class="text-sm text-red-600 mt-2" role="alert">{{ adjustmentError }}</p>
+              <div class="modal-actions" style="margin-top:1rem;">
+                <button
+                  v-if="(booking.adjustment_amount_cents ?? 0) > 0"
+                  type="button"
+                  class="btn-primary"
+                  :disabled="adjustmentLoading !== null"
+                  data-testid="accept-adjustment-pay-btn"
+                  @click="acceptAdjustmentWithPayment"
+                >
+                  {{ adjustmentLoading === 'accept_pay' ? 'Redirecting…' : `Accept & Pay ${formatPence(booking.adjustment_amount_cents ?? 0, booking.currency ?? 'GBP')} extra` }}
+                </button>
+                <button
+                  v-else
+                  type="button"
+                  class="btn-primary"
+                  :disabled="adjustmentLoading !== null"
+                  data-testid="accept-adjustment-btn"
+                  @click="acceptAdjustmentNoCharge"
+                >
+                  {{ adjustmentLoading === 'accept' ? 'Accepting…' : 'Accept adjustment' }}
+                </button>
+                <button
+                  type="button"
+                  class="btn-danger"
+                  :disabled="adjustmentLoading !== null"
+                  data-testid="reject-adjustment-reassign-btn"
+                  @click="rejectAdjustment('reassign')"
+                >
+                  {{ adjustmentLoading === 'reassign' ? 'Requesting…' : 'Request another cleaner' }}
+                </button>
+                <button
+                  type="button"
+                  class="btn-cancel"
+                  :disabled="adjustmentLoading !== null"
+                  data-testid="reject-adjustment-cancel-btn"
+                  @click="rejectAdjustment('cancel')"
+                >
+                  {{ adjustmentLoading === 'cancel' ? 'Cancelling…' : 'Cancel & request refund' }}
+                </button>
+              </div>
+            </div>
+
             <!-- estimate_proposed: cleaner raised price and customer owes more -->
             <div v-if="booking.status === 'estimate_proposed' && booking.requires_additional_payment" class="estimate-card">
               <p class="estimate-label">Revised Quote — Additional Payment Required</p>
@@ -617,9 +684,11 @@ import {
   reportCleanerNoShow,
   customerReassignBooking,
   reportNoShowOverdue,
+  acceptPriceAdjustmentNoCharge,
+  rejectPriceAdjustment,
   type BookingDetailRow,
 } from '@/services/bookingService'
-import { startAdditionalPayment, startInitialPayment } from '@/services/payments/paymentOrchestrator'
+import { startAdditionalPayment, startInitialPayment, startAdjustmentPayment } from '@/services/payments/paymentOrchestrator'
 import { cancelAsCustomer } from '@/services/bookingLifecycleService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import BookingTimeline from '@/components/BookingTimeline.vue'
@@ -666,6 +735,9 @@ const reassignSearchLoading = ref(false)
 const reassignConfirmLoading = ref(false)
 const reassignError = ref('')
 const reassignCleanerPrices = ref<Map<string, { price: number; title: string }>>(new Map())
+// Estimate adjustment flow
+const adjustmentError = ref('')
+const adjustmentLoading = ref<'accept_pay' | 'accept' | 'reassign' | 'cancel' | null>(null)
 
 const messages = computed(() => messagesStore.byBooking[bookingId] ?? [])
 
@@ -1033,6 +1105,49 @@ async function retryInitialPayment() {
   } catch (e) {
     payModalError.value = toUserMessage(e, 'Failed to restart payment. Please try again.')
     paymentProcessing.value = false
+  }
+}
+
+async function acceptAdjustmentWithPayment() {
+  if (!booking.value || adjustmentLoading.value) return
+  adjustmentLoading.value = 'accept_pay'
+  adjustmentError.value = ''
+  try {
+    const result = await startAdjustmentPayment(bookingId)
+    if (result.redirectUrl) {
+      window.location.href = result.redirectUrl
+    }
+  } catch (e) {
+    adjustmentError.value = toUserMessage(e, 'Failed to start payment. Please try again.')
+    adjustmentLoading.value = null
+  }
+}
+
+async function acceptAdjustmentNoCharge() {
+  if (!booking.value || adjustmentLoading.value) return
+  adjustmentLoading.value = 'accept'
+  adjustmentError.value = ''
+  try {
+    const updated = await acceptPriceAdjustmentNoCharge(bookingId)
+    booking.value = updated
+  } catch (e) {
+    adjustmentError.value = toUserMessage(e, 'Failed to accept adjustment. Please try again.')
+  } finally {
+    adjustmentLoading.value = null
+  }
+}
+
+async function rejectAdjustment(action: 'reassign' | 'cancel') {
+  if (!booking.value || adjustmentLoading.value) return
+  adjustmentLoading.value = action
+  adjustmentError.value = ''
+  try {
+    const updated = await rejectPriceAdjustment(bookingId, action)
+    booking.value = updated
+  } catch (e) {
+    adjustmentError.value = toUserMessage(e, 'Failed to process request. Please try again.')
+  } finally {
+    adjustmentLoading.value = null
   }
 }
 

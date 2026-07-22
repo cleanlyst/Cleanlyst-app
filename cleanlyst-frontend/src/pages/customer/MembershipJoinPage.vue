@@ -120,7 +120,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getMembershipPlans } from '@/services/membershipService'
-import type { MembershipPlan } from '@cleanlyst-backend/types/database.types'
+import type { MembershipPlan } from '@/types/database.types'
 
 const MEMBER_BENEFITS = [
   { icon: 'search',       text: 'View full cleaner profiles, photos, and bios' },
@@ -162,8 +162,9 @@ const activePlan = computed(() =>
 onMounted(async () => {
   try {
     plans.value = await getMembershipPlans()
-    if (plans.value.length > 0) {
-      selectedPlanId.value = plans.value[0].id
+    const [firstPlan] = plans.value
+    if (firstPlan) {
+      selectedPlanId.value = firstPlan.id
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to load plans'

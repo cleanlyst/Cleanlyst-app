@@ -1,7 +1,7 @@
 import type { AuthChangeEvent, Session, Subscription } from '@supabase/supabase-js'
 import { defineStore } from 'pinia'
 import { hasSupabaseConfig, requireSupabase, supabaseConfigError } from '@/lib/supabase'
-import type { MembershipStatus } from '@cleanlyst-backend/types/database.types'
+import type { MembershipStatus } from '@/types/database.types'
 
 export type Role = 'customer' | 'cleaner_pending' | 'cleaner_active' | 'admin'
 

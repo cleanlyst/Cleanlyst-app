@@ -307,7 +307,7 @@ import {
   adminUpsertMembershipPlan,
   type AdminMemberRow,
 } from '@/services/membershipService'
-import type { MembershipPlan, MembershipStatus } from '@cleanlyst-backend/types/database.types'
+import type { MembershipPlan, MembershipStatus } from '@/types/database.types'
 
 // ── State ────────────────────────────────────────────────────────────────────
 

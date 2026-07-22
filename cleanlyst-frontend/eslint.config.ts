@@ -26,6 +26,25 @@ export default defineConfigWithVueTs(
     files: ['src/**/__tests__/*'],
   },
 
+  {
+    name: 'app/no-backend-imports',
+    files: ['src/**/*.{vue,ts,mts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@cleanlyst-backend/*', '**/cleanlyst-backend/*', '**/../cleanlyst-backend/*'],
+              message:
+                'The frontend must not import backend source directly — Vercel only builds cleanlyst-frontend/. Use the canonical types in @/types/database.types instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
 
   skipFormatting,

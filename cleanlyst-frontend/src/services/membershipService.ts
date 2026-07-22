@@ -21,7 +21,7 @@
  */
 
 import { getSupabaseClient } from '@/services/supabaseClient'
-import type { CustomerMembership, MembershipPlan, MembershipStatus } from '@cleanlyst-backend/types/database.types'
+import type { CustomerMembership, MembershipPlan, MembershipStatus } from '@/types/database.types'
 
 // ── Customer-facing functions ─────────────────────────────────────────────────
 

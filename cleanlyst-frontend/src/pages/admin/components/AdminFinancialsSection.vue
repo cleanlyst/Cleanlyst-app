@@ -41,7 +41,7 @@
               <span v-else>{{ formatPence(metrics.platformFeeYtdPence) }}</span>
             </span>
           </div>
-          <span class="font-caption text-caption text-secondary">Booking fees + commission</span>
+          <span class="font-caption text-caption text-secondary">Platform fees</span>
         </div>
 
         <div
@@ -233,7 +233,7 @@
         </div>
         <div class="tx-detail-breakdown-rows" style="margin-top: 1rem;">
           <div class="tx-detail-breakdown-row tx-detail-breakdown-row--deduct">
-            <span>Commission Deducted</span>
+            <span>Platform Fee Deducted</span>
             <span>{{ formatPence(selectedTx.commissionCents) }}</span>
           </div>
           <div class="tx-detail-breakdown-row">

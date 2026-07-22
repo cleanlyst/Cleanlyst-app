@@ -4,27 +4,34 @@
     <!-- ── Hero ──────────────────────────────────────────────────────────── -->
     <section class="hero-section">
       <div class="hero-inner">
-        <h1 class="hero-title">Trusted home cleaners,<br />booked in minutes.</h1>
+        <h1 class="hero-title">Access a trusted network of<br />fully vetted cleaners.</h1>
         <p class="hero-copy">
-          Professional, vetted cleaners available across the UK. Fixed prices, no surprises —
-          just a spotless home.
+          Every cleaner on Cleanlyst passes our rigorous vetting process — background checks,
+          ID verification, and insurance review. Book with complete peace of mind.
         </p>
         <div class="hero-actions">
 
           <!-- Guest: acquisition CTAs -->
           <template v-if="isGuest">
             <router-link :to="{ name: 'SignupCustomer' }" class="button-primary">
-              Book Cleaner
+              Become a Member
             </router-link>
             <router-link :to="{ name: 'SignupCleaner' }" class="button-secondary">
               Join as a cleaner
             </router-link>
           </template>
 
-          <!-- Customer: booking CTA only -->
-          <template v-else-if="isCustomer">
+          <!-- Customer member: booking CTA -->
+          <template v-else-if="isCustomer && isMember">
             <router-link :to="{ name: 'BookCleaner' }" class="button-primary">
-              Book Cleaner
+              Book a Cleaner
+            </router-link>
+          </template>
+
+          <!-- Customer non-member: membership CTA -->
+          <template v-else-if="isCustomer">
+            <router-link :to="{ name: 'MembershipJoin' }" class="button-primary">
+              Join as a Member
             </router-link>
           </template>
 
@@ -44,15 +51,15 @@
       <div class="trust-inner">
         <div class="trust-item">
           <span class="material-symbols-outlined trust-icon">verified_user</span>
-          <span class="trust-text">Fully vetted &amp; background-checked cleaners</span>
+          <span class="trust-text">Every cleaner rigorously vetted &amp; background-checked</span>
         </div>
         <div class="trust-item">
-          <span class="material-symbols-outlined trust-icon">price_check</span>
-          <span class="trust-text">Fixed pricing — no hidden fees</span>
+          <span class="material-symbols-outlined trust-icon">shield</span>
+          <span class="trust-text">Book with peace of mind — safety guaranteed</span>
         </div>
         <div class="trust-item">
-          <span class="material-symbols-outlined trust-icon">thumb_up</span>
-          <span class="trust-text">Satisfaction guaranteed on every clean</span>
+          <span class="material-symbols-outlined trust-icon">star</span>
+          <span class="trust-text">Professional, reliable cleaners you can trust</span>
         </div>
       </div>
     </section>
@@ -227,8 +234,12 @@
 
 <script setup lang="ts">
 import { useRolePermissions } from '@/composables/useRolePermissions'
+import { useAuthStore } from '@/stores/auth'
+import { computed } from 'vue'
 
 const { isGuest, isCustomer, isCleaner, dashboardRouteName } = useRolePermissions()
+const authStore = useAuthStore()
+const isMember = computed(() => authStore.isMember)
 
 const customerServices = [
   {

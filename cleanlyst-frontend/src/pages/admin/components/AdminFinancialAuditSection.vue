@@ -23,7 +23,7 @@
                 <th class="px-4 py-3 font-label-md text-label-md whitespace-nowrap">Cleaner</th>
                 <th class="px-4 py-3 font-label-md text-label-md text-right whitespace-nowrap">Service Fee</th>
                 <th class="px-4 py-3 font-label-md text-label-md text-right whitespace-nowrap">Booking Fee</th>
-                <th class="px-4 py-3 font-label-md text-label-md text-right whitespace-nowrap">Commission</th>
+                <th class="px-4 py-3 font-label-md text-label-md text-right whitespace-nowrap">Platform Fee</th>
                 <th class="px-4 py-3 font-label-md text-label-md text-right whitespace-nowrap">Cleaner Payout</th>
                 <th class="px-4 py-3 font-label-md text-label-md text-right whitespace-nowrap">Platform Revenue</th>
                 <th class="px-4 py-3 font-label-md text-label-md whitespace-nowrap">Payment</th>

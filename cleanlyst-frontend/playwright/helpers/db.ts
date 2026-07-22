@@ -399,3 +399,141 @@ export async function countBookingsForCustomer(customerId: string): Promise<numb
     .eq('customer_id', customerId)
   return count ?? 0
 }
+
+// ─── Membership helpers ───────────────────────────────────────────────────────
+
+export async function upsertCustomerMembership(
+  customerId: string,
+  status: 'free' | 'active' | 'paused' | 'cancelled' | 'complimentary',
+  planId?: string | null,
+): Promise<void> {
+  const { error } = await db.from('customer_memberships').upsert(
+    { customer_id: customerId, status, plan_id: planId ?? null, updated_at: new Date().toISOString() },
+    { onConflict: 'customer_id' },
+  )
+  if (error) throw new Error(`upsertCustomerMembership failed: ${error.message}`)
+}
+
+export async function getCustomerMembership(
+  customerId: string,
+): Promise<{ status: string; plan_id: string | null } | null> {
+  const { data, error } = await db
+    .from('customer_memberships')
+    .select('status, plan_id')
+    .eq('customer_id', customerId)
+    .maybeSingle()
+  if (error) throw new Error(`getCustomerMembership failed: ${error.message}`)
+  return data as { status: string; plan_id: string | null } | null
+}
+
+export async function deleteCustomerMembership(customerId: string): Promise<void> {
+  await db.from('customer_memberships').delete().eq('customer_id', customerId)
+}
+
+export async function getDefaultMembershipPlan(): Promise<{ id: string; name: string } | null> {
+  const { data, error } = await db
+    .from('membership_plans')
+    .select('id, name')
+    .eq('active', true)
+    .order('sort_order')
+    .limit(1)
+    .maybeSingle()
+  if (error) throw new Error(`getDefaultMembershipPlan failed: ${error.message}`)
+  return data as { id: string; name: string } | null
+}
+
+export async function adminGrantMembershipRpc(
+  customerId: string,
+  planId: string | null,
+  reason?: string,
+): Promise<string | null> {
+  const client = await createAuthedClient(
+    process.env.E2E_ADMIN_EMAIL!,
+    process.env.E2E_ADMIN_PASSWORD!,
+  )
+  try {
+    const { error } = await client.rpc('admin_grant_membership', {
+      p_customer_id: customerId,
+      p_plan_id:     planId,
+      p_reason:      reason ?? null,
+    })
+    return error?.message ?? null
+  } finally {
+    await client.auth.signOut()
+  }
+}
+
+export async function adminPauseMembershipRpc(customerId: string): Promise<string | null> {
+  const client = await createAuthedClient(
+    process.env.E2E_ADMIN_EMAIL!,
+    process.env.E2E_ADMIN_PASSWORD!,
+  )
+  try {
+    const { error } = await client.rpc('admin_pause_membership', { p_customer_id: customerId })
+    return error?.message ?? null
+  } finally {
+    await client.auth.signOut()
+  }
+}
+
+export async function adminReactivateMembershipRpc(customerId: string): Promise<string | null> {
+  const client = await createAuthedClient(
+    process.env.E2E_ADMIN_EMAIL!,
+    process.env.E2E_ADMIN_PASSWORD!,
+  )
+  try {
+    const { error } = await client.rpc('admin_reactivate_membership', { p_customer_id: customerId })
+    return error?.message ?? null
+  } finally {
+    await client.auth.signOut()
+  }
+}
+
+export async function adminCancelMembershipRpc(customerId: string): Promise<string | null> {
+  const client = await createAuthedClient(
+    process.env.E2E_ADMIN_EMAIL!,
+    process.env.E2E_ADMIN_PASSWORD!,
+  )
+  try {
+    const { error } = await client.rpc('admin_cancel_membership', { p_customer_id: customerId })
+    return error?.message ?? null
+  } finally {
+    await client.auth.signOut()
+  }
+}
+
+export async function adminListMembersRpc(): Promise<{ error: string | null; count: number }> {
+  const client = await createAuthedClient(
+    process.env.E2E_ADMIN_EMAIL!,
+    process.env.E2E_ADMIN_PASSWORD!,
+  )
+  try {
+    const { data, error } = await client.rpc('admin_list_members')
+    return { error: error?.message ?? null, count: Array.isArray(data) ? data.length : 0 }
+  } finally {
+    await client.auth.signOut()
+  }
+}
+
+export async function adminUpsertMembershipPlanRpc(plan: {
+  name: string
+  price_pence: number
+  billing_interval?: string
+  active?: boolean
+}): Promise<{ error: string | null; id: string | null }> {
+  const client = await createAuthedClient(
+    process.env.E2E_ADMIN_EMAIL!,
+    process.env.E2E_ADMIN_PASSWORD!,
+  )
+  try {
+    const { data, error } = await client.rpc('admin_upsert_membership_plan', {
+      p_name:             plan.name,
+      p_price_pence:      plan.price_pence,
+      p_billing_interval: plan.billing_interval ?? 'monthly',
+      p_active:           plan.active ?? true,
+    })
+    return { error: error?.message ?? null, id: (data as { id?: string } | null)?.id ?? null }
+  } finally {
+    await client.auth.signOut()
+  }
+}

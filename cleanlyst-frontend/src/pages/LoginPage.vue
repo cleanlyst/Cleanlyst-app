@@ -8,8 +8,8 @@
           <div>
             <h1 class="font-h1 text-h1 tracking-tighter mb-4">Cleanlyst</h1>
             <p class="font-body text-body opacity-80 max-w-sm">
-              The most reliable marketplace for professional cleaning services. Simple booking,
-              vetted experts, and a spotless home guaranteed.
+              Your trusted network of fully vetted cleaning professionals. Simple booking,
+              certified experts, and a spotless home guaranteed.
             </p>
           </div>
           <div class="space-y-stack-gap">

@@ -280,7 +280,7 @@
           <div>
             <p class="font-label-md text-label-md text-red-800">Warning</p>
             <p class="text-caption font-caption text-red-700 mt-1">
-              This will remove the cleaner from the marketplace but retain all historical booking data. This action cannot be undone through the admin panel.
+              This will remove the cleaner from the platform but retain all historical booking data. This action cannot be undone through the admin panel.
             </p>
           </div>
         </div>

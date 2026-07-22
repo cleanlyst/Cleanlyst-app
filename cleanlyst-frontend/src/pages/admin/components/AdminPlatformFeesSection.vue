@@ -14,7 +14,7 @@
 
       <div v-if="migrationPending" class="mb-6 p-4 border border-amber-300 bg-amber-50 text-amber-800 text-sm space-y-2">
         <p class="font-semibold">Database migration required</p>
-        <p>The <code class="bg-amber-100 px-1">cleaner_commission_percent</code> column is missing. Commission settings will not be saved until you apply the migration.</p>
+        <p>The <code class="bg-amber-100 px-1">cleaner_commission_percent</code> column is missing. Platform fee settings will not be saved until you apply the migration.</p>
         <p>Go to <strong>Supabase Dashboard → SQL Editor</strong> and run the file:<br>
           <code class="bg-amber-100 px-1">supabase/migrations/20260521100000_platform_fees_apply.sql</code>
         </p>
@@ -62,7 +62,7 @@
             <!-- Cleaner commission -->
             <div class="space-y-2">
               <label class="block font-label-md text-label-md text-primary" for="commission">
-                Cleaner Commission (%)
+                Platform Cut (%)
               </label>
               <p class="text-caption font-caption text-secondary">
                 Deducted from service price. Cleaner receives: service − this fee.
@@ -96,7 +96,7 @@
               <span class="font-medium text-primary">£{{ exampleCustomerTotal }}</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-secondary">Platform revenue (booking fee + commission)</span>
+              <span class="text-secondary">Platform revenue</span>
               <span class="font-medium text-primary">£{{ examplePlatformRevenue }}</span>
             </div>
             <div class="flex justify-between text-sm">

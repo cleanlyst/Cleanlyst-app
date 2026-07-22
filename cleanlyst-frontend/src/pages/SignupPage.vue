@@ -12,7 +12,7 @@
         <div class="hidden lg:block">
           <div class="space-y-8">
             <h1 class="font-h1 text-h1 text-primary">
-              Join the marketplace for professional cleaning services.
+              Join a trusted network of cleaning professionals.
             </h1>
             <p class="font-body text-body text-on-surface-variant max-w-md">
               Sign up to book trusted local cleaners or apply to offer your services on Cleanlyst.

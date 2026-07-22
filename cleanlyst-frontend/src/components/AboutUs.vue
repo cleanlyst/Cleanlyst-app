@@ -26,7 +26,7 @@
           <div>
             <span class="mission-label">Our Mission</span>
             <h2 class="mission-title">
-              Building a trusted marketplace for modern cleaning services.
+              Building a trusted network of cleaning professionals.
             </h2>
           </div>
 
@@ -39,10 +39,10 @@
             </p>
 
             <p class="body-text">
-              Through a streamlined marketplace experience, Cleanlyst connects customers with vetted
+              Through a streamlined platform experience, Cleanlyst connects customers with vetted
               cleaning professionals based on location, services, and availability. From secure
               onboarding and booking management to transparent pricing and reviews, our goal is to
-              create a platform built on trust, quality, and convenience.
+              create a network built on trust, quality, and convenience.
             </p>
           </div>
         </div>
@@ -62,7 +62,7 @@
               <h3 class="pillar-title">Vetted Professionals</h3>
               <p class="body-text">
                 Every cleaner undergoes a multi-step verification process, ensuring only the most
-                reliable talent joins our marketplace ecosystem.
+                reliable talent joins our trusted network.
               </p>
             </div>
           </div>
@@ -111,7 +111,7 @@
           </p>
 
           <p>
-            Today, Cleanlyst is building a modern, community-driven marketplace that connects
+            Today, Cleanlyst is building a modern, community-driven network that connects
             customers with vetted cleaning professionals through a seamless booking experience. From
             secure onboarding and verified cleaner profiles to transparent pricing, scheduling, and
             payments, our platform is designed to make cleaning services more accessible,

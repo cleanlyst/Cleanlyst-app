@@ -103,7 +103,7 @@
 
                 <p>
                   This Privacy Policy explains what information we collect, how we use it, and the
-                  choices you have regarding your personal data when using our marketplace platform.
+                  choices you have regarding your personal data when using our platform.
                 </p>
 
                 <p>

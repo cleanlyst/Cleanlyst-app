@@ -3,7 +3,7 @@
     <div class="max-w-6xl mx-auto">
       <header class="mb-12">
         <h1 class="font-h1 text-h1 text-on-background mb-2">Admin Dashboard</h1>
-        <p class="text-secondary">Overview of marketplace performance and operations.</p>
+        <p class="text-secondary">Overview of platform performance and operations.</p>
       </header>
 
       <!-- Stats Cards -->

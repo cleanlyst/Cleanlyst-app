@@ -9,6 +9,8 @@ export interface CleanerSearchResult {
   average_rating: number
   review_count: number
   service_radius_km: number | null
+  /** Payment methods this cleaner accepts (Phase M). Defaults to ['card']. */
+  accepted_payment_methods: string[]
   profiles: {
     full_name: string
     avatar_url: string | null
@@ -173,6 +175,7 @@ export async function searchCleaners(
       average_rating,
       review_count,
       service_radius_km,
+      accepted_payment_methods,
       profiles!inner (
         full_name,
         avatar_url,
@@ -216,6 +219,7 @@ export async function getCleanerPublicProfile(userId: string): Promise<CleanerSe
       average_rating,
       review_count,
       service_radius_km,
+      accepted_payment_methods,
       profiles!inner (
         full_name,
         avatar_url,

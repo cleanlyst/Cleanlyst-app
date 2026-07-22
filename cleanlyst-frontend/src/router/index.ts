@@ -23,6 +23,7 @@ declare module 'vue-router' {
     requiresAuth?: boolean
     requiresRole?: Role | Role[]
     redirectIfAuthenticated?: boolean
+    requiresMembership?: boolean
   }
 }
 
@@ -125,6 +126,12 @@ const router = createRouter({
       component: () => import('../components/TermsOfService.vue'),
     },
     {
+      path: '/membership',
+      name: 'MembershipJoin',
+      meta: { title: 'Become a Member', requiresAuth: true, requiresRole: 'customer' },
+      component: () => import('../pages/customer/MembershipJoinPage.vue'),
+    },
+    {
       path: '/customer/onboarding',
       name: 'CustomerOnboarding',
       meta: { title: 'Set Up Your Preferences', requiresAuth: true, requiresRole: 'customer' },
@@ -134,7 +141,7 @@ const router = createRouter({
       path: '/book-cleaner',
       alias: '/book',
       name: 'BookCleaner',
-      meta: { title: 'Book Cleaner', requiresAuth: true, requiresRole: 'customer' },
+      meta: { title: 'Book a Cleaner', requiresAuth: true, requiresRole: 'customer', requiresMembership: true },
       component: () => import('../pages/customer/booking/SearchCleaner.vue'),
     },
     {
@@ -294,9 +301,16 @@ const router = createRouter({
       component: () => import('../pages/admin/AdminDashboard.vue'),
     },
     {
-      path: '/admin/dashboard/subscription',
-      name: 'AdminSubscription',
-      meta: { title: 'Subscription', requiresAuth: true, requiresRole: 'admin' },
+      path: '/admin/dashboard/membership',
+      alias: ['/admin/dashboard/subscription'],
+      name: 'AdminMembership',
+      meta: { title: 'Membership', requiresAuth: true, requiresRole: 'admin' },
+      component: () => import('../pages/admin/AdminDashboard.vue'),
+    },
+    {
+      path: '/admin/dashboard/platform-fees',
+      name: 'AdminPlatformFees',
+      meta: { title: 'Platform Fees', requiresAuth: true, requiresRole: 'admin' },
       component: () => import('../pages/admin/AdminDashboard.vue'),
     },
     {
@@ -437,6 +451,11 @@ router.beforeEach(async (to) => {
         if (prefsStore.preferences && !prefsStore.preferences.setup_completed_at) {
           return { name: 'CustomerOnboarding' }
         }
+      }
+
+      // Membership gate — customer must be an active member to access member-only routes
+      if (to.meta.requiresMembership && auth.hasRole('customer') && !auth.isMember) {
+        return { name: 'MembershipJoin', query: { redirect: to.fullPath } }
       }
 
       return

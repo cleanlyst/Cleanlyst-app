@@ -60,7 +60,7 @@
           <span class="th-label">Service</span>
           <span class="th-label">Date</span>
           <span class="th-label th-label--right">Service price</span>
-          <span class="th-label th-label--right">Commission</span>
+          <span class="th-label th-label--right">Platform Fee</span>
           <span class="th-label th-label--right">Net payout</span>
           <span class="th-label">Status</span>
         </div>
@@ -156,7 +156,7 @@
           }}</span>
         </div>
         <div class="tx-detail-breakdown-row tx-detail-breakdown-row--deduct">
-          <span>Commission Deduction</span>
+          <span>Platform Fee</span>
           <span>{{
             selectedTx.commissionCents != null
               ? '− ' + formatCurrencyVal(selectedTx.commissionCents)

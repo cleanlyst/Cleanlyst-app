@@ -1,6 +1,7 @@
 import type { AuthChangeEvent, Session, Subscription } from '@supabase/supabase-js'
 import { defineStore } from 'pinia'
 import { hasSupabaseConfig, requireSupabase, supabaseConfigError } from '@/lib/supabase'
+import type { MembershipStatus } from '@cleanlyst-backend/types/database.types'
 
 export type Role = 'customer' | 'cleaner_pending' | 'cleaner_active' | 'admin'
 
@@ -27,6 +28,7 @@ export interface CleanerProfile {
   is_available: boolean
   average_rating: number
   review_count: number
+  accepted_payment_methods: string[]
 }
 
 type PublicSignupRole = 'customer' | 'cleaner_pending'
@@ -38,6 +40,7 @@ export const useAuthStore = defineStore('auth', {
     profile: null as Profile | null,
     cleanerProfile: null as CleanerProfile | null,
     cleanerApplicationStatus: null as string | null,
+    membershipStatus: null as MembershipStatus | null,
     loading: true,
     initialized: false,
     authSubscription: null as Subscription | null,
@@ -46,6 +49,9 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (state) => !!state.userId,
     userRole: (state) => state.profile?.role ?? null,
+    /** True when the customer has an active or complimentary membership. */
+    isMember: (state): boolean =>
+      state.membershipStatus === 'active' || state.membershipStatus === 'complimentary',
     dashboardRouteName(): 'CustomerDashboard' | 'CleanerDashboard' | 'AdminDashboard' | 'Home' {
       switch (this.userRole) {
         case 'customer':
@@ -104,6 +110,7 @@ export const useAuthStore = defineStore('auth', {
       this.profile = null
       this.cleanerProfile = null
       this.cleanerApplicationStatus = null
+      this.membershipStatus = null
 
       if (this.userId) {
         const { data: profile, error: profileError } = await supabase
@@ -140,6 +147,15 @@ export const useAuthStore = defineStore('auth', {
             .maybeSingle()
           this.cleanerApplicationStatus = appRow?.status ?? null
         }
+
+        if (this.profile?.role === 'customer') {
+          const { data: membership } = await supabase
+            .from('customer_memberships')
+            .select('status')
+            .eq('customer_id', this.userId)
+            .maybeSingle()
+          this.membershipStatus = (membership?.status as MembershipStatus | undefined) ?? 'free'
+        }
       }
 
       this.loading = false
@@ -155,6 +171,7 @@ export const useAuthStore = defineStore('auth', {
       // getUser() round-trip that init() would make for a session we just established.
       this.userId = data.user.id
       this.cleanerApplicationStatus = null
+      this.membershipStatus = null
       this.loading = true
       try {
         await this._loadProfileData(data.user.id)
@@ -283,6 +300,7 @@ export const useAuthStore = defineStore('auth', {
       this.profile = null
       this.cleanerProfile = null
       this.cleanerApplicationStatus = null
+      this.membershipStatus = null
     },
 
     hasRole(role: Role) {
@@ -323,6 +341,17 @@ export const useAuthStore = defineStore('auth', {
         this.cleanerProfile = null
         this.cleanerApplicationStatus = null
       }
+
+      if (this.profile.role === 'customer') {
+        const { data: membership } = await supabase
+          .from('customer_memberships')
+          .select('status')
+          .eq('customer_id', userId)
+          .maybeSingle()
+        this.membershipStatus = (membership?.status as MembershipStatus | undefined) ?? 'free'
+      } else {
+        this.membershipStatus = null
+      }
     },
 
     bindAuthListener() {
@@ -352,6 +381,7 @@ export const useAuthStore = defineStore('auth', {
           this.profile = null
           this.cleanerProfile = null
           this.cleanerApplicationStatus = null
+          this.membershipStatus = null
           return
         }
 

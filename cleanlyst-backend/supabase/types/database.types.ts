@@ -24,17 +24,25 @@ export type BookingStatus =
   | 'estimate_proposed'
   | 'awaiting_customer_payment'
   | 'payment_authorized'
+  | 'estimate_adjustment_requested'
   | 'in_progress'
   | 'completion_pending_customer'
   | 'completed'
   | 'cancelled'
   | 'cleaner_declined'
+  | 'cleaner_cancelled'
   | 'cleaner_no_show'
   | 'refunded'
   | 'disputed'
-export type PaymentStatus = 'unpaid' | 'authorized' | 'captured' | 'refunded' | 'failed'
+  | 'reassign_requested'
+export type PaymentStatus = 'unpaid' | 'authorized' | 'captured' | 'refunded' | 'failed' | 'offline'
 export type PayoutStatus = 'pending' | 'processing' | 'released' | 'paid' | 'failed'
 export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'canceled' | 'inactive' | 'cancelled'
+
+// ── MEMBERSHIP (Phase M) ───────────────────────────────────────────────────────
+
+export type MembershipStatus = 'free' | 'active' | 'paused' | 'cancelled' | 'complimentary'
+export type BookingPaymentMethod = 'card' | 'cash' | 'bank_transfer'
 
 // ── TABLES ────────────────────────────────────────────────────────────────────
 
@@ -66,6 +74,8 @@ export interface CleanerProfile {
   total_reviews: number
   total_jobs_completed: number
   total_earnings_cents: number
+  /** Payment methods the cleaner accepts for bookings (Phase M). Defaults to ['card']. */
+  accepted_payment_methods: BookingPaymentMethod[]
   created_at: string
   updated_at: string
 }
@@ -125,6 +135,8 @@ export interface Booking {
   stripe_payment_intent_id: string | null
   status: BookingStatus
   payment_status: PaymentStatus
+  /** How the customer will pay (or paid) for this booking. Null for pre-Phase M bookings. */
+  payment_method: BookingPaymentMethod | null
   no_show_reported_at: string | null
   no_show_action: string | null
   booking_request_id: string | null
@@ -137,6 +149,12 @@ export interface Booking {
   dispute_resolved_at: string | null
   cancelled_at: string | null
   cancellation_reason: string | null
+  // Estimate adjustment fields (Phase F2)
+  proposed_total_cents: number | null
+  adjustment_amount_cents: number | null
+  adjustment_requested_at: string | null
+  customer_adjustment_response_at: string | null
+  adjustment_reason: string | null
   created_at: string
   updated_at: string
 }
@@ -277,6 +295,40 @@ export interface PlatformSettings {
   updated_at: string
 }
 
+// ── MEMBERSHIP TABLES (Phase M) ───────────────────────────────────────────────
+
+export interface MembershipPlan {
+  id: string
+  name: string
+  description: string | null
+  price_pence: number
+  billing_interval: 'monthly' | 'annual'
+  stripe_price_id: string | null
+  active: boolean
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CustomerMembership {
+  id: string
+  customer_id: string
+  plan_id: string | null
+  status: MembershipStatus
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+  current_period_start: string | null
+  current_period_end: string | null
+  trial_ends_at: string | null
+  cancelled_at: string | null
+  paused_at: string | null
+  granted_by: string | null
+  grant_reason: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
 // ── DATABASE TYPE MAP (for typed Supabase client) ─────────────────────────────
 
 export interface Database {
@@ -298,6 +350,8 @@ export interface Database {
       cleaner_application_documents: { Row: CleanerApplicationDocument; Insert: Omit<CleanerApplicationDocument, 'id' | 'uploaded_at'>; Update: Partial<CleanerApplicationDocument> }
       cleaner_subscriptions: { Row: CleanerSubscription; Insert: Omit<CleanerSubscription, 'trial_started_at' | 'created_at' | 'updated_at'>; Update: Partial<CleanerSubscription> }
       platform_settings: { Row: PlatformSettings; Insert: Omit<PlatformSettings, 'id' | 'created_at' | 'updated_at'>; Update: Partial<Omit<PlatformSettings, 'id' | 'created_at'>> }
+      membership_plans: { Row: MembershipPlan; Insert: Omit<MembershipPlan, 'id' | 'created_at' | 'updated_at'>; Update: Partial<MembershipPlan> }
+      customer_memberships: { Row: CustomerMembership; Insert: Omit<CustomerMembership, 'id' | 'created_at' | 'updated_at'>; Update: Partial<CustomerMembership> }
     }
     Functions: {
       get_my_profile: { Args: Record<never, never>; Returns: Profile }
@@ -305,6 +359,7 @@ export interface Database {
       is_admin: { Args: Record<never, never>; Returns: boolean }
       is_cleaner: { Args: Record<never, never>; Returns: boolean }
       is_cleaner_active: { Args: Record<never, never>; Returns: boolean }
+      is_member: { Args: Record<never, never>; Returns: boolean }
       is_booking_participant: { Args: { p_booking_id: string }; Returns: boolean }
       submit_cleaner_application: { Args: { p_application_id: string }; Returns: CleanerApplication }
       admin_review_cleaner_application: {
@@ -322,6 +377,8 @@ export interface Database {
           p_booking_id: string
           p_target_status: BookingStatus
           p_note?: string | null
+          p_reassigned_at?: string | null
+          p_notify?: boolean
         }
         Returns: Booking
       }
@@ -329,6 +386,59 @@ export interface Database {
       start_booking: { Args: { p_booking_id: string }; Returns: Booking }
       complete_booking: { Args: { p_booking_id: string }; Returns: Booking }
       report_cleaner_no_show: { Args: { p_booking_id: string; p_action: 'replacement' | 'refund' }; Returns: Booking }
+      get_my_membership: { Args: Record<never, never>; Returns: CustomerMembership | null }
+      ensure_customer_membership: { Args: Record<never, never>; Returns: CustomerMembership }
+      admin_grant_membership: {
+        Args: {
+          p_customer_id: string
+          p_plan_id?: string | null
+          p_reason?: string | null
+          p_notes?: string | null
+        }
+        Returns: CustomerMembership
+      }
+      admin_cancel_membership: {
+        Args: { p_customer_id: string; p_reason?: string | null }
+        Returns: CustomerMembership
+      }
+      admin_pause_membership: {
+        Args: { p_customer_id: string; p_reason?: string | null }
+        Returns: CustomerMembership
+      }
+      admin_reactivate_membership: {
+        Args: { p_customer_id: string; p_plan_id?: string | null; p_notes?: string | null }
+        Returns: CustomerMembership
+      }
+      admin_upsert_membership_plan: {
+        Args: {
+          p_id?: string | null
+          p_name?: string | null
+          p_description?: string | null
+          p_price_pence?: number | null
+          p_billing_interval?: string | null
+          p_stripe_price_id?: string | null
+          p_active?: boolean | null
+          p_sort_order?: number | null
+        }
+        Returns: MembershipPlan
+      }
+      admin_list_members: {
+        Args: {
+          p_status?: MembershipStatus | null
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: Array<{
+          membership_id: string
+          customer_id: string
+          customer_name: string | null
+          customer_email: string
+          plan_name: string | null
+          status: MembershipStatus
+          current_period_end: string | null
+          created_at: string
+        }>
+      }
     }
   }
 }

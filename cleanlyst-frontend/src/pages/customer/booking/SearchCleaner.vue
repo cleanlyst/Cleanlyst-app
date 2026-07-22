@@ -383,31 +383,75 @@
             </div>
           </div>
 
-          <!-- Pricing breakdown -->
+          <!-- Payment method selection (shown when cleaner accepts multiple methods) -->
+          <div
+            v-if="availablePaymentMethods.length > 1"
+            class="border border-outline-variant p-5 space-y-3"
+          >
+            <h3 class="font-label-md text-label-md text-primary">How would you like to pay?</h3>
+            <div class="space-y-2">
+              <label
+                v-for="method in availablePaymentMethods"
+                :key="method.value"
+                :class="[
+                  'flex items-center gap-3 p-3 border cursor-pointer transition-colors',
+                  selectedPaymentMethod === method.value
+                    ? 'border-primary bg-surface-variant'
+                    : 'border-outline-variant hover:border-primary',
+                ]"
+              >
+                <input
+                  v-model="selectedPaymentMethod"
+                  :value="method.value"
+                  type="radio"
+                  class="w-4 h-4 accent-primary flex-shrink-0"
+                />
+                <span class="material-symbols-outlined text-xl text-primary">{{ method.icon }}</span>
+                <div>
+                  <p class="font-label-md text-label-md text-primary text-sm">{{ method.label }}</p>
+                  <p class="text-caption text-secondary text-xs">{{ method.description }}</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Pricing breakdown (card payments show full breakdown; offline shows service total only) -->
           <div class="border border-outline-variant p-5 space-y-3">
             <div class="flex justify-between text-sm">
               <span class="text-secondary">{{ selectedServiceLabel }}</span>
               <span class="text-primary font-medium">{{ formatPence(basePricePence) }}</span>
             </div>
-            <div class="pt-3 border-t border-outline-variant space-y-2">
-              <div class="flex justify-between text-sm">
-                <span class="text-secondary">Subtotal</span>
-                <span class="text-primary">{{ formatPence(subtotalPence) }}</span>
+            <template v-if="selectedPaymentMethod === 'card'">
+              <div class="pt-3 border-t border-outline-variant space-y-2">
+                <div class="flex justify-between text-sm">
+                  <span class="text-secondary">Subtotal</span>
+                  <span class="text-primary">{{ formatPence(subtotalPence) }}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-secondary">{{ bookingFeeLabel }}</span>
+                  <span class="text-primary">{{ formatPence(bookingFeePence) }}</span>
+                </div>
+                <p class="text-caption font-caption text-secondary text-xs mt-2">
+                  * Platform fee covers secure payments, customer support, and cleaner vetting.
+                </p>
+                <div class="flex justify-between pt-2 border-t border-outline-variant">
+                  <span class="font-h2 text-h2 text-primary">Total</span>
+                  <span class="font-h2 text-h2 text-primary">{{ formatPence(totalPence) }}</span>
+                </div>
               </div>
-              <div class="flex justify-between text-sm">
-                <span class="text-secondary">{{ bookingFeeLabel }}</span>
-                <span class="text-primary">{{ formatPence(bookingFeePence) }}</span>
+            </template>
+            <template v-else>
+              <div class="pt-3 border-t border-outline-variant">
+                <div class="flex justify-between">
+                  <span class="font-h2 text-h2 text-primary">Total to pay cleaner</span>
+                  <span class="font-h2 text-h2 text-primary">{{ formatPence(basePricePence) }}</span>
+                </div>
+                <p class="text-caption text-secondary text-xs mt-2">
+                  No platform payment required.
+                  {{ selectedPaymentMethod === 'cash' ? 'Pay your cleaner in cash on the day.' : 'Transfer directly to your cleaner before the clean.' }}
+                </p>
               </div>
-              <div>
-              <p class="text-caption font-caption text-secondary text-xs mt-4">
-                * Platform fee helps us secure your payment, provide customer support and vet cleaners.
-              </p>
-              </div>
-              <div class="flex justify-between pt-2 border-t border-outline-variant">
-                <span class="font-h2 text-h2 text-primary">Total</span>
-                <span class="font-h2 text-h2 text-primary">{{ formatPence(totalPence) }}</span>
-              </div>
-            </div>
+            </template>
           </div>
 
           <p v-if="payError" class="text-caption text-red-600">{{ payError }}</p>
@@ -419,10 +463,20 @@
             @click="confirmAndPay"
           >
             <span v-if="paying || loadingServices" class="loading-spinner-sm"></span>
-            {{ paying ? 'Processing…' : loadingServices ? 'Loading…' : 'Confirm and Pay' }}
+            <template v-if="paying || loadingServices">
+              {{ paying ? 'Processing…' : 'Loading…' }}
+            </template>
+            <template v-else>
+              {{ selectedPaymentMethod === 'card' ? 'Confirm and Pay' : 'Confirm Booking' }}
+            </template>
           </button>
           <p class="text-center text-caption font-caption text-secondary">
-            Payment held securely. Released to cleaner after job completion.
+            <template v-if="selectedPaymentMethod === 'card'">
+              Payment held securely. Released to cleaner after job completion.
+            </template>
+            <template v-else>
+              Your booking will be confirmed once the cleaner accepts.
+            </template>
           </p>
         </div>
 
@@ -600,6 +654,20 @@ const loadingServices = ref(false)
 const currentPricing = ref<PricingResult | null>(null)
 // Pre-loaded at step 4 so cleaner card estimates include the correct fee
 const platformFeePercent = ref(7)
+const selectedPaymentMethod = ref<string>('card')
+
+const PAYMENT_METHOD_META: Record<string, { label: string; icon: string; description: string }> = {
+  card:          { label: 'Card via Cleanlyst', icon: 'credit_card',     description: 'Secure card payment through Cleanlyst — held until job is complete.' },
+  cash:          { label: 'Cash',               icon: 'payments',         description: 'Pay your cleaner in cash on the day of the clean.' },
+  bank_transfer: { label: 'Bank Transfer',      icon: 'account_balance',  description: 'Transfer directly to your cleaner before or after the clean.' },
+}
+
+const availablePaymentMethods = computed(() => {
+  const methods = selectedCleaner.value?.accepted_payment_methods ?? ['card']
+  return methods
+    .filter(m => m in PAYMENT_METHOD_META)
+    .map(m => ({ value: m, ...PAYMENT_METHOD_META[m] }))
+})
 
 // --- Computed ---
 
@@ -782,6 +850,9 @@ async function loadCleanerBasePrices(cleanerIds: string[]) {
 
 async function selectCleaner(c: CleanerSearchResult) {
   selectedCleaner.value = c
+  // Default to first accepted method (card if available, otherwise first in list)
+  const methods = c.accepted_payment_methods ?? ['card']
+  selectedPaymentMethod.value = methods.includes('card') ? 'card' : (methods[0] ?? 'card')
   step.value = 5
   loadingServices.value = true
   try {
@@ -852,6 +923,13 @@ async function confirmAndPay() {
     const titleSnapshot = selectedServiceLabel.value
 
     void track('BOOKING_STARTED', { user_id: auth.userId ?? undefined, role: 'customer' })
+    const isOfflinePayment = selectedPaymentMethod.value !== 'card'
+
+    // Offline payments (cash/bank transfer) use service price only — no platform fee
+    const quoteCentsForBooking = isOfflinePayment
+      ? basePricePence.value
+      : (pricing?.totalCustomerCents ?? totalPence.value)
+
     const booking = await createBookingRequest({
       customerId: auth.userId,
       cleanerId: selectedCleaner.value.user_id,
@@ -862,7 +940,7 @@ async function confirmAndPay() {
       locationText: locationText.value || 'Address not provided',
       scheduledStart: scheduledStart.toISOString(),
       scheduledEnd: scheduledEnd.toISOString(),
-      quoteCents: pricing?.totalCustomerCents ?? totalPence.value,
+      quoteCents: quoteCentsForBooking,
       cleanerPayoutCents: pricing?.cleanerPayoutCents ?? subtotalPence.value,
       currency: selectedCleaner.value.currency,
       notes: fullNotes,
@@ -870,7 +948,8 @@ async function confirmAndPay() {
       propertyType: propertyType.value || null,
       bedrooms: bedrooms.value || null,
       bathrooms: bathrooms.value || null,
-      financials: pricing
+      paymentMethod: selectedPaymentMethod.value,
+      financials: pricing && !isOfflinePayment
         ? {
             servicePriceCents: pricing.servicePriceCents,
             bookingFeeCents: pricing.bookingFeeCents,
@@ -900,6 +979,12 @@ async function confirmAndPay() {
       } catch {
         // Non-fatal
       }
+    }
+
+    if (isOfflinePayment) {
+      // No Stripe checkout for cash/bank transfer — redirect to booking detail
+      window.location.href = `/customer/bookings/${booking.id}`
+      return
     }
 
     const paymentResult = await startInitialPayment(booking.id)

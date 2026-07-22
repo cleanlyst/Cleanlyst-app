@@ -235,6 +235,52 @@
           </div>
         </section>
 
+        <!-- Step 4: Payment Methods -->
+        <section v-if="step === 4" class="space-y-6">
+          <div>
+            <h2 class="font-h2 text-h2 text-primary">Payment Methods</h2>
+            <p class="text-caption text-on-surface-variant mt-1">
+              Select the payment methods you accept from customers. Customers will see these options
+              when booking with you. You must accept at least one.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <label
+              v-for="method in PAYMENT_METHOD_OPTIONS"
+              :key="method.value"
+              :class="[
+                'flex items-start gap-4 p-4 border cursor-pointer transition-colors',
+                acceptedPaymentMethods.includes(method.value)
+                  ? 'border-primary bg-surface-variant'
+                  : 'border-outline-variant bg-white hover:border-primary',
+              ]"
+            >
+              <input
+                v-model="acceptedPaymentMethods"
+                :value="method.value"
+                type="checkbox"
+                class="mt-0.5 w-4 h-4 accent-primary flex-shrink-0"
+              />
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-xl text-primary">{{ method.icon }}</span>
+                  <span class="font-label-md text-label-md text-primary">{{ method.label }}</span>
+                </div>
+                <p class="text-caption text-on-surface-variant mt-1">{{ method.description }}</p>
+              </div>
+            </label>
+          </div>
+
+          <div
+            v-if="acceptedPaymentMethods.length === 0"
+            class="flex items-center gap-2 text-amber-700 text-caption"
+          >
+            <span class="material-symbols-outlined text-base">warning</span>
+            Select at least one payment method to continue.
+          </div>
+        </section>
+
         <!-- Error -->
         <p v-if="stepError" class="mt-4 text-caption text-red-600">{{ stepError }}</p>
 
@@ -277,7 +323,28 @@ import { useCleanerApplicationStore } from '@/stores/cleanerApplication'
 import { uploadCleanerDocument } from '@/services/applicationService'
 import { getSupabaseClient } from '@/services/supabaseClient'
 
-const STEP_LABELS = ['Verify Identity', 'Insurance', 'DBS Check']
+const STEP_LABELS = ['Verify Identity', 'Insurance', 'DBS Check', 'Payment Methods']
+
+const PAYMENT_METHOD_OPTIONS = [
+  {
+    value: 'card',
+    label: 'Card via Cleanlyst',
+    icon: 'credit_card',
+    description: 'Customers pay by card through the Cleanlyst platform. Payment is authorised before the job.',
+  },
+  {
+    value: 'cash',
+    label: 'Cash',
+    icon: 'payments',
+    description: 'Customers pay you in cash on the day of the clean.',
+  },
+  {
+    value: 'bank_transfer',
+    label: 'Bank Transfer',
+    icon: 'account_balance',
+    description: 'Customers pay by bank transfer before or after the clean.',
+  },
+]
 
 const ID_DOC_TYPES = [
   { value: 'passport', label: 'Passport' },
@@ -301,6 +368,7 @@ const idDocType = ref<'passport' | 'driving_licence'>('passport')
 const idFile = ref<File | null>(null)
 const insuranceFile = ref<File | null>(null)
 const dbsFile = ref<File | null>(null)
+const acceptedPaymentMethods = ref<string[]>(['card'])
 
 const idFileInput = ref<HTMLInputElement | null>(null)
 const insuranceFileInput = ref<HTMLInputElement | null>(null)
@@ -320,6 +388,7 @@ const uploadedDocs = ref<UploadedDocs>({
 const canNext = computed(() => {
   if (step.value === 1) return !!idFile.value || uploadedDocs.value.id_document
   if (step.value === 2) return !!insuranceFile.value || uploadedDocs.value.insurance_document
+  if (step.value === 4) return acceptedPaymentMethods.value.length > 0
   return true
 })
 
@@ -328,6 +397,18 @@ onMounted(async () => {
     await appStore.createOrLoad()
     if (appStore.application) {
       await loadExistingDocs(appStore.application.id)
+    }
+    // Load existing payment method preferences if already set
+    if (auth.userId) {
+      const supabase = getSupabaseClient()
+      const { data: cp } = await supabase
+        .from('cleaner_profiles')
+        .select('accepted_payment_methods')
+        .eq('user_id', auth.userId)
+        .maybeSingle()
+      if (cp?.accepted_payment_methods?.length) {
+        acceptedPaymentMethods.value = cp.accepted_payment_methods
+      }
     }
     // If submitted/under_review/approved/rejected, go to pending review page
     const status = appStore.application?.status
@@ -454,6 +535,14 @@ async function uploadCurrentStep() {
     await uploadCleanerDocument(userId, dbsFile.value.name, dbsFile.value, applicationId, 'dbs_document')
     uploadedDocs.value.dbs_document = true
     dbsFile.value = null
+  }
+  if (step.value === 4 && acceptedPaymentMethods.value.length > 0) {
+    const supabase = getSupabaseClient()
+    const { error } = await supabase
+      .from('cleaner_profiles')
+      .update({ accepted_payment_methods: acceptedPaymentMethods.value })
+      .eq('user_id', userId)
+    if (error) throw new Error(error.message)
   }
 }
 </script>

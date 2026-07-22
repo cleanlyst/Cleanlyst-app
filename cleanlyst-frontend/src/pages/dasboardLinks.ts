@@ -7,7 +7,8 @@ export interface DashboardLinkItem {
 export const adminDashboardLinks: DashboardLinkItem[] = [
   { name: 'AdminDashboard', label: 'Overview', icon: 'dashboard' },
   { name: 'AdminApprovals', label: 'Cleaners', icon: 'person_check' },
-  { name: 'AdminSubscription', label: 'Platform Fees', icon: 'account_balance_wallet' },
+  { name: 'AdminMembership', label: 'Membership', icon: 'card_membership' },
+  { name: 'AdminPlatformFees', label: 'Platform Fees', icon: 'account_balance_wallet' },
   { name: 'AdminFinancials', label: 'Financials', icon: 'list_alt' },
   { name: 'AdminFinancialAudit', label: 'Financial Audit', icon: 'fact_check' },
   { name: 'AdminBookingAudit', label: 'Booking Audit', icon: 'history' },

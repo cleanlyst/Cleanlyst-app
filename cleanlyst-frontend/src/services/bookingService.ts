@@ -85,6 +85,8 @@ export interface BookingRequestInput {
   propertyType?: string | null
   bedrooms?: string | null
   bathrooms?: string | null
+  /** Payment method the customer selected (Phase M). Defaults to 'card'. */
+  paymentMethod?: string | null
   financials?: BookingFinancialsSnapshot | null
 }
 
@@ -228,6 +230,7 @@ export async function createBookingRequest(input: BookingRequestInput): Promise<
       property_type_snapshot: input.propertyType ?? null,
       bedrooms_snapshot: input.bedrooms ?? null,
       bathrooms_snapshot: input.bathrooms ?? null,
+      payment_method: input.paymentMethod ?? 'card',
     })
     .select('id')
     .single()

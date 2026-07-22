@@ -126,7 +126,7 @@ async function main() {
         console.log('Frame:', frame.url().substring(0, 80))
         inputs.forEach(inp => console.log('  input:', JSON.stringify(inp)))
       }
-    } catch (e) { /* skip */ }
+    } catch { /* skip */ }
   }
   
   await browser.close()

@@ -12,7 +12,6 @@ import {
   deleteUser,
   seedBookingDirect,
   deleteBooking,
-  setCleanerStatus,
   getServiceIdForCleaner,
 } from '../../helpers/db'
 import { collectConsoleErrors } from '../../helpers/adminGuards'
@@ -185,7 +184,6 @@ test.describe('Admin — Filters & Pagination', () => {
 
     const nextBtn = page.getByRole('button', { name: /next/i })
     if (await nextBtn.isEnabled({ timeout: 3_000 }).catch(() => false)) {
-      const rowsBefore = await page.getByRole('row').count()
       await nextBtn.click()
       await page.waitForLoadState('networkidle')
       const rowsAfter = await page.getByRole('row').count()

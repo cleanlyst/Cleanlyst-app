@@ -45,7 +45,7 @@ test.describe('PC — Cleaner Visibility', () => {
 
   // ── PC-27: Cleaner sees payment_authorized ─────────────────────────────────
 
-  test('PC-17 — cleaner dashboard shows payment_authorized booking', async ({ cleanerPage: page }) => {
+  test('PC-17 — cleaner dashboard shows payment_authorized booking', async () => {
     const serviceId = await getServiceIdForCleaner(cleanerUserId)
     const bookingId = await seedBookingDirect(customerUserId, cleanerUserId, serviceId, {
       status: 'payment_authorized',

@@ -45,7 +45,6 @@ test.describe.configure({ mode: 'serial' })
 
 // Ephemeral user created for membership state tests (isolated from E2E test user)
 let EPHEMERAL_CUSTOMER_ID = ''
-let EPHEMERAL_USER_EMAIL   = ''
 let DEFAULT_PLAN_ID: string | null = null
 
 let CUSTOMER_ID = ''
@@ -63,7 +62,6 @@ test.beforeAll(async () => {
   // Create ephemeral customer for isolated membership state tests
   const ephemeral = await createEphemeralUser('m17-cust', 'TestPassword123!', { role: 'customer' })
   EPHEMERAL_CUSTOMER_ID = ephemeral.id
-  EPHEMERAL_USER_EMAIL  = ephemeral.email
 
   // Set role so Supabase profile exists
   await db.from('profiles').update({ role: 'customer' }).eq('id', EPHEMERAL_CUSTOMER_ID)

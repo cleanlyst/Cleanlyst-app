@@ -3,65 +3,79 @@ import { searchCleaners } from '@/services/cleanerService'
 
 type QueryResponse = { data: unknown; error: unknown }
 
-class MockQuery {
-  eqCalls: Array<[string, unknown]> = []
-  inCalls: Array<[string, unknown[]]> = []
-  orCalls: string[] = []
-  lteCalls: Array<[string, unknown]> = []
-  gtCalls: Array<[string, unknown]> = []
-  rangeCalls: Array<[number, number]> = []
-  orderCalls: Array<[string, unknown]> = []
-
-  constructor(
-    readonly table: string,
-    private response: QueryResponse,
-  ) {}
-
-  select() {
-    return this
-  }
-
-  eq(column: string, value: unknown) {
-    this.eqCalls.push([column, value])
-    return this
-  }
-
-  in(column: string, values: unknown[]) {
-    this.inCalls.push([column, values])
-    return this
-  }
-
-  or(filter: string) {
-    this.orCalls.push(filter)
-    return this
-  }
-
-  lte(column: string, value: unknown) {
-    this.lteCalls.push([column, value])
-    return this
-  }
-
-  gt(column: string, value: unknown) {
-    this.gtCalls.push([column, value])
-    return this
-  }
-
-  range(start: number, end: number) {
-    this.rangeCalls.push([start, end])
-    return this
-  }
-
-  order(column: string, options?: unknown) {
-    this.orderCalls.push([column, options])
-    return this
-  }
-
+interface MockQuery {
+  readonly table: string
+  eqCalls: Array<[string, unknown]>
+  inCalls: Array<[string, unknown[]]>
+  orCalls: string[]
+  lteCalls: Array<[string, unknown]>
+  gtCalls: Array<[string, unknown]>
+  rangeCalls: Array<[number, number]>
+  orderCalls: Array<[string, unknown]>
+  select(): MockQuery
+  eq(column: string, value: unknown): MockQuery
+  in(column: string, values: unknown[]): MockQuery
+  or(filter: string): MockQuery
+  lte(column: string, value: unknown): MockQuery
+  gt(column: string, value: unknown): MockQuery
+  range(start: number, end: number): MockQuery
+  order(column: string, options?: unknown): MockQuery
   then<TResult1 = QueryResponse, TResult2 = never>(
     onfulfilled?: ((value: QueryResponse) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
-  ) {
-    return Promise.resolve(this.response).then(onfulfilled, onrejected)
+  ): Promise<TResult1 | TResult2>
+}
+
+// Plain-object factory (not a class) so this thenable mock doesn't trip
+// unicorn/no-thenable, which only guards against `then` on class instances.
+function createMockQuery(table: string, response: QueryResponse): MockQuery {
+  const query: MockQuery = {
+    table,
+    eqCalls: [],
+    inCalls: [],
+    orCalls: [],
+    lteCalls: [],
+    gtCalls: [],
+    rangeCalls: [],
+    orderCalls: [],
+    select() {
+      return query
+    },
+    eq(column, value) {
+      query.eqCalls.push([column, value])
+      return query
+    },
+    in(column, values) {
+      query.inCalls.push([column, values])
+      return query
+    },
+    or(filter) {
+      query.orCalls.push(filter)
+      return query
+    },
+    lte(column, value) {
+      query.lteCalls.push([column, value])
+      return query
+    },
+    gt(column, value) {
+      query.gtCalls.push([column, value])
+      return query
+    },
+    range(start, end) {
+      query.rangeCalls.push([start, end])
+      return query
+    },
+    order(column, options) {
+      query.orderCalls.push([column, options])
+      return query
+    },
+    // Mocks Supabase's PostgrestBuilder, which is itself thenable so callers can `await` a query chain directly.
+    // oxlint-disable-next-line unicorn/no-thenable
+    then(onfulfilled, onrejected) {
+      return Promise.resolve(response).then(onfulfilled, onrejected)
+    },
   }
+  return query
 }
 
 const rpc = vi.fn()
@@ -72,7 +86,7 @@ vi.mock('@/services/supabaseClient', () => ({
   getSupabaseClient: () => ({
     from: (table: string) => {
       const response = responsesByTable[table]?.shift() ?? { data: [], error: null }
-      const query = new MockQuery(table, response)
+      const query = createMockQuery(table, response)
       queries.push(query)
       return query
     },

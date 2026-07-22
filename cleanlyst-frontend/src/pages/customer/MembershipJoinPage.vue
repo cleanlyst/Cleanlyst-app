@@ -118,7 +118,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
 import { getMembershipPlans } from '@/services/membershipService'
 import type { MembershipPlan } from '@/types/database.types'
 
@@ -146,9 +145,6 @@ const COMPARISON_ROWS = [
   { feature: 'Save favourites',          free: false },
   { feature: 'Priority support',         free: false },
 ]
-
-const router = useRouter()
-const route  = useRoute()
 
 const plans         = ref<MembershipPlan[]>([])
 const selectedPlanId = ref<string | null>(null)

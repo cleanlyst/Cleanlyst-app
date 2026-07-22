@@ -6,8 +6,6 @@
  */
 import { test, expect } from '../../fixtures'
 import {
-  db,
-  wipeDynamic,
   seedBookingDirect,
   deleteBooking,
   getServiceIdForCleaner,
@@ -212,7 +210,6 @@ test.describe('Admin — Booking Management', () => {
     const texts = await Promise.all(rows.map((r) => r.textContent()))
     // Collect data rows (skip header)
     const dataRows = texts.slice(1).filter((t) => t && t.trim().length > 0)
-    const unique = new Set(dataRows)
     // Allow near-duplicates (if content is identical but that's valid), check by count
     expect(dataRows.length).toBeGreaterThanOrEqual(0) // Always passes — structure test
   })

@@ -26,8 +26,6 @@ import {
   makeCheckoutCompleted,
   makePaymentIntentSucceeded,
   makeChargeRefunded,
-  makePaymentIntentCanceled,
-  makeTransferPaid,
   makePaymentIntentFailed,
   resetEvtSeq,
 } from '../fixtures/stripeFactory'

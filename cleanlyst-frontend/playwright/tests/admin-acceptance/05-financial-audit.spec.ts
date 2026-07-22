@@ -150,9 +150,6 @@ test.describe('Admin — Financial Audit', () => {
     await page.goto('/admin/dashboard/financials')
     await page.waitForLoadState('networkidle')
 
-    const exportBtn = page.getByRole('button', { name: /export|download|csv/i }).first()
-    // May not exist on this page — optional check
-    const exists = await exportBtn.isVisible({ timeout: 3_000 })
     // Just verify no error loading the page
     expect(true).toBeTruthy()
   })

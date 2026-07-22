@@ -17,10 +17,6 @@
 
 import { getSupabaseClient } from '@/services/supabaseClient'
 
-export interface PaymentCapturedContext {
-  bookingId: string
-}
-
 /**
  * Refreshes the booking row after a payment capture event.
  * Returns the refreshed booking data so callers can update their local state.

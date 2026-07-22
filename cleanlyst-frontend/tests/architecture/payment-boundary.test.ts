@@ -121,8 +121,6 @@ const ALL_SRC_FILES = walk(SRC_DIR)
 describe('R1: Payment RPCs are isolated to paymentOrchestrator', () => {
   const ORCHESTRATOR_PATH = join(SRC_DIR, 'services', 'payments', 'paymentOrchestrator.ts')
 
-  const forbiddenRpcPattern = /record_initial_payment|record_additional_payment/
-
   it('record_initial_payment / record_additional_payment appear only in paymentOrchestrator.ts', () => {
     const violations = ALL_SRC_FILES
       .filter((f) => f !== ORCHESTRATOR_PATH)
@@ -133,12 +131,15 @@ describe('R1: Payment RPCs are isolated to paymentOrchestrator', () => {
       })
       .map((f) => relativeToSrc(f))
 
-    expect(violations, [
-      'The following files call record_initial_payment or record_additional_payment directly.',
-      'These RPCs must ONLY be called from src/services/payments/paymentOrchestrator.ts.',
-      'Route payment operations through the orchestrator instead.',
-      ...violations,
-    ].join('\n')).toEqual([])
+    if (violations.length > 0) {
+      throw new Error([
+        'The following files call record_initial_payment or record_additional_payment directly.',
+        'These RPCs must ONLY be called from src/services/payments/paymentOrchestrator.ts.',
+        'Route payment operations through the orchestrator instead.',
+        ...violations,
+      ].join('\n'))
+    }
+    expect(violations).toEqual([])
   })
 })
 
@@ -154,13 +155,16 @@ describe('R2: UI layers do not import @stripe/stripe-js directly', () => {
       'Direct @stripe/stripe-js import in UI layer',
     )
 
-    expect(violations, [
-      'The following files import @stripe/stripe-js directly.',
-      'Use the useStripe composable (src/composables/useStripe.ts) instead.',
-      'If you need raw Stripe, add the operation to src/services/stripe/ and expose it',
-      'through the composable or paymentOrchestrator.',
-      ...violations,
-    ].join('\n')).toEqual([])
+    if (violations.length > 0) {
+      throw new Error([
+        'The following files import @stripe/stripe-js directly.',
+        'Use the useStripe composable (src/composables/useStripe.ts) instead.',
+        'If you need raw Stripe, add the operation to src/services/stripe/ and expose it',
+        'through the composable or paymentOrchestrator.',
+        ...violations,
+      ].join('\n'))
+    }
+    expect(violations).toEqual([])
   })
 })
 
@@ -171,12 +175,15 @@ describe('R2: UI layers do not import @stripe/stripe-js directly', () => {
 describe('R3: bookingService.ts does not import Stripe SDK', () => {
   it('bookingService does not import @stripe/stripe-js', () => {
     const content = readSrc('services/bookingService.ts')
-    expect(
-      /from\s+['"]@stripe\/stripe-js['"]/.test(content),
-      'bookingService.ts must not import @stripe/stripe-js.\n' +
-        'bookingService is a domain coordinator — Stripe is isolated behind the stripe service layer.\n' +
-        'Use paymentOrchestrator for payment initiation.',
-    ).toBe(false)
+    const importsStripeSdk = /from\s+['"]@stripe\/stripe-js['"]/.test(content)
+    if (importsStripeSdk) {
+      throw new Error(
+        'bookingService.ts must not import @stripe/stripe-js.\n' +
+          'bookingService is a domain coordinator — Stripe is isolated behind the stripe service layer.\n' +
+          'Use paymentOrchestrator for payment initiation.',
+      )
+    }
+    expect(importsStripeSdk).toBe(false)
   })
 })
 
@@ -187,12 +194,15 @@ describe('R3: bookingService.ts does not import Stripe SDK', () => {
 describe('R4: paymentOrchestrator does not import bookingService', () => {
   it('No circular dependency: orchestrator → bookingService is forbidden', () => {
     const content = readSrc('services/payments/paymentOrchestrator.ts')
-    expect(
-      /from\s+['"].*bookingService['"]/.test(content),
-      'paymentOrchestrator.ts must not import from bookingService.ts.\n' +
-        'The permitted direction is: bookingService → paymentOrchestrator.\n' +
-        'If the orchestrator needs booking data, the caller (bookingService) must pass it as a parameter.',
-    ).toBe(false)
+    const importsBookingService = /from\s+['"].*bookingService['"]/.test(content)
+    if (importsBookingService) {
+      throw new Error(
+        'paymentOrchestrator.ts must not import from bookingService.ts.\n' +
+          'The permitted direction is: bookingService → paymentOrchestrator.\n' +
+          'If the orchestrator needs booking data, the caller (bookingService) must pass it as a parameter.',
+      )
+    }
+    expect(importsBookingService).toBe(false)
   })
 })
 
@@ -216,12 +226,15 @@ describe('R5: UI layers do not import src/services/stripe directly', () => {
       })
       .map(relativeToSrc)
 
-    expect(violations, [
-      'The following UI files import from @/services/stripe directly.',
-      'Stripe services are internal to the payments domain.',
-      'Use paymentOrchestrator or useStripe composable instead.',
-      ...violations,
-    ].join('\n')).toEqual([])
+    if (violations.length > 0) {
+      throw new Error([
+        'The following UI files import from @/services/stripe directly.',
+        'Stripe services are internal to the payments domain.',
+        'Use paymentOrchestrator or useStripe composable instead.',
+        ...violations,
+      ].join('\n'))
+    }
+    expect(violations).toEqual([])
   })
 })
 
@@ -241,12 +254,15 @@ describe('R6: process_booking_payment RPC confined to bookingService.ts', () => 
       })
       .map(relativeToSrc)
 
-    expect(violations, [
-      'The following files call process_booking_payment RPC directly.',
-      'This is a payment RPC deprecated in bookingService.ts.',
-      'Route through paymentOrchestrator.startInitialPayment() instead.',
-      ...violations,
-    ].join('\n')).toEqual([])
+    if (violations.length > 0) {
+      throw new Error([
+        'The following files call process_booking_payment RPC directly.',
+        'This is a payment RPC deprecated in bookingService.ts.',
+        'Route through paymentOrchestrator.startInitialPayment() instead.',
+        ...violations,
+      ].join('\n'))
+    }
+    expect(violations).toEqual([])
   })
 })
 
@@ -265,12 +281,15 @@ describe('R7: UI does not write to payments or booking_financials tables directl
       'Direct write to payments/booking_financials from UI',
     )
 
-    expect(violations, [
-      'The following UI files write directly to the payments or booking_financials tables.',
-      'Financial mutations must go through the webhook (for Stripe flows) or the orchestrator',
-      '(which calls the appropriate RPC/Edge Function). UI components are read-only for',
-      'financial tables.',
-      ...violations,
-    ].join('\n')).toEqual([])
+    if (violations.length > 0) {
+      throw new Error([
+        'The following UI files write directly to the payments or booking_financials tables.',
+        'Financial mutations must go through the webhook (for Stripe flows) or the orchestrator',
+        '(which calls the appropriate RPC/Edge Function). UI components are read-only for',
+        'financial tables.',
+        ...violations,
+      ].join('\n'))
+    }
+    expect(violations).toEqual([])
   })
 })

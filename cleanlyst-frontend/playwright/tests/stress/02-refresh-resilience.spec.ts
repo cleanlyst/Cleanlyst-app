@@ -76,7 +76,6 @@ test.describe('Refresh and navigation resilience', () => {
     await page.waitForLoadState('networkidle')
 
     // DB: no booking should exist yet
-    const booking = await latestBookingForCustomer(customerUserId)
     // It's acceptable if no booking exists (wizard is stateless)
     // OR if exactly one exists (wizard is stateful/persisted)
     const { data } = await db.from('bookings').select('id').eq('customer_id', customerUserId)
@@ -89,7 +88,6 @@ test.describe('Refresh and navigation resilience', () => {
     const wizard = new BookingWizard(page)
     await wizard.completeFullJourney({ daysAhead: 4 })
 
-    const urlAfterPayment = page.url()
     await page.reload()
     await page.waitForLoadState('networkidle')
 

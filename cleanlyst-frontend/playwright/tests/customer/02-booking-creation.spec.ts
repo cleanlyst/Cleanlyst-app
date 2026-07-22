@@ -13,7 +13,7 @@
 import { test, expect }      from '../../fixtures'
 import { BookingWizard }     from '../../pageObjects/BookingWizard'
 import { CustomerDashboard } from '../../pageObjects/CustomerDashboard'
-import { db, getUserIdByEmail, latestBookingForCustomer, wipeDynamic } from '../../helpers/db'
+import { getUserIdByEmail, latestBookingForCustomer, wipeDynamic } from '../../helpers/db'
 
 test.describe.configure({ mode: 'serial' })
 

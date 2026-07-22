@@ -6,7 +6,6 @@ import {
   updateBooking,
   cleanupBookingsForCustomer,
   getLatestBookingStatus,
-  serviceClient,
 } from '../utils'
 import { loginAs, logout } from '../helpers/login'
 

@@ -12,7 +12,6 @@ import {
   db,
   createEphemeralUser,
   deleteUser,
-  getUserIdByEmail,
   getCleanerStatusInDb,
   setCleanerStatus,
 } from '../../helpers/db'
@@ -67,7 +66,7 @@ test.describe('Admin — All Cleaners', () => {
   // ── REGRESSION: ambiguous user_id ─────────────────────────────────────────
 
   test('CL1.0 — REGRESSION: All Cleaners page loads without SQL error (user_id ambiguity fix)', async ({ adminPage: page }) => {
-    const { errors, attach } = collectConsoleErrors(page)
+    const { attach } = collectConsoleErrors(page)
     const { failures, attach: attachNet } = collectNetworkFailures(page)
     attach()
     attachNet()

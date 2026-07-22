@@ -8,7 +8,6 @@ import { test, expect } from '../../fixtures'
 import {
   seedBookingDirect,
   deleteBooking,
-  seedLedgerCaptured,
   getServiceIdForCleaner,
 } from '../../helpers/db'
 import { OperationsConsole } from '../../pageObjects/OperationsConsole'
@@ -21,7 +20,6 @@ let CUSTOMER_ID = ''
 let CLEANER_ID  = ''
 const CUSTOMER_EMAIL = process.env.E2E_CUSTOMER_EMAIL!
 const CLEANER_EMAIL  = process.env.E2E_CLEANER_EMAIL!
-const ADMIN_EMAIL    = process.env.E2E_ADMIN_EMAIL!
 
 test.describe('Admin — Search', () => {
   let searchBookingId: string

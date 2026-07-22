@@ -187,6 +187,7 @@ import { requireSupabase } from '@/lib/supabase'
 import { subscribeToTable, unsubscribe } from '@/lib/realtime'
 import AppModal from '@/components/ui/AppModal.vue'
 import { getCleanerTransactions, type CleanerTransactionRow } from '@/services/financialService'
+import { formatStatus } from '@/utils/format'
 
 const auth = useAuthStore()
 const loading = ref(true)
@@ -260,7 +261,7 @@ function txStatusLabel(status: string): string {
     disputed: 'Disputed',
     refunded: 'Refunded',
   }
-  return map[status] ?? status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  return map[status] ?? formatStatus(status)
 }
 
 async function loadFinancials() {

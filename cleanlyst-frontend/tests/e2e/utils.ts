@@ -175,13 +175,6 @@ async function upsertCustomerPreferences(customerId: string) {
   if (error) throw error
 }
 
-async function upsertAdminProfile(userId: string) {
-  const { error } = await serviceClient
-    .from('profiles')
-    .upsert({ id: userId, role: 'admin' }, { onConflict: 'id' })
-  if (error) throw error
-}
-
 export async function ensureUserWithProfile(email: string, password: string, fullName: string, role: string) {
   let user = await findAuthUser(email)
   if (!user) {

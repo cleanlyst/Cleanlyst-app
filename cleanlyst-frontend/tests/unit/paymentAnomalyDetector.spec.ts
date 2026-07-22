@@ -29,7 +29,6 @@ vi.mock('@/services/supabaseClient', () => ({
 }))
 
 const COMPLETED_CTX = { data: { status: 'completed', completed_at: '2026-01-15T11:00:00.000Z', cancelled_at: null } }
-const PAID_CTX      = { data: { status: 'paid',      completed_at: null, cancelled_at: null } }
 
 describe('detectBookingAnomalies()', () => {
   beforeEach(() => {

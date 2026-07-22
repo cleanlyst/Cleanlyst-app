@@ -41,7 +41,7 @@ async function signIn(email: string, password: string): Promise<SupabaseClient> 
   const client = createClient(SUPABASE_URL, process.env.SUPABASE_ANON_KEY ?? '', {
     auth: { persistSession: false, autoRefreshToken: false },
   })
-  const { data, error } = await client.auth.signInWithPassword({ email, password })
+  const { error } = await client.auth.signInWithPassword({ email, password })
   if (error) throw new Error(`Auth failed for ${email}: ${error.message}`)
   return client
 }
@@ -66,11 +66,8 @@ describe('RLS: bookings table', () => {
       .limit(5)
     expect(error).toBeNull()
     // All returned rows belong to this customer
-    if (data && data.length > 0) {
-      for (const row of data) {
-        expect(row.customer_id).toBe(customerUserId)
-      }
-    }
+    const allBelongToCustomer = (data ?? []).every((row) => row.customer_id === customerUserId)
+    expect(allBelongToCustomer).toBe(true)
   })
 
   it('customer cannot read another customer\'s bookings', async () => {

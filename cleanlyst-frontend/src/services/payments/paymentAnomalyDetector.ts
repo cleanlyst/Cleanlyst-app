@@ -15,7 +15,7 @@
  */
 
 import { getSupabaseClient } from '@/services/supabaseClient'
-import { getLedgerEvents, type LedgerEvent } from './paymentLedgerResolver'
+import { getLedgerEvents } from './paymentLedgerResolver'
 import { log } from './financialLogger'
 
 export type AnomalyType =

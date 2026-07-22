@@ -1,3 +1,5 @@
+import { formatStatus } from './format'
+
 export type BookingRole = 'customer' | 'cleaner' | 'admin'
 
 export interface StatusLabelInput {
@@ -96,7 +98,7 @@ export function getBookingStatusLabel(booking: StatusLabelInput, role: BookingRo
       return 'Refunded'
 
     default:
-      return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+      return formatStatus(status)
   }
 }
 

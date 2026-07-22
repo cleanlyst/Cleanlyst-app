@@ -100,11 +100,3 @@ export function toUserMessage(error: unknown, fallback = 'Something went wrong. 
   if (raw.length > 300) return fallback
   return raw || fallback
 }
-
-// ── Numbers ────────────────────────────────────────────────────────────────
-
-export function formatRating(rating: number | null | undefined, reviews?: number): string {
-  if (rating == null) return 'No rating yet'
-  const star = rating.toFixed(1)
-  return reviews != null ? `${star} (${reviews} review${reviews !== 1 ? 's' : ''})` : star
-}

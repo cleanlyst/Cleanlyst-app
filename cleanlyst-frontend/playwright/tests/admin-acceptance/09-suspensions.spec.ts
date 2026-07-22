@@ -11,9 +11,8 @@ import {
   deleteUser,
   getCleanerStatusInDb,
   setCleanerStatus,
-  getNotificationsForUser,
 } from '../../helpers/db'
-import { collectConsoleErrors, collectNetworkFailures } from '../../helpers/adminGuards'
+import { collectConsoleErrors } from '../../helpers/adminGuards'
 
 test.describe.configure({ mode: 'serial' })
 

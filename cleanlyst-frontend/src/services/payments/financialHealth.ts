@@ -103,14 +103,8 @@ export async function getFinancialHealthSnapshot(): Promise<FinancialHealthSnaps
   // ── Reconciliation failures ────────────────────────────────────────────────
   // Ledger events that don't correspond to any processed webhook event.
   // Each ledger row must have a stripe_event_id that exists in payment_webhook_events.
+  // Full reconciliation is in ledgerReconciliationService.compareStripeToLedger()
   const processedWebhookIds = new Set(webhookRows.map((r) => r.stripe_event_id))
-  const reconciliationFailures = ledgerRows.filter(
-    (r) => {
-      // We can't get stripe_event_id from this query; use a count-based heuristic.
-      // Full reconciliation is in ledgerReconciliationService.compareStripeToLedger()
-      return false // placeholder — compareStripeToLedger gives the exact count
-    },
-  ).length
 
   // Use webhook count vs ledger count as a coarse check
   const processedCount = processedWebhookIds.size

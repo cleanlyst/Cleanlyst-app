@@ -158,12 +158,10 @@ export async function getAdminTransactions(limit = 10): Promise<AdminTransaction
 
     const bf_raw = booking?.booking_financials
     const bf = (Array.isArray(bf_raw) ? bf_raw[0] : bf_raw) as Record<string, unknown> | null
-    const customer = (
-      Array.isArray(booking?.customer) ? (booking?.customer as unknown[])[0] : booking?.customer
-    ) as Record<string, unknown> | null
-    const cleaner = (
-      Array.isArray(booking?.cleaner) ? (booking?.cleaner as unknown[])[0] : booking?.cleaner
-    ) as Record<string, unknown> | null
+    const customer_raw = booking?.customer
+    const customer = (Array.isArray(customer_raw) ? customer_raw[0] : customer_raw) as Record<string, unknown> | null
+    const cleaner_raw = booking?.cleaner
+    const cleaner = (Array.isArray(cleaner_raw) ? cleaner_raw[0] : cleaner_raw) as Record<string, unknown> | null
 
     return {
       paymentId: String(row.id ?? ''),
@@ -311,12 +309,10 @@ export async function getFinancialAudit(limit = 50, offset = 0): Promise<AuditRo
     const booking = (
       Array.isArray(row.booking) ? row.booking[0] : row.booking
     ) as Record<string, unknown> | null
-    const customer = (
-      Array.isArray(booking?.customer) ? (booking?.customer as unknown[])[0] : booking?.customer
-    ) as Record<string, unknown> | null
-    const cleaner = (
-      Array.isArray(booking?.cleaner) ? (booking?.cleaner as unknown[])[0] : booking?.cleaner
-    ) as Record<string, unknown> | null
+    const customer_raw = booking?.customer
+    const customer = (Array.isArray(customer_raw) ? customer_raw[0] : customer_raw) as Record<string, unknown> | null
+    const cleaner_raw = booking?.cleaner
+    const cleaner = (Array.isArray(cleaner_raw) ? cleaner_raw[0] : cleaner_raw) as Record<string, unknown> | null
 
     return {
       bookingId: String(row.booking_id ?? ''),

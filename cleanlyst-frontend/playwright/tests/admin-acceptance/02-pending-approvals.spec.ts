@@ -9,7 +9,6 @@ import {
   db,
   createEphemeralUser,
   deleteUser,
-  getNotificationsForUser,
 } from '../../helpers/db'
 import { collectConsoleErrors, collectNetworkFailures } from '../../helpers/adminGuards'
 

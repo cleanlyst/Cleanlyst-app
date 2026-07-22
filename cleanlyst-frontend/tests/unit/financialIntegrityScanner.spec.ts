@@ -20,7 +20,7 @@ vi.mock('@/services/payments/paymentLedgerResolver', () => ({
 
 vi.mock('@/services/supabaseClient', () => ({
   getSupabaseClient: () => ({
-    from: (table: string) => ({
+    from: (_table: string) => ({
       select: () => ({
         eq:          () => ({
           maybeSingle: () => mockFetchBooking(),
@@ -34,14 +34,6 @@ const COMPLETED_BOOKING = {
   data: {
     status:       'completed',
     completed_at: '2026-01-15T11:00:00.000Z',
-    payments:     { amount_cents: 10_000 },
-  },
-}
-
-const ACTIVE_BOOKING = {
-  data: {
-    status:       'paid',
-    completed_at: null,
     payments:     { amount_cents: 10_000 },
   },
 }

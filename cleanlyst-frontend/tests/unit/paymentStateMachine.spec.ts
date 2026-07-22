@@ -3,7 +3,6 @@ import {
   handle,
   derivePaymentReadiness,
   paymentStatusLabel,
-  type PaymentStateMachineInput,
 } from '@/services/payments/paymentStateMachine'
 
 describe('paymentStateMachine.handle()', () => {

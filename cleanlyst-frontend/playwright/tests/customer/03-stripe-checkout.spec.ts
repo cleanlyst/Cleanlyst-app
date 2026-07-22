@@ -13,7 +13,7 @@
  */
 import { test, expect }      from '../../fixtures'
 import { BookingWizard }     from '../../pageObjects/BookingWizard'
-import { STRIPE_CARDS, completeStripeHostedCheckout, TEST_EXPIRY, TEST_CVC, TEST_POSTCODE } from '../../helpers/stripe'
+import { STRIPE_CARDS, completeStripeHostedCheckout } from '../../helpers/stripe'
 import {
   db,
   getUserIdByEmail,
@@ -21,7 +21,6 @@ import {
   getLedgerEvents,
   wipeDynamic,
 } from '../../helpers/db'
-import { loginAs } from '../../helpers/auth'
 
 test.describe.configure({ mode: 'serial' })
 

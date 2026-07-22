@@ -96,7 +96,7 @@ test.describe('Financial flow — payment to payout', () => {
     await logout(page)
   })
 
-  test('booking enters payment_authorized state after checkout', async ({ page }) => {
+  test('booking enters payment_authorized state after checkout', async () => {
     if (!bookingId) test.skip()
 
     // Verify DB state directly
@@ -110,7 +110,7 @@ test.describe('Financial flow — payment to payout', () => {
     expect(data?.status).toBe('payment_authorized')
   })
 
-  test('ledger has PAYMENT_AUTHORIZED event after checkout', async ({ page }) => {
+  test('ledger has PAYMENT_AUTHORIZED event after checkout', async () => {
     if (!bookingId) test.skip()
 
     const { data } = await serviceClient

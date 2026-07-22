@@ -5,7 +5,7 @@
  * Use sequence() to create distinct IDs for parallel test runs.
  */
 
-import type { LedgerEvent, LedgerEventType } from '@/services/payments/paymentLedgerResolver'
+import type { LedgerEvent } from '@/services/payments/paymentLedgerResolver'
 
 let seq = 0
 export function resetSeq() { seq = 0 }

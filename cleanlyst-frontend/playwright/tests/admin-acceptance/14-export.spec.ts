@@ -6,7 +6,7 @@
  * returns appropriate response, no console errors during export.
  */
 import { test, expect } from '../../fixtures'
-import { FinancialClose, type PeriodType } from '../../pageObjects/FinancialClose'
+import { FinancialClose } from '../../pageObjects/FinancialClose'
 import {
   seedBookingDirect,
   deleteBooking,
@@ -24,13 +24,6 @@ let CLEANER_ID  = ''
 
 test.describe('Admin — Export', () => {
   let exportBookingId: string
-
-  // A past date that is likely to have our seeded booking visible
-  const PAST_DATE = (() => {
-    const d = new Date()
-    d.setDate(d.getDate() - 60)
-    return d.toISOString().slice(0, 10)
-  })()
 
   test.beforeAll(async () => {
     ;({ customerId: CUSTOMER_ID, cleanerId: CLEANER_ID } = await resolveTestUsers())

@@ -7,7 +7,6 @@ import { detectBookingAlerts, filterAlertsBySeverity, type AlertType } from '@/s
 import {
   makeAuthorized,
   makeCaptured,
-  makeRefunded,
   makePayoutReleased,
   BOOKING_ID,
   resetSeq,

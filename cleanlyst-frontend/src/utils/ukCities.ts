@@ -55,5 +55,3 @@ export const UK_CITIES = [
   'Worcester',
   'York',
 ] as const
-
-export type UKCity = (typeof UK_CITIES)[number]

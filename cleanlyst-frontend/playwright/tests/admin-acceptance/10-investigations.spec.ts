@@ -167,7 +167,6 @@ test.describe('Admin — Investigations', () => {
       const ops = new OperationsConsole(page)
       await ops.goto(cleanBid)
 
-      const noInv = page.getByText(/no active investigation|no investigation|not flagged/i).first()
       const invSection = ops.investigation
       await expect(invSection).toBeVisible({ timeout: 15_000 })
       // The section exists but shows empty/no-investigation state

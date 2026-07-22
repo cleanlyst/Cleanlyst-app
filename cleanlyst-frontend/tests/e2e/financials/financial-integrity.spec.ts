@@ -8,7 +8,7 @@ import {
   findBookingFinancials,
   findAllCompletedBookingsWithFinancials,
 } from '../utils'
-import { loginAs, logout } from '../helpers/login'
+import { loginAs } from '../helpers/login'
 
 function futureDate(daysAhead = 3) {
   const date = new Date()

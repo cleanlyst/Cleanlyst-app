@@ -16,13 +16,7 @@ export async function getStripeInstance(): Promise<Stripe | null> {
   if (instance) return instance
   if (pendingLoad) return pendingLoad
 
-  let key: string | undefined
-  try {
-    key = getStripePublishableKey()
-  } catch (e) {
-    // Re-throw key validation failures (wrong key type for environment, etc.)
-    throw e
-  }
+  const key = getStripePublishableKey()
 
   if (!key) {
     if (import.meta.env.DEV) {

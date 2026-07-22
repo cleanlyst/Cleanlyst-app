@@ -3,8 +3,6 @@ export const ROLLOUT_CONFIG = {
   cities: ['Wigan'],
 } as const
 
-export type RolloutCity = (typeof ROLLOUT_CONFIG.cities)[number]
-
 export function isCityEnabled(city: string): boolean {
   return ROLLOUT_CONFIG.cities.some((c) => c.toLowerCase() === city.trim().toLowerCase())
 }

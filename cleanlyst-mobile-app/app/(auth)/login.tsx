@@ -18,7 +18,7 @@ export default function LoginScreen() {
     try {
       await signIn(email, password);
       router.replace("/(tabs)/home");
-    } catch (err) {
+    } catch {
       setError("Unable to sign in. Please check credentials.");
     } finally {
       setLoading(false);

@@ -164,7 +164,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import FooterPage from '@/components/FooterPage.vue'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
 import { useRoute, useRouter, type RouteLocationRaw } from 'vue-router'

@@ -15,24 +15,20 @@
  */
 import { test, expect } from '../../fixtures'
 import {
-  db,
   seedBookingDirect,
   deleteBooking,
   seedLedgerAuthorized,
   patchBooking,
   getBookingStatus,
-  getLedgerEvents,
   getServiceIdForCleaner,
 } from '../../helpers/db'
 import { resolveTestUsers } from '../../helpers/testUsers'
-import { collectConsoleErrors, collectNetworkFailures } from '../../helpers/adminGuards'
+import { collectConsoleErrors } from '../../helpers/adminGuards'
 
 test.describe.configure({ mode: 'serial' })
 
 let CUSTOMER_ID = ''
 let CLEANER_ID  = ''
-const CUSTOMER_EMAIL = process.env.E2E_CUSTOMER_EMAIL!
-const CLEANER_EMAIL  = process.env.E2E_CLEANER_EMAIL!
 
 // ─── Shared booking IDs ────────────────────────────────────────────────────────
 let authorizedBookingId  = ''  // payment_authorized — cleaner sees accept/adjust buttons
@@ -472,7 +468,6 @@ test.describe('Phase F2 — Estimate Adjustment', () => {
 
     // The error paragraph has role="alert" so screen readers announce it
     // We verify the attribute is present in the DOM (even when hidden)
-    const alertEl = page.locator('[role="alert"]').first()
     // It only appears when adjustmentError is set — just verify the card renders
     await expect(page.getByTestId('adjustment-card')).toBeVisible()
   })

@@ -11,7 +11,6 @@ import {
   makePaidBooking,
   makeCompletedBooking,
   makePaymentAuthorizedBooking,
-  resetIdSeq,
 } from '../fixtures/bookingFactory'
 import type { BookingDetailRow } from '@/services/bookingService'
 

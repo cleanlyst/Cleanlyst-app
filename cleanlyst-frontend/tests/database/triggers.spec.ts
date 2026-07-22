@@ -12,7 +12,7 @@
  * Run with: npm run test:db
  */
 
-import { describe, expect, it, beforeAll, afterAll } from 'vitest'
+import { describe, expect, it, beforeAll } from 'vitest'
 import { createClient } from '@supabase/supabase-js'
 import * as dotenv from 'dotenv'
 import * as path from 'node:path'

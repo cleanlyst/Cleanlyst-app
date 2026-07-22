@@ -105,8 +105,6 @@ export async function processPayout(bookingId: string): Promise<ProcessPayoutRes
   return callFunction('process-payout', { booking_id: bookingId })
 }
 
-export const releasePayout = processPayout
-
 export interface RefundPaymentResult {
   refund_id: string | null
   amount_cents: number

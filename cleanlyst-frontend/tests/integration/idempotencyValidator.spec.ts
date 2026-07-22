@@ -6,7 +6,6 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import {
   validateBookingIdempotency,
   validateWebhookIdempotency,
-  validateGlobalWebhookIdempotency,
 } from '@/services/payments/idempotencyValidator'
 import {
   makeAuthorized,

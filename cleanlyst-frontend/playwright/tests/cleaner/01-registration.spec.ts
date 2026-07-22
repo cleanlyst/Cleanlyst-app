@@ -11,7 +11,6 @@
  */
 import { test, expect }   from '../../fixtures'
 import { RegisterPage }   from '../../pageObjects/RegisterPage'
-import { OnboardingPage } from '../../pageObjects/OnboardingPage'
 import { CleanerDashboard } from '../../pageObjects/CleanerDashboard'
 import { makeCleanerProfile } from '../../helpers/dataFactory'
 import { db, deleteUser, setCleanerRole } from '../../helpers/db'

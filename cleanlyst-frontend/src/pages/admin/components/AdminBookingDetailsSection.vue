@@ -319,7 +319,7 @@ import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getBookingById, reassignBooking, type BookingDetailRow } from '@/services/bookingService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
-import { formatDate, formatDateTime, formatPence, toUserMessage } from '@/utils/format'
+import { formatDate, formatDateTime, formatPence, formatStatus, toUserMessage } from '@/utils/format'
 import { getBookingStatusLabel, getStatusPillClass } from '@/utils/bookingStatusLabel'
 import { requireSupabase } from '@/lib/supabase'
 
@@ -400,7 +400,7 @@ function formatPaymentStatus(ps: string | null | undefined): string {
     case 'pending': return 'Pending'
     case 'failed': return 'Payment Failed'
     case 'authorized': return 'Authorized'
-    default: return ps ? ps.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Unknown'
+    default: return ps ? formatStatus(ps) : 'Unknown'
   }
 }
 

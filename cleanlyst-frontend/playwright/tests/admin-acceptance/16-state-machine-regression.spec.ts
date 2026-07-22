@@ -40,7 +40,6 @@
  */
 import { test, expect } from '../../fixtures'
 import {
-  db,
   seedBookingDirect,
   deleteBooking,
   seedLedgerAuthorized,
@@ -48,7 +47,6 @@ import {
   seedPaymentRecord,
   patchBooking,
   getBookingStatus,
-  getLedgerEvents,
   getServiceIdForCleaner,
 } from '../../helpers/db'
 import { resolveTestUsers } from '../../helpers/testUsers'
@@ -573,7 +571,7 @@ test.describe('Phase B7 — State Machine Canonicalisation Regression', () => {
   test('SM16.13 — no SQL ambiguity errors when loading booking detail', async ({ customerPage: page }) => {
     const { errors, attach } = collectConsoleErrors(page)
     attach()
-    const { failures, attach: attachNet } = collectNetworkFailures(page)
+    const { attach: attachNet } = collectNetworkFailures(page)
     attachNet()
 
     const svcId = await getServiceIdForCleaner(CLEANER_ID)

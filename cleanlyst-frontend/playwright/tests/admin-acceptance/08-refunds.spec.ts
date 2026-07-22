@@ -13,14 +13,11 @@ import {
   db,
   seedBookingDirect,
   deleteBooking,
-  advanceBookingToPaid,
   seedLedgerCaptured,
   seedPaymentRecord,
-  getLedgerEvents,
   getServiceIdForCleaner,
 } from '../../helpers/db'
-import { AdminDashboard } from '../../pageObjects/AdminDashboard'
-import { collectConsoleErrors, collectNetworkFailures } from '../../helpers/adminGuards'
+import { collectConsoleErrors } from '../../helpers/adminGuards'
 import { resolveTestUsers } from '../../helpers/testUsers'
 
 test.describe.configure({ mode: 'serial' })
@@ -68,7 +65,6 @@ test.describe('Admin — Refunds', () => {
     const { errors, attach } = collectConsoleErrors(page)
     attach()
 
-    const admin = new AdminDashboard(page)
     await page.goto(`/admin/bookings/${refundBookingId}`)
     await page.waitForLoadState('networkidle')
 
@@ -188,7 +184,7 @@ test.describe('Admin — Refunds', () => {
 
   // ── REGRESSION: double-refund guard ───────────────────────────────────────
 
-  test('RF8.5 — REGRESSION: double-refund is blocked by status guard', async ({ adminPage: page }) => {
+  test('RF8.5 — REGRESSION: double-refund is blocked by status guard', async () => {
     // Simulate a booking already marked as refunded
     const serviceId = await getServiceIdForCleaner(CLEANER_ID)
     const bid = await seedBookingDirect(CUSTOMER_ID, CLEANER_ID, serviceId, {
@@ -243,7 +239,6 @@ test.describe('Admin — Refunds', () => {
       // Refund button should be disabled or absent, or show "already refunded"
       const alreadyRefunded = page.getByText(/already refunded|refund issued|refunded/i).first()
       const disabledBtn = page.getByRole('button', { name: /refund/i }).and(page.locator('[disabled]')).first()
-      const noBtn = page.getByRole('button', { name: /refund/i }).first()
 
       const isDisabled = await disabledBtn.isVisible({ timeout: 3_000 }).catch(() => false)
       const showsAlreadyRefunded = await alreadyRefunded.isVisible({ timeout: 3_000 }).catch(() => false)

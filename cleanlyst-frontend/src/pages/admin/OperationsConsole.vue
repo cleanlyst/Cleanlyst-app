@@ -148,6 +148,8 @@
                 :booking-id="bundle.bookingId"
                 :booking-status="bundle.booking.status"
                 :payment-status="bundle.booking.paymentStatus"
+                :has-stripe-payment="!!bundle.payment.stripePaymentIntentId"
+                :payment-amount-cents="bundle.payment.amountCents"
                 @refresh="refresh"
               />
             </OpsSection>

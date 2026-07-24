@@ -3,6 +3,7 @@ import { getStripeInstance } from '@/services/stripe/stripeClient'
 import { initiateCheckoutSession } from '@/services/stripe/checkout'
 import { initializePaymentIntent, type PaymentIntent } from '@/services/stripe/payments'
 import { parseCheckoutRedirectParams, type PostCheckoutRedirectParams } from '@/services/stripe/webhooks'
+import { toUserMessage } from '@/utils/format'
 
 /**
  * useStripe — Vue composable for Stripe payment operations.
@@ -42,7 +43,7 @@ export function useStripe() {
       const session = await initiateCheckoutSession(bookingId)
       return session.checkoutUrl
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to create checkout session'
+      error.value = toUserMessage(e, 'Failed to create checkout session')
       throw e
     } finally {
       loading.value = false
@@ -71,7 +72,7 @@ export function useStripe() {
       }
       return await initializePaymentIntent(bookingId)
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to initialise payment'
+      error.value = toUserMessage(e, 'Failed to initialise payment')
       throw e
     } finally {
       loading.value = false

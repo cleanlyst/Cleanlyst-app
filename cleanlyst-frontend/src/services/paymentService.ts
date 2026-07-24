@@ -106,9 +106,10 @@ export async function processPayout(bookingId: string): Promise<ProcessPayoutRes
 }
 
 export interface RefundPaymentResult {
-  refund_id: string | null
-  amount_cents: number
-  status: string
+  ok: boolean
+  refund_id: string
+  is_full: boolean
+  refund_cents: number
 }
 
 export async function refundPayment(

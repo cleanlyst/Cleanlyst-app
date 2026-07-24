@@ -188,15 +188,22 @@ export async function refundPayment(
 
   console.info('[payment:refunded]', makePaymentRefundedEvent({
     bookingId,
-    paymentType:    options.amountCents ? 'partial_refund' : 'refund',
+    paymentType:    efResult.is_full ? 'refund' : 'partial_refund',
     provider:       'stripe_checkout',
     refundId:       efResult.refund_id ?? undefined,
-    amountCents:    options.amountCents,
+    amountCents:    efResult.refund_cents,
     reason:         options.reason,
-    isFullRefund:   !options.amountCents,
+    isFullRefund:   efResult.is_full,
   }))
 
-  return { success: true, provider: 'stripe_checkout', simulationMode: false }
+  return {
+    success:      true,
+    provider:     'stripe_checkout',
+    simulationMode: false,
+    refundId:     efResult.refund_id,
+    refundCents:  efResult.refund_cents,
+    isFullRefund: efResult.is_full,
+  }
 }
 
 /** Issues a partial refund. Delegates to refundPayment with amountCents set. */

@@ -419,28 +419,6 @@ button:disabled,
   border-color: var(--primary, #000000);
 }
 
-/* Booking card base */
-.clnst-booking-card {
-  padding: 1.5rem;
-  background-color: #ffffff;
-  border: 1px solid var(--outline-variant, #c4c7c7);
-  transition: border-color 0.15s;
-}
-
-.clnst-booking-card:hover {
-  border-color: var(--primary, #000000);
-}
-
-/* Booking CTAs */
-.clnst-booking-ctas {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--surface-variant, #e2e2e2);
-  justify-content: flex-end;
-}
-
 /* Status pills */
 .clnst-status-pill {
   border-radius: 999px;
@@ -584,24 +562,6 @@ button:disabled,
   }
 }
 
-/* ── Sticky table headers ─────────────────────────────────────────────────── */
-
-.clnst-table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.clnst-table-wrap table {
-  min-width: 40rem;
-}
-
-.clnst-table-wrap thead th {
-  position: sticky;
-  top: 0;
-  background: var(--surface-container-lowest, #ffffff);
-  z-index: 1;
-}
-
 /* ── Improved disabled state ──────────────────────────────────────────────── */
 
 button:disabled,
@@ -632,31 +592,6 @@ button:not(:disabled):active {
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 
-/* ── Success state pill (missing variant) ────────────────────────────────── */
-
-.status-pill--in-progress {
-  background: #e3f2fd;
-  color: #1565c0;
-  border: 1px solid #90caf9;
-}
-
-.status-pill--refunded {
-  background: #f3e8ff;
-  color: #6b21a8;
-  border: 1px solid #d8b4fe;
-}
-
-.status-pill--suspended {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fcd34d;
-}
-
-.status-pill--deactivated {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #cbd5e1;
-}
 
 /* ── Overdue booking panel ────────────────────────────────────────────────── */
 

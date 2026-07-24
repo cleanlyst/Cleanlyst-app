@@ -119,6 +119,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { getMembershipPlans } from '@/services/membershipService'
+import { toUserMessage } from '@/utils/format'
 import type { MembershipPlan } from '@/types/database.types'
 
 const MEMBER_BENEFITS = [
@@ -163,7 +164,7 @@ onMounted(async () => {
       selectedPlanId.value = firstPlan.id
     }
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load plans'
+    error.value = toUserMessage(e, 'Failed to load plans')
   }
 })
 

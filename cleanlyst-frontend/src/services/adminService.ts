@@ -86,15 +86,6 @@ export interface AdminCleanerReview {
   customer_name: string | null
 }
 
-export interface AdminRefundResult {
-  booking_id: string
-  refund_cents: number
-  is_full: boolean
-  payment_total: number
-  platform_fee: number
-  cleaner_payout: number
-}
-
 export async function getPendingCleanerApplications() {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase
@@ -206,13 +197,32 @@ export async function deactivateCleaner(cleanerId: string): Promise<void> {
 }
 
 // ── Refund ─────────────────────────────────────────────────────
+//
+// Card payments MUST go through paymentOrchestrator.refundPayment() (→
+// refund-payment Edge Function), the only code that calls Stripe — see
+// REFUND_CERTIFICATION_REPORT.md. admin_process_refund never touches
+// Stripe, so it was retired from every UI entry point for card payments.
+//
+// It still has exactly one legitimate use: cash/bank_transfer bookings have
+// no stripe_payment_intent_id, so there is no Stripe transaction to reverse
+// — refund-payment correctly rejects them with 409 "Payment has no Stripe
+// intent to refund". recordManualRefund is the bookkeeping-only path for
+// that case: it records that the admin returned the money outside the
+// system (in person, bank transfer, etc.). Callers MUST check the payment
+// has no stripe_payment_intent_id before calling this — never use it for a
+// card payment.
+export interface ManualRefundResult {
+  booking_id: string
+  refund_cents: number
+  is_full: boolean
+}
 
-export async function processRefund(
+export async function recordManualRefund(
   bookingId: string,
   refundCents: number,
   reason: string,
   notes?: string,
-): Promise<AdminRefundResult> {
+): Promise<ManualRefundResult> {
   const supabase = getSupabaseClient()
   const { data, error } = await supabase.rpc('admin_process_refund', {
     p_booking_id:   bookingId,
@@ -221,5 +231,5 @@ export async function processRefund(
     p_notes:        notes || null,
   })
   if (error) throw new Error(error.message)
-  return data as AdminRefundResult
+  return data as ManualRefundResult
 }

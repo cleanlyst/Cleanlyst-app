@@ -96,13 +96,17 @@ export async function requireRole(
 export async function stripePost(
   path: string,
   params: URLSearchParams,
+  idempotencyKey?: string,
 ): Promise<Record<string, unknown>> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${env('STRIPE_SECRET_KEY')}`,
+    'Content-Type': 'application/x-www-form-urlencoded',
+  }
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey
+
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env('STRIPE_SECRET_KEY')}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
+    headers,
     body: params.toString(),
   })
   if (!res.ok) throw new Error(`Stripe [${res.status}]: ${await res.text()}`)

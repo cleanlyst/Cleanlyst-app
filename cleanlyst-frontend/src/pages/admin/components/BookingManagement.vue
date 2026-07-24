@@ -489,7 +489,13 @@ import { formatDate, formatStatus, formatPence, formatRelativeTime, toUserMessag
 import AppModal from '@/components/ui/AppModal.vue'
 import { reassignBooking } from '@/services/bookingService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
-import { processRefund, type AdminRefundResult } from '@/services/adminService'
+import { refundPayment } from '@/services/payments/paymentOrchestrator'
+import { recordManualRefund } from '@/services/adminService'
+
+interface RefundResult {
+  refund_cents: number
+  is_full: boolean
+}
 
 const PAGE_SIZE = 10
 
@@ -894,7 +900,7 @@ interface RefundModal {
   notes: string
   loading: boolean
   error: string
-  result: AdminRefundResult | null
+  result: RefundResult | null
 }
 
 const refundModal = reactive<RefundModal>({
@@ -1083,13 +1089,34 @@ async function submitRefund() {
   refundModal.loading = true
   refundModal.error = ''
   try {
-    const result = await processRefund(
-      bookingId,
-      refundCents,
-      refundModal.reason,
-      refundModal.notes || undefined,
-    )
-    refundModal.result = result
+    if (refundModal.payment?.stripe_payment_intent_id) {
+      // Card payment — must go through Stripe, the canonical path.
+      // refundType === 'full' leaves amountCents undefined so the Edge
+      // Function refunds the full payment amount itself, rather than us
+      // pre-computing it — it's the sole authority on the true amount_cents.
+      const amountCents = refundModal.refundType === 'full' ? undefined : refundCents
+      const result = await refundPayment(bookingId, {
+        amountCents,
+        reason: refundModal.reason,
+      })
+      refundModal.result = {
+        refund_cents: result.refundCents ?? refundCents,
+        is_full:      result.isFullRefund ?? refundModal.refundType === 'full',
+      }
+    } else {
+      // Cash / bank_transfer — no Stripe transaction exists to reverse.
+      // Record that the admin returned the money outside the system.
+      const result = await recordManualRefund(
+        bookingId,
+        refundCents,
+        refundModal.reason,
+        refundModal.notes || undefined,
+      )
+      refundModal.result = {
+        refund_cents: result.refund_cents,
+        is_full:      result.is_full,
+      }
+    }
     await loadBookings()
   } catch (e) {
     refundModal.error = toUserMessage(e, 'Failed to process refund. Please try again.')

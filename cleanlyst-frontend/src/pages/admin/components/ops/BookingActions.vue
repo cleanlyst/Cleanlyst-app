@@ -82,11 +82,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { getSupabaseClient } from '@/services/supabaseClient'
+import { refundPayment } from '@/services/payments/paymentOrchestrator'
+import { recordManualRefund } from '@/services/adminService'
+import { toUserMessage } from '@/utils/format'
 
 const props = defineProps<{
-  bookingId:     string
-  bookingStatus: string | null
-  paymentStatus: string | null
+  bookingId:         string
+  bookingStatus:     string | null
+  paymentStatus:     string | null
+  /** False for cash/bank_transfer bookings — no Stripe transaction exists to reverse. */
+  hasStripePayment:  boolean
+  paymentAmountCents: number | null
 }>()
 
 const emit = defineEmits<{ (e: 'refresh'): void }>()
@@ -105,18 +111,22 @@ async function triggerRefund(): Promise<void> {
   actionError.value   = null
   actionSuccess.value = null
 
-  const supabase = getSupabaseClient()
-  const { error } = await supabase.rpc('admin_process_refund', {
-    p_booking_id: props.bookingId,
-    p_reason:     'admin_console',
-  })
-
-  actioning.value = false
-  if (error) {
-    actionError.value = error.message
-  } else {
-    actionSuccess.value = 'Refund initiated. The booking will update shortly.'
+  try {
+    if (props.hasStripePayment) {
+      await refundPayment(props.bookingId, { reason: 'admin_console' })
+      actionSuccess.value = 'Refund issued via Stripe. The booking will update shortly.'
+    } else {
+      // Cash / bank_transfer — nothing for Stripe to reverse. Record that
+      // the admin returned the money outside the system.
+      if (!props.paymentAmountCents) throw new Error('Payment amount unknown — cannot record refund')
+      await recordManualRefund(props.bookingId, props.paymentAmountCents, 'admin_console')
+      actionSuccess.value = 'Manual refund recorded. Booking marked as refunded.'
+    }
     emit('refresh')
+  } catch (error) {
+    actionError.value = toUserMessage(error, 'Refund failed')
+  } finally {
+    actioning.value = false
   }
 }
 
@@ -132,7 +142,7 @@ async function forceAcceptAdjustment(): Promise<void> {
 
   actioning.value = false
   if (error) {
-    actionError.value = error.message
+    actionError.value = toUserMessage(error, 'Action failed')
   } else {
     actionSuccess.value = 'Adjustment accepted. Booking is now confirmed.'
     emit('refresh')
@@ -152,7 +162,7 @@ async function forceCancelAdjustment(): Promise<void> {
 
   actioning.value = false
   if (error) {
-    actionError.value = error.message
+    actionError.value = toUserMessage(error, 'Action failed')
   } else {
     actionSuccess.value = 'Booking cancelled. Admin should process refund via Issue Refund.'
     emit('refresh')

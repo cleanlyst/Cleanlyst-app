@@ -19,11 +19,6 @@ body {
   font-synthesis: none;
 }
 
-.boldFont {
-  font-family: var(--bold-font);
-  font-weight: var(--font-weight-bold);
-}
-
 h1,
 h2,
 h3,
@@ -125,30 +120,6 @@ p {
   margin-bottom: 1rem;
 }
 
-.blue-text {
-  color: var(--blue);
-}
-
-.white-text {
-  color: var(--white);
-}
-
-.black-text {
-  color: var(--black);
-}
-
-.red-text {
-  color: var(--red);
-}
-
-.green-text {
-  color: var(--green);
-}
-
-.text-uppercase {
-  text-transform: uppercase;
-}
-
 .text-underline {
   text-decoration: underline;
 }
@@ -157,8 +128,4 @@ strong,
 b {
   font-family: var(--bold-font);
   font-weight: var(--font-weight-bold);
-}
-
-.text-end {
-  text-align: end;
 }

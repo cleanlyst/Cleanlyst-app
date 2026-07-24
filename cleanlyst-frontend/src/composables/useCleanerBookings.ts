@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import type { BookingStatus } from '@/types/domain'
 import { getCleanerBookings, transitionBookingState, type BookingListRow } from '@/services/bookingService'
+import { toUserMessage } from '@/utils/format'
 
 export type CleanerBooking = BookingListRow
 
@@ -33,7 +34,7 @@ export function useCleanerBookings() {
     try {
       bookings.value = await getCleanerBookings(cleanerId)
     } catch (e) {
-      errorMessage.value = e instanceof Error ? e.message : 'Failed to load bookings.'
+      errorMessage.value = toUserMessage(e, 'Failed to load bookings.')
       bookings.value = []
     } finally {
       loading.value = false

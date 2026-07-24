@@ -688,7 +688,7 @@ import {
   rejectPriceAdjustment,
   type BookingDetailRow,
 } from '@/services/bookingService'
-import { startAdditionalPayment, startInitialPayment, startAdjustmentPayment } from '@/services/payments/paymentOrchestrator'
+import { startAdditionalPayment, startInitialPayment, startAdjustmentPayment, refundPayment } from '@/services/payments/paymentOrchestrator'
 import { cancelAsCustomer } from '@/services/bookingLifecycleService'
 import { searchCleaners, type CleanerSearchResult } from '@/services/cleanerService'
 import BookingTimeline from '@/components/BookingTimeline.vue'
@@ -971,13 +971,10 @@ async function cancelBooking() {
   try {
     if (booking.value.status === 'payment_authorized') {
       // Stripe hold on card — must cancel via Stripe (not DB-only path).
-      // refund-payment Edge Function cancels the uncaptured PaymentIntent,
-      // releasing the hold immediately, and updates booking + payment rows.
-      const supabase = getSupabaseClient()
-      const { error } = await supabase.functions.invoke('refund-payment', {
-        body: { booking_id: bookingId, reason: 'requested_by_customer' },
-      })
-      if (error) throw new Error(error.message ?? 'Failed to cancel payment authorization')
+      // refundPayment (paymentOrchestrator → refund-payment EF) cancels the
+      // uncaptured PaymentIntent, releasing the hold immediately, and only
+      // then updates booking + payment rows.
+      await refundPayment(bookingId, { reason: 'requested_by_customer' })
     } else {
       await cancelAsCustomer(bookingId)
     }
@@ -1063,6 +1060,10 @@ async function requestNoShowRefund() {
   try {
     const updated = await reportCleanerNoShow(bookingId, 'refund')
     booking.value = updated
+    // reportCleanerNoShow only records the no-show and cancels the booking.
+    // The actual Stripe refund — and the only "refund processed" claim —
+    // comes from the canonical refund path below.
+    await refundPayment(bookingId)
     noShowSuccess.value = 'Refund processed successfully'
   } catch (e) {
     noShowError.value = toUserMessage(e, 'Failed to process refund. Please try again.')

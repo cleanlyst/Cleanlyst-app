@@ -9,6 +9,7 @@ import {
   type Notification,
 } from '@/services/notificationService'
 import { useAuthStore } from '@/stores/auth'
+import { toUserMessage } from '@/utils/format'
 
 export function useNotifications() {
   const auth = useAuthStore()
@@ -25,7 +26,7 @@ export function useNotifications() {
     try {
       notifications.value = await getNotifications()
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Failed to load notifications'
+      error.value = toUserMessage(e, 'Failed to load notifications')
     } finally {
       loading.value = false
     }

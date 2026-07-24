@@ -13,6 +13,7 @@ import { useRouter }               from 'vue-router'
 import { getSupabaseClient }       from '@/services/supabaseClient'
 import { investigateBooking }      from '@/services/payments/paymentInvestigation'
 import type { InvestigationBundle } from '@/services/payments/paymentInvestigation'
+import { toUserMessage } from '@/utils/format'
 
 export interface SearchResult {
   bookingId: string
@@ -142,7 +143,7 @@ export function useOperationsConsole() {
         return true
       })
     } catch (e) {
-      searchError.value = e instanceof Error ? e.message : String(e)
+      searchError.value = toUserMessage(e, 'Search failed')
     } finally {
       searching.value = false
     }
@@ -160,7 +161,7 @@ export function useOperationsConsole() {
       refreshedAt.value = new Date()
       subscribeRealtime(bookingId)
     } catch (e) {
-      loadError.value = e instanceof Error ? e.message : String(e)
+      loadError.value = toUserMessage(e, 'Failed to load investigation bundle')
     } finally {
       loading.value = false
     }

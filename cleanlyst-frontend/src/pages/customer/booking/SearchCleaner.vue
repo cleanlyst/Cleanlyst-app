@@ -994,7 +994,22 @@ async function confirmAndPay() {
       window.location.href = paymentResult.redirectUrl
     }
   } catch (e) {
-    payError.value = toUserMessage(e, 'Payment failed. Please try again.')
+    // Server-side membership enforcement (bookings INSERT trigger) raises a
+    // specific, already-human-readable message prefixed with a stable tag —
+    // strip the tag rather than run it through the generic fallback copy.
+    const rawMessage = e instanceof Error ? e.message : ''
+    const membershipDetail = /MEMBERSHIP_REQUIRED:\s*(.+)/.exec(rawMessage)?.[1]
+    const errorCode = typeof e === 'object' && e !== null && 'code' in e ? String((e as { code: unknown }).code) : ''
+    const isDuplicateRequest =
+      errorCode === '23505' && rawMessage.includes('bookings_no_duplicate_pending_request')
+
+    if (membershipDetail) {
+      payError.value = membershipDetail
+    } else if (isDuplicateRequest) {
+      payError.value = 'You already have a pending request for this cleaner at this time.'
+    } else {
+      payError.value = toUserMessage(e, 'Payment failed. Please try again.')
+    }
   } finally {
     paying.value = false
   }

@@ -25,6 +25,7 @@ import {
 } from '@/services/bookingService'
 import { derivePaymentReadiness } from '@/services/payments/paymentStateMachine'
 import type { DerivedPaymentState } from '@/services/payments/paymentLedgerResolver'
+import { refundPayment } from '@/services/payments/paymentOrchestrator'
 
 // ─── Transition map (mirrors SQL in transition_booking_state) ─────────────────
 
@@ -170,6 +171,18 @@ export function cannotAttend(booking: BookingDetailRow): boolean {
   return !booking.started_at
 }
 
+/**
+ * Mirrors cancel_booking_customer's SQL threshold: cancellations made more
+ * than 24 hours before the scheduled start are auto-refund-eligible; later
+ * cancellations require admin review. Used by cancelAsCustomer to decide
+ * whether to follow up with a real Stripe refund after cancelling — the
+ * RPC itself no longer touches payment state (see 20260724000000 migration).
+ */
+export function isAutoRefundEligible(scheduledStart: string): boolean {
+  const start = new Date(scheduledStart).getTime()
+  return start - Date.now() > 24 * 60 * 60 * 1000
+}
+
 // ─── Actions ──────────────────────────────────────────────────────────────────
 
 export async function acceptBooking(bookingId: string, note?: string): Promise<BookingDetailRow> {
@@ -192,7 +205,19 @@ export async function cancelAsCustomer(
   bookingId: string,
   reason?: string,
 ): Promise<BookingDetailRow> {
-  return _cancelBookingCustomer(bookingId, reason)
+  const booking = await _cancelBookingCustomer(bookingId, reason)
+
+  // cancel_booking_customer only transitions the booking — it no longer
+  // touches payment state (see 20260724000000 migration). When the
+  // cancellation is auto-refund-eligible (>24h before start), this is the
+  // one and only place that triggers the real Stripe refund. Cancellations
+  // within 24h intentionally do NOT auto-refund — they await admin review,
+  // matching the RPC's own notification to the customer and admins.
+  if (isAutoRefundEligible(booking.scheduled_start)) {
+    await refundPayment(bookingId, { reason: 'requested_by_customer' })
+  }
+
+  return booking
 }
 
 export async function markCannotAttend(

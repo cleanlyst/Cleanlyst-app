@@ -307,6 +307,7 @@ import {
   adminUpsertMembershipPlan,
   type AdminMemberRow,
 } from '@/services/membershipService'
+import { toUserMessage } from '@/utils/format'
 import type { MembershipPlan, MembershipStatus } from '@/types/database.types'
 
 // ── State ────────────────────────────────────────────────────────────────────
@@ -352,7 +353,7 @@ async function loadPlans() {
   try {
     plans.value = await adminGetAllPlans()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load plans'
+    error.value = toUserMessage(e, 'Failed to load plans')
   } finally {
     plansLoading.value = false
   }
@@ -364,7 +365,7 @@ async function loadMembers() {
     const status = memberFilter.value as MembershipStatus | ''
     members.value = await adminListMembers(status || null)
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to load members'
+    error.value = toUserMessage(e, 'Failed to load members')
   } finally {
     membersLoading.value = false
   }
@@ -378,7 +379,7 @@ async function grantMembership(customerId: string) {
     await adminGrantMembership(customerId, plans.value[0]?.id ?? null, 'Admin grant')
     await loadMembers()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to grant membership'
+    error.value = toUserMessage(e, 'Failed to grant membership')
   } finally {
     actionLoading.value = null
   }
@@ -390,7 +391,7 @@ async function pauseMembership(customerId: string) {
     await adminPauseMembership(customerId)
     await loadMembers()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to pause membership'
+    error.value = toUserMessage(e, 'Failed to pause membership')
   } finally {
     actionLoading.value = null
   }
@@ -402,7 +403,7 @@ async function reactivateMembership(customerId: string) {
     await adminReactivateMembership(customerId)
     await loadMembers()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to reactivate membership'
+    error.value = toUserMessage(e, 'Failed to reactivate membership')
   } finally {
     actionLoading.value = null
   }
@@ -415,7 +416,7 @@ async function cancelMembership(customerId: string) {
     await adminCancelMembership(customerId)
     await loadMembers()
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Failed to cancel membership'
+    error.value = toUserMessage(e, 'Failed to cancel membership')
   } finally {
     actionLoading.value = null
   }

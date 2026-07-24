@@ -59,4 +59,10 @@ export interface OrchestratorResult {
   clientSecret?: string
   /** True when the simulation RPC path ran (no Stripe key configured) */
   simulationMode: boolean
+  /** Stripe refund/cancellation id — set only by refundPayment/partialRefund */
+  refundId?: string
+  /** Actual refunded amount in pence, clamped to the payment total — set only by refundPayment/partialRefund */
+  refundCents?: number
+  /** True when the refund covered the full payment amount — set only by refundPayment/partialRefund */
+  isFullRefund?: boolean
 }

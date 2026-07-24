@@ -12,6 +12,10 @@
       {{ loadError }}
     </div>
 
+    <div v-else-if="store.loading" class="py-6 text-center text-secondary text-sm animate-pulse">
+      Loading preferences…
+    </div>
+
     <template v-else>
       <!-- Read-only summary -->
       <div v-if="!editing">

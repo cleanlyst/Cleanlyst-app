@@ -21,6 +21,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { toUserMessage } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -60,7 +61,7 @@ onMounted(async () => {
 
     await router.replace({ name: auth.dashboardRouteName })
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : 'Something went wrong.'
+    errorMessage.value = toUserMessage(error, 'Something went wrong.')
   }
 })
 

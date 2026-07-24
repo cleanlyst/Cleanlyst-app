@@ -127,7 +127,17 @@ export async function wipeDynamic(customerId: string, cleanerId?: string): Promi
 
 const SUPABASE_ANON_KEY = 'sb_publishable_JVZQZGRwhdg9V6u-xkLTpQ__ayDTnL0'
 
-async function createAuthedClient(email: string, password: string) {
+// Unauthenticated client (anon key, no session) — for verifying RLS policies
+// that intentionally grant access to the `public` role (e.g. public reads).
+export function createAnonClient(): SupabaseClient {
+  return createClient(
+    process.env.SUPABASE_STAGING_URL!,
+    SUPABASE_ANON_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  )
+}
+
+export async function createAuthedClient(email: string, password: string) {
   const client = createClient(
     process.env.SUPABASE_STAGING_URL!,
     SUPABASE_ANON_KEY,
@@ -367,7 +377,7 @@ export async function setCleanerStatus(
 export async function getNotificationsForUser(userId: string, limit = 10) {
   const { data, error } = await db
     .from('notifications')
-    .select('id, type, title, body, created_at')
+    .select('id, type, title, body, booking_id, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -385,9 +395,23 @@ export async function getBookingStatusEvents(bookingId: string) {
   return data ?? []
 }
 
-export async function seedPaymentRecord(bookingId: string, amountCents = 5000): Promise<void> {
+export async function seedPaymentRecord(
+  bookingId: string,
+  amountCents = 5000,
+  stripePaymentIntentId?: string,
+): Promise<void> {
+  // NOTE: stripe_payment_intent_id lives on `payments` here — it is a
+  // DIFFERENT column from bookings.stripe_payment_intent_id (set via
+  // seedBookingDirect's option of the same name). refund-payment reads it
+  // from `payments`, so a test exercising the real Stripe-call path must
+  // pass it here, not (only) to seedBookingDirect.
   await db.from('payments').upsert(
-    { booking_id: bookingId, status: 'captured', amount_cents: amountCents },
+    {
+      booking_id: bookingId,
+      status: 'captured',
+      amount_cents: amountCents,
+      ...(stripePaymentIntentId ? { stripe_payment_intent_id: stripePaymentIntentId } : {}),
+    },
     { onConflict: 'booking_id' },
   )
 }

@@ -189,8 +189,25 @@ export async function acceptBooking(bookingId: string, note?: string): Promise<B
   return transitionBookingState(bookingId, 'accepted', note)
 }
 
-export async function declineBooking(bookingId: string, note?: string): Promise<BookingDetailRow> {
-  return transitionBookingState(bookingId, 'declined', note)
+/**
+ * Mirrors the DECLINED branch of transition_booking_state exactly
+ * (20260701000003_estimate_adjustment.sql:850-858):
+ *   pending_request     → declined | cleaner_declined  (cleaner/admin)
+ *   payment_authorized  → cleaner_declined only         (cleaner/admin)
+ * Cleaners can never see pending_request bookings (RLS: "Cleaner views paid
+ * bookings"), so in practice the reachable target for a cleaner-initiated
+ * decline is always cleaner_declined — but the source status is still used
+ * to pick the right target rather than hardcoding one, so this stays correct
+ * if ever called from a pending_request context (e.g. an admin decline).
+ */
+export async function declineBooking(
+  bookingId: string,
+  currentStatus: BookingStatus,
+  note?: string,
+): Promise<BookingDetailRow> {
+  const targetStatus: BookingStatus =
+    currentStatus === 'pending_request' ? 'declined' : 'cleaner_declined'
+  return transitionBookingState(bookingId, targetStatus, note)
 }
 
 export async function startCleaning(bookingId: string): Promise<BookingDetailRow> {

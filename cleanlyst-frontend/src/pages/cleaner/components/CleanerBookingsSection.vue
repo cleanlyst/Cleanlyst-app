@@ -110,9 +110,10 @@
               type="button"
               data-testid="decline-booking-btn"
               :data-booking-id="b.id"
+              :disabled="props.actionLoadingId === b.id"
               @click="handleDeclineBooking(b.id)"
             >
-              Decline
+              {{ props.actionLoadingId === b.id ? 'Declining…' : 'Decline' }}
             </button>
             <button
               v-if="canStartCleaning(b)"
@@ -190,6 +191,7 @@ const props = defineProps({
     default: () => ({ pending: 0, accepted: 0, completed: 0 }),
   },
   errorMessage: { type: String, default: '' },
+  actionLoadingId: { type: String as PropType<string | null>, default: null },
   acceptBooking: {
     type: Function as PropType<(id: string) => Promise<void>>,
     default: () => {},

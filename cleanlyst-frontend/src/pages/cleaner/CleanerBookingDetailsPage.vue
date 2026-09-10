@@ -578,7 +578,7 @@ async function confirmDecline() {
   errorMessage.value = ''
   successMessage.value = ''
   try {
-    await declineBooking(bookingId, declineReason.value || undefined)
+    await declineBooking(bookingId, booking.value.status, declineReason.value || undefined)
     declineModalOpen.value = false
     declineReason.value = ''
     successMessage.value = 'Booking declined'

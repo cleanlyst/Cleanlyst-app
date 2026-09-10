@@ -77,8 +77,15 @@ test.describe('Cleaner booking flow', () => {
   })
 
   // ── CL2.2  Decline booking ─────────────────────────────────────────────────────
+  // Regression coverage for the confirmed production bug: the decline flow used to
+  // send the RPC target status 'declined', which transition_booking_state only
+  // accepts from pending_request (a status cleaners can never see). Every real
+  // decline of a payment_authorized booking therefore failed. The fix sends
+  // 'cleaner_declined' — the only status transition_booking_state allows from
+  // payment_authorized for a cleaner actor
+  // (20260701000003_estimate_adjustment.sql:855-858).
 
-  test('CL2.2 — cleaner declines booking, status changes', async ({ page }) => {
+  test('CL2.2 — cleaner declines a paid booking, status becomes cleaner_declined', async ({ page }) => {
     const bookingId = await createAndAssignBooking(page, 4)
     await loginAs(page, process.env.E2E_CLEANER_EMAIL!, process.env.E2E_CLEANER_PASSWORD!)
 
@@ -86,8 +93,74 @@ test.describe('Cleaner booking flow', () => {
     await dashboard.gotoBookings()
     await dashboard.declineBooking(bookingId)
 
+    // Exact status, not a loose set — pins the fix to the one status the SQL
+    // state machine actually allows from payment_authorized for a cleaner.
     const status = await getBookingStatus(bookingId)
-    expect(['declined', 'pending_request', 'cancelled']).toContain(status)
+    expect(status).toBe('cleaner_declined')
+
+    // UI must still show the correct result after a full page reload — a
+    // decline that only updated in-memory state (and reverted on reload) would
+    // indicate the transition never actually committed server-side.
+    await page.reload()
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText(/declined/i).first()).toBeVisible({ timeout: 10_000 })
+    expect(await getBookingStatus(bookingId)).toBe('cleaner_declined')
+  })
+
+  // ── CL2.2b  Decline double-click does not fire a duplicate transition ──────────
+
+  test('CL2.2b — double-clicking Decline does not send a duplicate transition', async ({ page }) => {
+    const bookingId = await createAndAssignBooking(page, 4.5)
+    await loginAs(page, process.env.E2E_CLEANER_EMAIL!, process.env.E2E_CLEANER_PASSWORD!)
+
+    const dashboard = new CleanerDashboard(page)
+    await dashboard.gotoBookings()
+
+    const btn = dashboard.declineBtn(bookingId)
+    await expect(btn).toBeVisible({ timeout: 15_000 })
+    // Fire two clicks back-to-back before the first request resolves. The
+    // button must disable on the first click (actionLoadingId guard), so the
+    // second click is a no-op rather than a second RPC call.
+    await Promise.all([btn.click(), btn.click({ force: true })])
+    await expect(page.getByText(/declined/i).first()).toBeVisible({ timeout: 10_000 })
+
+    // Exactly one transition event should have been recorded for this booking's
+    // decline — a duplicate concurrent call would insert a second
+    // booking_status_events row for the same from/to pair.
+    const { data: events } = await db
+      .from('booking_status_events')
+      .select('id')
+      .eq('booking_id', bookingId)
+      .eq('to_status', 'cleaner_declined')
+    expect(events?.length ?? 0).toBe(1)
+
+    expect(await getBookingStatus(bookingId)).toBe('cleaner_declined')
+  })
+
+  // ── CL2.2c  Decline never triggers a refund ────────────────────────────────────
+
+  test('CL2.2c — declining a booking does not create a payout or mark it refunded', async ({ page }) => {
+    const bookingId = await createAndAssignBooking(page, 4.75)
+    await loginAs(page, process.env.E2E_CLEANER_EMAIL!, process.env.E2E_CLEANER_PASSWORD!)
+
+    const dashboard = new CleanerDashboard(page)
+    await dashboard.gotoBookings()
+    await dashboard.declineBooking(bookingId)
+
+    expect(await getBookingStatus(bookingId)).toBe('cleaner_declined')
+
+    // Decline is booking-state-only by design — refunding a declined paid
+    // booking is a separate, explicit admin action (refund-payment Edge
+    // Function), never an automatic side effect of the decline transition.
+    const { data: payment } = await db
+      .from('payments')
+      .select('status')
+      .eq('booking_id', bookingId)
+      .maybeSingle()
+    expect(payment?.status).not.toBe('refunded')
+
+    const { data: payouts } = await db.from('payouts').select('id').eq('booking_id', bookingId)
+    expect(payouts?.length ?? 0).toBe(0)
   })
 
   // ── CL2.3  Submit estimate ─────────────────────────────────────────────────────

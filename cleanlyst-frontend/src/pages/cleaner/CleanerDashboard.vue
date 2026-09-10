@@ -21,6 +21,7 @@
       v-if="activeRouteName === 'CleanerBookings'"
       :bookingTotals="bookingTotals"
       :errorMessage="errorMessage"
+      :actionLoadingId="actionLoadingId"
       :acceptBooking="acceptBooking"
       :declineBooking="declineBooking"
       :startBooking="startBooking"
@@ -45,6 +46,7 @@ import { requireSupabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useCleanerBookings } from '@/composables/useCleanerBookings'
 import { completeBooking, startBooking as startBookingRequest } from '@/services/bookingService'
+import { declineBooking as declineBookingRequest } from '@/services/bookingLifecycleService'
 import { upsertAvailabilityOverride } from '@/services/availabilityService'
 import { subscribeToTable, unsubscribe } from '@/lib/realtime'
 import { toUserMessage } from '@/utils/format'
@@ -195,7 +197,12 @@ async function acceptBooking(id: string) {
 async function declineBooking(id: string) {
   actionLoadingId.value = id
   try {
-    await transition(id, 'declined')
+    // Route through the canonical bookingLifecycleService.declineBooking so the
+    // correct target status (cleaner_declined vs declined) is derived from the
+    // booking's current status in exactly one place — see bookingLifecycleService.ts.
+    const currentBooking = bookings.value.find((b) => b.id === id)
+    if (!currentBooking) throw new Error('Booking not found')
+    await declineBookingRequest(id, currentBooking.status)
     await loadBookings()
   } catch (e) {
     errorMessage.value = toUserMessage(e, 'Failed to decline booking. Please try again.')
